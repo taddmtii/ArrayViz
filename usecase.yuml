@@ -15,4 +15,5 @@
 [Instructor]-(Create quizzes)
 [Instructor]-(Manage student progress)
 [Instructor]-(View/manage leaderboards)
-[Administrator]-(Manage site)
+[Administrator]-(Manage system users and roles)
+[Administrator]-(Configure database and integrations)
