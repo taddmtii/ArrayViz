@@ -55,10 +55,37 @@ Time complexity analysis (counting steps)
 Leaderboards
 Potential achievement system (Gameification) (for instance, sort an array in *** amount of steps or complete all search algorithms).
 
-QUestions to answer:
+Questions to answer:
 
 What the code we are executing should look like? (pseudocode, python, block based (blockly - block code library))
 
+    I believe it should be sometype of psuedocode that is python based. I am open to block based, but blockly upon furhter research looks outdated and I would need to look into more options.
+
 What data types should we deal with?
 
+    Integers are what make the most sense here, it may be a tough hurdle to implement string and/or object (by specific attribute) sorting.
 
+Actors:
+[Student<<actor>>]
+[Instructor<<actor>>]
+[Administrator<<actor>>]
+
+User Stories:
+Register -> Student
+Login -> Student 
+Save instance -> Student
+Load instance -> Student
+Integrate with eClass -> Student
+Take periodic quizzes -> Student
+Set custom indexing variabels -> Student
+Step through selected algorithm process -> Student
+Access documentation for each process -> Student
+View and create leaderboard entries -> Student
+Count steps for time complexity -> Student
+Earn achievements -> Student
+
+Create quizzes -> Instructor
+Manage student progress -> Instructor
+View/manage leaderboards -> Instructor
+
+Manage -> Administrator

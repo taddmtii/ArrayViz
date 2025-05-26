@@ -1,0 +1,18 @@
+// {type:usecase}
+// {direction:leftToRight}
+[Student]-(Register)
+[Student]-(Login)
+[Student]-(Save Instance)
+[Student]-(Load Instance)
+[Student]-(Communicate with eClass)
+[Student]-(Take quizzes)
+[Student]-(Set custom indexing variables)
+[Student]-(Step through selected algorithm process)
+[Student]-(Access documentation for each process)
+[Student]-(View and create leaderboard entries)
+[Student]-(Count steps for time complexity)
+[Student]-(Earn achievements)
+[Instructor]-(Create quizzes)
+[Instructor]-(Manage student progress)
+[Instructor]-(View/manage leaderboards)
+[Administrator]-(Manage site)
