@@ -1,6 +1,6 @@
 Source for template: https://www.perforce.com/blog/alm/how-write-software-requirements-specification-srs-document
 
-1. Introduction
+# 1. Introduction
     1.1 Purpose
 
     1.2 Intended Audience
@@ -11,12 +11,12 @@ Source for template: https://www.perforce.com/blog/alm/how-write-software-requir
 
     1.5 Definitions
 
-2. Overall Descriptions
+# 2. Overall Descriptions
     2.1 User Needs
 
     2.2 Assumptions and Dependencies
 
-3. System Features and Requirements
+# 3. System Features and Requirements
     3.1 Functional Requirements
 
     3.2 External Interface Requirements
