@@ -6,8 +6,9 @@
 [Student]-(Load Instance)
 [Student]-(Communicate with eClass)
 [Student]-(Take quizzes)
-[Student]-(Set custom indexing variables)
-[Student]-(Step through selected algorithm process)
+[Student]-(View Results)
+[Student]-(Run algorithm)
+(Run algorithm) > (Set custom indexing variables)
 [Student]-(Access documentation for each process)
 [Student]-(View and create leaderboard entries)
 [Student]-(Count steps for time complexity)
@@ -17,3 +18,10 @@
 [Instructor]-(View/manage leaderboards)
 [Administrator]-(Manage system users and roles)
 [Administrator]-(Configure database and integrations)
+[Content Creator]
+
+// Student/Instructor inherits from Content Creator
+// Instructor inherits from student
+
+// Demo mode (use case) (computer run algoirhtm)
+// Prediction mode (use case) (user run algorithm, check me functionaltiy)

@@ -43,13 +43,19 @@ Course: CPTR-486 Senior Seminar
 
     2.2 Assumptions and Dependencies
 
-        ????
+        - student preconceived
 
 # 3. System Features and Requirements
     3.1 Functional Requirements
-
+        - what software does (user stories)
+        - update variable
+        - update contents of array
+        
     3.2 External Interface Requirements
 
     3.3 System Features
 
     3.4 Nonfunctional Requirements
+        - what platforms
+        - what performance
+        - limitations
