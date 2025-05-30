@@ -1,5 +1,7 @@
 // {type:usecase}
 // {direction:leftToRight}
+
+//Student
 [Student]-(Register)
 [Student]-(Login)
 [Student]-(Save Instance)
@@ -9,15 +11,25 @@
 [Student]-(View Results)
 [Student]-(Run algorithm)
 (Run algorithm) > (Set custom indexing variables)
+(Run algorithm) > (Count steps for time complexity)
 [Student]-(Access documentation for each process)
 [Student]-(View and create leaderboard entries)
-[Student]-(Count steps for time complexity)
 [Student]-(Earn achievements)
+[Student]-(Use Demo Mode)
+(Use Demo Mode) > (Run algorithm)
+
+//Instructor
 [Instructor]-(Create quizzes)
 [Instructor]-(Manage student progress)
 [Instructor]-(View/manage leaderboards)
+[Instructor]-()
+[Instructor]-()
+
+//Administrator
 [Administrator]-(Manage system users and roles)
 [Administrator]-(Configure database and integrations)
+
+//Content Creator
 [Content Creator]
 
 // Student/Instructor inherits from Content Creator
