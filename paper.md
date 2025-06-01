@@ -9,6 +9,7 @@ What will happen if I increment this index?
 If I swap these two elements, what’s next?
 What will happen when we execute the next line
 // would this be a good fit to use instead of pythontutor
+
 PythonTutor is excellent for tracing code execution, this tool offers a more focused environment designed specifically for array algorithms as opposed to abstract code visualization. Manual manipulation is the key difference.
 // dynamic vs static allocation with consideration to pythons lists (dynamic by nature) *prefer fixed size
 Fixed size it is.
@@ -59,11 +60,11 @@ Questions to answer:
 
 What the code we are executing should look like? (pseudocode, python, block based (blockly - block code library))
 
-    I believe it should be sometype of psuedocode that is python based. I am open to block based, but blockly upon furhter research looks outdated and I would need to look into more options.
+    Block based makes the most amount of sense.
 
 What data types should we deal with?
 
-    Integers are what make the most sense here, it may be a tough hurdle to implement string and/or object (by specific attribute) sorting.
+    Integers and chars.
 
 Actors:
 [Student<<actor>>]

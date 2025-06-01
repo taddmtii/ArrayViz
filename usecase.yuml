@@ -1,6 +1,12 @@
 // {type:usecase}
 // {direction:leftToRight}
 
+//Rules for Inheritance
+
+//Instructor inherits from Student
+[Student]^[Instructor] 
+[Content Creator]^[Instructor]
+
 //Student
 [Student]-(Register)
 [Student]-(Login)
@@ -9,28 +15,38 @@
 [Student]-(Communicate with eClass)
 [Student]-(Take quizzes)
 [Student]-(View Results)
-[Student]-(Run algorithm)
-(Run algorithm) > (Set custom indexing variables)
-(Run algorithm) > (Count steps for time complexity)
 [Student]-(Access documentation for each process)
 [Student]-(View and create leaderboard entries)
 [Student]-(Earn achievements)
-[Student]-(Use Demo Mode)
-(Use Demo Mode) > (Run algorithm)
+[Student]-(Run algorithm)
+(Run algorithm) > (Set custom indexing variables)
+(Run algorithm) > (Count steps for time complexity)
+(Run algorithm) > (Compare elements)
+(Run algorithm) > (Step forward/back)
+(Run algorithm) > (Prediction Mode)
+(Run algorithm) > (Demo Mode)
+
+(Prediction Mode) > (Predict results of swapping elements)
+(Prediction Mode) > (Predict index variable increments)
+(Prediction Mode) > (Predict next execution line)
+
+(Demo Mode) > (Computer runs algorithm)
+(Demo Mode) > (Ability to manually step through)
 
 //Instructor
 [Instructor]-(Create quizzes)
 [Instructor]-(Manage student progress)
 [Instructor]-(View/manage leaderboards)
-[Instructor]-()
-[Instructor]-()
+[Instructor]-(Review student attempts)
+[Instructor]-(Assign algorithms to students)
 
 //Administrator
 [Administrator]-(Manage system users and roles)
-[Administrator]-(Configure database and integrations)
+[Administrator]-(Configure database)
+[Administrator]-(Integrate external connections)
 
 //Content Creator
-[Content Creator]
+[Content Creator]-(Design new algorithms)
 
 // Student/Instructor inherits from Content Creator
 // Instructor inherits from student
