@@ -4,39 +4,45 @@
 //Rules for Inheritance
 
 //Instructor inherits from Student
-[Student]^[Instructor] 
+[Instructor]^[Student] 
 [Content Creator]^[Instructor]
 
 //Student
-[Student]-(Register)
-[Student]-(Login)
+[Student]-(Run algorithm)
 [Student]-(Save Instance)
 [Student]-(Load Instance)
-[Student]-(Communicate with eClass)
-[Student]-(Take quizzes)
+//[Student]-(Take quizzes)
 [Student]-(View Results)
-[Student]-(Access documentation for each process)
-[Student]-(View and create leaderboard entries)
+[Student]-(View documentation)
+[Student]-(View leaderboard)
 [Student]-(Earn achievements)
-[Student]-(Run algorithm)
-(Run algorithm) > (Set custom indexing variables)
-(Run algorithm) > (Count steps for time complexity)
-(Run algorithm) > (Compare elements)
+[Student]-(Select algorithm)
+[Student]-(Register*)
+[Student]-(Login*)
 (Run algorithm) > (Step forward/back)
-(Run algorithm) > (Prediction Mode)
-(Run algorithm) > (Demo Mode)
+(Run algorithm) > (Bind index var)
+// Types of steps to count:
+// - Array read/write operations
+// - Arithmetic / Logic (+ * - / && || ! ++ -- != == += -=)
+// - Variable access
+// - Total # of steps
+// * nested tree of counts for read and write operations
+(Run algorithm) > (Compare elements)
+(Run algorithm) > (Group elements)
+(Run algorithm) > (Toggle predict)
+(Run algorithm) < (Predict)
 
-(Prediction Mode) > (Predict results of swapping elements)
-(Prediction Mode) > (Predict index variable increments)
-(Prediction Mode) > (Predict next execution line)
-
-(Demo Mode) > (Computer runs algorithm)
-(Demo Mode) > (Ability to manually step through)
+(Predict) > (Element change)
+(Predict) > (Index change)
+// next line may need some clarification
+(Predict) > (Next line)
+(Predict) > (Count steps)
+// refer to line 23
 
 //Instructor
-[Instructor]-(Create quizzes)
+//[Instructor]-(Create quizzes)
 [Instructor]-(Manage student progress)
-[Instructor]-(View/manage leaderboards)
+[Instructor]-(Manage leaderboards)
 [Instructor]-(Review student attempts)
 [Instructor]-(Assign algorithms to students)
 
@@ -48,8 +54,12 @@
 //Content Creator
 [Content Creator]-(Design new algorithms)
 
-// Student/Instructor inherits from Content Creator
-// Instructor inherits from student
+// include line numbers (non func requirement)
 
-// Demo mode (use case) (computer run algoirhtm)
-// Prediction mode (use case) (user run algorithm, check me functionaltiy)
+// HW:
+// 1. Two modes for debugging: line oriented and expression oriented.
+//  - line oriented: pythontutor, most debuggers.
+//  - expression oriented: thonny, each step is an expression, replaces step with result.
+//  - what one do i want to focus on?
+
+
