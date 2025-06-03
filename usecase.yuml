@@ -60,6 +60,7 @@
 // 1. Two modes for debugging: line oriented and expression oriented.
 //  - line oriented: pythontutor, most debuggers.
 //  - expression oriented: thonny, each step is an expression, replaces step with result.
-//  - what one do i want to focus on?
+//  - what one do i want to focus on: expression oriented, I think visualizing reaching a step,
+//  evaluating that step, replacing the expression with the result etc... is really user friendly.
 
 
