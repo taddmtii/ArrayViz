@@ -63,6 +63,11 @@
 // Text based.
 
 // http://jsav.io/
+// https://www.bottlecaps.de/rr/ui
+// https://github.com/jesse-r-s-hines/MultithreadingDemo?tab=readme-ov-file
+// https://nearley.js.org/
+// https://uiwjs.github.io/react-codemirror/
+// https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-assignment_stmt
 
 // Grammar: (Python)
 // assignment statement, list literal, basic arithmetic expressions,
