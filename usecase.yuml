@@ -27,13 +27,15 @@
 // - Variable access
 // - Total # of steps
 // * nested tree of counts for read and write operations
-(Run algorithm) > (Compare elements)
-(Run algorithm) > (Group elements)
+(Run algorithm) > (Evaluate expression)
+(Evaluate expression) < (Access element)
+(Evaluate expression) < (Create var)
 (Run algorithm) > (Toggle predict)
 (Run algorithm) < (Predict)
 
-(Predict) > (Element change)
-(Predict) > (Index change)
+(Predict) > (Variable change)
+(Variable change) < (Element Change)
+(Variable change) < (Index change)
 // next line may need some clarification
 (Predict) > (Next line)
 (Predict) > (Count steps)
@@ -56,11 +58,12 @@
 
 // include line numbers (non func requirement)
 
-// HW:
-// 1. Two modes for debugging: line oriented and expression oriented.
-//  - line oriented: pythontutor, most debuggers.
-//  - expression oriented: thonny, each step is an expression, replaces step with result.
-//  - what one do i want to focus on: expression oriented, I think visualizing reaching a step,
-//  evaluating that step, replacing the expression with the result etc... is really user friendly.
+// Tech stack / "wireframe"
+// Build potential grammar
+// Text based.
 
+// http://jsav.io/
 
+// Grammar: (Python)
+// assignment statement, list literal, basic arithmetic expressions,
+// variable access, array subscripting (access)
