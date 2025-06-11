@@ -59,6 +59,7 @@
 // include line numbers (non func requirement)
 
 // Tech stack / "wireframe"
+//    - React, Typescript
 // Build potential grammar
 // Text based.
 
@@ -70,5 +71,9 @@
 // https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-assignment_stmt
 
 // Grammar: (Python)
-// assignment statement, list literal, basic arithmetic expressions,
-// variable access, array subscripting (access)
+// assignment statement: IDENTIFIER EQ (NUMBER | IDENTIFIER )
+// list literal: LEFT_SQ_BRACKET (NUMBER_LIST) RIGHT_SQ_BRACKET
+// basic arithmetic expressions: '+' | '-' | '*' | '/' (PLUS, SUB, MULT, DIV)
+// variable access: lets talk about what this means exactly. (a = b + c or something like print(a))
+// array subscripting (access): IDENTIFIER LEFT_SQ_BRACKET NUMBER RIGHT_SQ_BRACKET 
+// method calls (like list.append): APPEND LEFT_PAREN ( IDENTIFIER | NUMBER ) RIGHT_PAREN
