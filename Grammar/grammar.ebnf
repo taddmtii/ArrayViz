@@ -24,5 +24,3 @@ expression ::= IDENTIFIER EQ NUMBER |
                IDENTIFIER EQ IDENTIFIER |
                IDENTIFIER LSQBRACK NUMBER RSQBRACK
                ;
-
-array
