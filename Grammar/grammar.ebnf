@@ -1,0 +1,28 @@
+NUMBER ::= [0-9]+ 
+
+IDENTIFIER ::= [a-z][A-Z]+
+
+PLUS ::= '+'
+
+SUB ::= '-'
+
+MULT ::= '*' 
+
+DIV ::= '/'
+
+EQ ::= '='
+
+LSQBRACK ::= = '['
+
+RSQBRACK ::= ']'
+
+number_list ::= number_list NUMBER
+
+list ::= LSQBRACK number_list RSQBRACK
+
+expression ::= IDENTIFIER EQ NUMBER |
+               IDENTIFIER EQ IDENTIFIER |
+               IDENTIFIER LSQBRACK NUMBER RSQBRACK
+               ;
+
+array
