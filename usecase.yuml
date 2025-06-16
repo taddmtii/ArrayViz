@@ -77,6 +77,7 @@
 // variable access: lets talk about what this means exactly. (a = b + c or something like print(a))
 // array subscripting (access): IDENTIFIER LEFT_SQ_BRACKET NUMBER RIGHT_SQ_BRACKET 
 // method calls (like list.append): APPEND LEFT_PAREN ( IDENTIFIER | NUMBER ) RIGHT_PAREN
+// function definitions
 
 // 0x -> Hex
 // 0b -> Binary
