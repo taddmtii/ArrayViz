@@ -1,7 +1,16 @@
-NUMBER ::= [0-9]+ 
+NUMBER ::= DECIMAL |
+           HEX |
+           BINARY
 
-IDENTIFIER ::= [a-z][A-Z]+
+DECIMAL ::= [0-9]+
+HEX ::= '0x' [0-9a-fA-F]+
+BINARY ::= '0b' [0-1]+
 
+IDENTIFIER ::= [a-z][A-Z_] [a-zA-Z0-9_]*
+
+IF ::= 'if'
+
+WHILE ::= 'while'
 PLUS ::= '+'
 
 SUB ::= '-'
@@ -16,11 +25,19 @@ LSQBRACK ::= = '['
 
 RSQBRACK ::= ']'
 
-number_list ::= number_list NUMBER
+COMMA ::= ','
 
-list ::= LSQBRACK number_list RSQBRACK
+UNDERSCORE ::= '_'
 
-expression ::= IDENTIFIER EQ NUMBER |
+number_list ::= NUMBER number_list
+
+list ::= LSQBRACK number_list RSQBRACK |
+        LSQBRACK RSQBRACK
+
+statement ::= IDENTIFIER EQ NUMBER |
                IDENTIFIER EQ IDENTIFIER |
-               IDENTIFIER LSQBRACK NUMBER RSQBRACK
+               IDENTIFIER LSQBRACK NUMBER RSQBRACK |
+               IDENTIFIER LSQBRACK NUMBER RSQBRACK EQ NUMBER
                ;
+
+expression
