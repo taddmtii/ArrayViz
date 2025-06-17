@@ -16,7 +16,7 @@ PLUS ::= '+'
 
 SUB ::= '-'
 
-MULT ::= '*' 
+MULT ::= '*'
 
 DIV ::= '/'
 
@@ -50,6 +50,13 @@ statement ::=  IDENTIFIER EQ NUMBER |
                ;
 
 /* 
+
+Next Steps:
+1. Flesh out the rest of the levels.
+   - Discuss with Prof. O
+2. Develop grammar level by level
+3. Test grammar incrementally
+
 Level 1
 i = 0
 nums = [1, 2, 3]
@@ -81,13 +88,28 @@ Level 5
 
 ------------------------------------
 Ultimate Level (Level 6)
+
+Features:
 - func definitions and calls
-- no classes
 - loops (while / for)
 - control flow
 - basic arithmetic
 - variable access
 - array operations
 - built in function calls (such as print(), len(), abs(), sum(), sorted() etc...)
+
+Maybe:
+- multiple assignments (a, b = 5, 6)
+- visualize stack frames/heap
+
+Excluded:
+- classes
+- exeception
+- generators
+- decorators
+- dictionaries
+
+
+
 
 */

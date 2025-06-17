@@ -4,8 +4,8 @@
 //Rules for Inheritance
 
 //Instructor inherits from Student
-[Instructor]^[Student] 
-[Content Creator]^[Instructor]
+// [Instructor]^[Student] 
+// [Content Creator]^[Instructor]
 
 //Student
 [Student]-(Run algorithm)
@@ -43,25 +43,23 @@
 
 //Instructor
 //[Instructor]-(Create quizzes)
-[Instructor]-(Manage student progress)
-[Instructor]-(Manage leaderboards)
-[Instructor]-(Review student attempts)
-[Instructor]-(Assign algorithms to students)
+// [Instructor]-(Manage student progress)
+// [Instructor]-(Manage leaderboards)
+// [Instructor]-(Review student attempts)
+// [Instructor]-(Assign algorithms to students)
 
-//Administrator
-[Administrator]-(Manage system users and roles)
-[Administrator]-(Configure database)
-[Administrator]-(Integrate external connections)
+// //Administrator
+// [Administrator]-(Manage system users and roles)
+// [Administrator]-(Configure database)
+// [Administrator]-(Integrate external connections)
 
-//Content Creator
-[Content Creator]-(Design new algorithms)
+// //Content Creator
+// [Content Creator]-(Design new algorithms)
 
 // include line numbers (non func requirement)
 
 // Tech stack / "wireframe"
-//    - React, Typescript
-// Build potential grammar
-// Text based.
+//    - React, Typescript, Node.js, React Router
 
 // http://jsav.io/
 // https://www.bottlecaps.de/rr/ui
@@ -69,6 +67,8 @@
 // https://nearley.js.org/
 // https://uiwjs.github.io/react-codemirror/
 // https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-assignment_stmt
+
+//https://www.craftinginterpreters.com/introduction.html INTERPRETER TEXTBOOK
 
 // Grammar: (Python)
 // assignment statement: IDENTIFIER EQ (NUMBER | IDENTIFIER )
