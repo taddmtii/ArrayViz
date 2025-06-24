@@ -61,8 +61,8 @@ Level 1
 
 - variable assignment
 - list literals
-- array access
-- print statement
+- list element access and assignment
+- print (built in function)
 
 i = 0
 nums = [1, 2, 3]
@@ -71,7 +71,7 @@ print(nums[0])
 ------------------------------------
 Level 2
 
-- basic arithmetic
+- basic arithmetic (+, -, *, /)
 - expressions / expressions in subscripts
 
 i = 0
@@ -81,7 +81,20 @@ nums[i] = nums[i - 1]
 ------------------------------------
 Level 3
 
+- control flow
+
+x = 1
+if x == 2:
+   print(2)
+else:
+   print(1)
+
+------------------------------------
+Level 4
+
 - simple for and while loops
+- nested for loops 
+
 i = 0
 while i < 5:
    print(i)
@@ -93,17 +106,6 @@ for x in range(5):
 nums = [1, 2, 3, 4, 5]
 for n in nums:
    print(n)
-------------------------------------
-Level 4
-
-- control flow
-- nested for loops 
-
-x = 1
-if x == 2:
-   print(2)
-else:
-   print(1)
 
 nums1 = [1, 2, 3]
 nums2 = [4, 5, 6]
