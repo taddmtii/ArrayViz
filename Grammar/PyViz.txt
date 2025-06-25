@@ -25,6 +25,7 @@ nums[i] = nums[i - 1]
 Level 3
 
 - control flow
+- add methods for lists (append, sort, etc...)
 
 x = 1
 if x == 2:
