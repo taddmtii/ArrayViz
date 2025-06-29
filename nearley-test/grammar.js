@@ -3,14 +3,16 @@
 (function () {
 function id(x) { return x[0]; }
 
-
 const moo = require("moo");
 const lexer = moo.compile({
     // WHITESPACE
     WS: /[ \t]+/,
 
-    // COMMENTS (talk to Prof O about this one)
-    COMMENT: {match: /#.*?/},
+    // NEWLINES
+    NL: {match: /\r?\n/, lineBreaks: true},
+
+    // COMMENTS
+    COMMENT: {match: /#.*/},
 
     // KEYWORDS
     PRINT: "print",
@@ -36,37 +38,36 @@ const lexer = moo.compile({
 // IIFE (Immediately Invoked Function Expression)
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
-    while ((tok = next.call(lexer)) && tok.type === "WS") {} // keep getting tokens and disgard any tokens with type WS
+    while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "NL")) {} // keep getting tokens and disgard any tokens with type WS
     return tok; // return first non WS token
 })(lexer.next);
 
 var grammar = {
     Lexer: lexer,
     ParserRules: [
-    {"name": "main", "symbols": ["statement_list"], "postprocess": id},
-    {"name": "NUMBER", "symbols": [(lexer.has("HEX") ? {type: "HEX"} : HEX)], "postprocess": id},
-    {"name": "NUMBER", "symbols": [(lexer.has("BINARY") ? {type: "BINARY"} : BINARY)], "postprocess": id},
-    {"name": "NUMBER", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": id},
-    {"name": "number_list", "symbols": ["NUMBER"], "postprocess": d => [d[0]]},
-    {"name": "number_list", "symbols": ["NUMBER", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
+    {"name": "program", "symbols": ["statement_list"], "postprocess": id},
+    {"name": "number", "symbols": [(lexer.has("HEX") ? {type: "HEX"} : HEX)], "postprocess": id},
+    {"name": "number", "symbols": [(lexer.has("BINARY") ? {type: "BINARY"} : BINARY)], "postprocess": id},
+    {"name": "number", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": id},
+    {"name": "number_list", "symbols": ["number"], "postprocess": d => [d[0]]},
+    {"name": "number_list", "symbols": ["number", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "number_list", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: d[1] })},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: [] })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), "NUMBER"], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", var: d[0], value: { type: "array_access", array: d[2], index: d[4] } })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("EQ") ? {type: "EQ"} : EQ), "NUMBER"], "postprocess": d => ({ type: "statement", array: d[0], index: d[2], value: d[5] })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", array: d[0], index: d[2], value: { type: "array_access", array: d[5], index: d[7] } })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), "list"], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
-    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", array: d[0], index: d[2] })},
+    {"name": "statement", "symbols": ["assignment_statement"]},
     {"name": "statement", "symbols": ["print_func"], "postprocess": id},
-    {"name": "statement_list", "symbols": ["statement"], "postprocess": d => [d[0]]},
+    {"name": "assignment_statement", "symbols": ["assignable_expression", (lexer.has("EQ") ? {type: "EQ"} : EQ), "expression"], "postprocess": d => ({ type: "assignment_statement", var: d[0], value: d[2] })},
+    {"name": "array_access", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "array_access", array: d[0], index: d[2] })},
+    {"name": "assignable_expression", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": id},
+    {"name": "assignable_expression", "symbols": ["array_access"]},
+    {"name": "expression", "symbols": ["assignable_expression"]},
+    {"name": "expression", "symbols": ["list"]},
+    {"name": "expression", "symbols": ["number"]},
+    {"name": "statement_list", "symbols": ["statement"], "postprocess": id},
     {"name": "statement_list", "symbols": ["statement", "statement_list"], "postprocess": d => [d[0], ...d[1]]},
     {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [] })},
-    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "NUMBER", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [d[2]] })},
-    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [d[2]] })},
-    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [{ type: "array_access", array: d[2], index: d[4] }] })}
+    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "expression", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [d[2]] })}
 ]
-  , ParserStart: "main"
+  , ParserStart: "program"
 }
 if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
    module.exports = grammar;

@@ -1,10 +1,11 @@
-
 @{%
-
 const moo = require("moo");
 const lexer = moo.compile({
     // WHITESPACE
     WS: /[ \t]+/,
+
+    // NEWLINES
+    NL: {match: /\r?\n/, lineBreaks: true},
 
     // COMMENTS
     COMMENT: {match: /#.*/},
@@ -33,7 +34,7 @@ const lexer = moo.compile({
 // IIFE (Immediately Invoked Function Expression)
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
-    while ((tok = next.call(lexer)) && tok.type === "WS") {} // keep getting tokens and disgard any tokens with type WS
+    while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "NL")) {} // keep getting tokens and disgard any tokens with type WS
     return tok; // return first non WS token
 })(lexer.next);
 
@@ -62,11 +63,11 @@ list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] })
 statement -> assignment_statement |
             print_func {% id %}
 
-assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %} | # i = 5, num = 2, nums[1] = 5 
+assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
            
 array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
-assignable_expression -> IDENTIFIER {% id %} |
+assignable_expression -> %IDENTIFIER {% id %} |
             array_access
 
 expression -> assignable_expression |
@@ -77,4 +78,4 @@ statement_list -> statement {% id %} |
                     statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array 
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
-               %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(5) 
+              %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} # print(5) 
