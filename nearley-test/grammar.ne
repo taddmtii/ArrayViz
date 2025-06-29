@@ -7,7 +7,7 @@ const lexer = moo.compile({
     WS: /[ \t]+/,
 
     // COMMENTS (talk to Prof O about this one)
-    COMMENT: {match: /#.*?/}
+    COMMENT: {match: /#.*?/},
 
     // KEYWORDS
     PRINT: "print",
@@ -18,7 +18,7 @@ const lexer = moo.compile({
     DECIMAL: /[1-9][0-9]*/,
 
     // IDENTIFIER
-    IDENTIFIER: /[a-zA-Z_] [a-zA-Z0-9_]*/,
+    IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
 
     //SYMBOLS
     COMMA: ",",
@@ -53,21 +53,25 @@ NUMBER -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
 
-number_list -> NUMBER (%COMMA number_list):? # 3 OR 3, OR 3, 4 OR 3, 4, 
+number_list -> NUMBER {% d => [d[0]] %} |
+                 NUMBER %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
          %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
 
 statement -> %IDENTIFIER %EQ NUMBER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = 5, num = 2 
               %IDENTIFIER %EQ %IDENTIFIER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = num, num = other_num 
-              %IDENTIFIER %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK | # num = nums[1] 
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ NUMBER | # nums[1] = 5 
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK | # nums[1] = nums[4] 
-              %IDENTIFIER %EQ list | # nums = [1, 2, 3]
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK # nums[1] 
+              %IDENTIFIER %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", var: d[0], value: { type: "array_access", array: d[2], index: d[4] } }) %} | # num = nums[1] 
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ NUMBER {% d => ({ type: "statement", array: d[0], index: d[2], value: d[5] }) %} | # nums[1] = 5 
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", array: d[0], index: d[2], value: { type: "array_access", array: d[5], index: d[7] } }) %} | # nums[1] = nums[4] 
+              %IDENTIFIER %EQ list {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # nums = [1, 2, 3]
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", array: d[0], index: d[2] }) %} | # nums[1]
+              print_func {% id %} 
 
-statement_list -> statement statement_list
+statement_list -> statement {% d => [d[0]] %} |
+                    statement statement_list {% d => [d[0], ...d[1]] %}
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
                %PRINT %LPAREN NUMBER %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(5) 
-               %PRINT %LPAREN %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %RPAREN # print(nums[0]) 
+               %PRINT %LPAREN %IDENTIFIER %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(num)
+               %PRINT %LPAREN %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %RPAREN {% d => ({ type: "print", args: [{ type: "array_access", array: d[2], index: d[4] }] }) %} # print(nums[0]) 

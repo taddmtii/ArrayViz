@@ -2,52 +2,71 @@
 // http://github.com/Hardmath123/nearley
 (function () {
 function id(x) { return x[0]; }
+
+
+const moo = require("moo");
+const lexer = moo.compile({
+    // WHITESPACE
+    WS: /[ \t]+/,
+
+    // COMMENTS (talk to Prof O about this one)
+    COMMENT: {match: /#.*?/},
+
+    // KEYWORDS
+    PRINT: "print",
+
+    // NUMBERS
+    HEX: /0x[0-9a-fA-F]+/,
+    BINARY: /0b[01]+/,
+    DECIMAL: /[1-9][0-9]*/,
+
+    // IDENTIFIER
+    IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
+
+    //SYMBOLS
+    COMMA: ",",
+    LSQBRACK: "[",
+    RSQBRACK: "]",
+    LPAREN: "(",
+    RPAREN: ")",
+    EQ: "="
+});
+
+// Overrides next method from lexer, automatically skips whitespace tokens.
+// IIFE (Immediately Invoked Function Expression)
+lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
+    let tok;
+    while ((tok = next.call(lexer)) && tok.type === "WS") {} // keep getting tokens and disgard any tokens with type WS
+    return tok; // return first non WS token
+})(lexer.next);
+
 var grammar = {
-    Lexer: undefined,
+    Lexer: lexer,
     ParserRules: [
-    {"name": "IDENTIFIER$ebnf$1", "symbols": []},
-    {"name": "IDENTIFIER$ebnf$1", "symbols": ["IDENTIFIER$ebnf$1", /[a-zA-Z0-9_]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "IDENTIFIER", "symbols": [/[a-zA-Z_]/, "IDENTIFIER$ebnf$1"]},
-    {"name": "DECIMAL$ebnf$1", "symbols": []},
-    {"name": "DECIMAL$ebnf$1", "symbols": ["DECIMAL$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "DECIMAL", "symbols": [/[1-9]/, "DECIMAL$ebnf$1"]},
-    {"name": "HEX$string$1", "symbols": [{"literal":"0"}, {"literal":"x"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "HEX$ebnf$1", "symbols": [/[0-9a-fA-F]/]},
-    {"name": "HEX$ebnf$1", "symbols": ["HEX$ebnf$1", /[0-9a-fA-F]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "HEX", "symbols": ["HEX$string$1", "HEX$ebnf$1"]},
-    {"name": "BINARY$string$1", "symbols": [{"literal":"0"}, {"literal":"b"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "BINARY$ebnf$1", "symbols": [/[0-1]/]},
-    {"name": "BINARY$ebnf$1", "symbols": ["BINARY$ebnf$1", /[0-1]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "BINARY", "symbols": ["BINARY$string$1", "BINARY$ebnf$1"]},
-    {"name": "NUMBER", "symbols": ["DECIMAL"]},
-    {"name": "NUMBER", "symbols": ["HEX"]},
-    {"name": "NUMBER", "symbols": ["BINARY"]},
-    {"name": "COMMA", "symbols": [{"literal":","}]},
-    {"name": "LSQBRACK", "symbols": [{"literal":"["}]},
-    {"name": "RSQBRACK", "symbols": [{"literal":"]"}]},
-    {"name": "LPAREN", "symbols": [{"literal":"("}]},
-    {"name": "RPAREN", "symbols": [{"literal":")"}]},
-    {"name": "PRINT$string$1", "symbols": [{"literal":"p"}, {"literal":"r"}, {"literal":"i"}, {"literal":"n"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "PRINT", "symbols": ["PRINT$string$1"]},
-    {"name": "EQ", "symbols": [{"literal":"="}]},
-    {"name": "number_list$ebnf$1$subexpression$1", "symbols": ["COMMA", "number_list"]},
-    {"name": "number_list$ebnf$1", "symbols": ["number_list$ebnf$1$subexpression$1"], "postprocess": id},
-    {"name": "number_list$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "number_list", "symbols": ["NUMBER", "number_list$ebnf$1"]},
-    {"name": "list", "symbols": ["LSQBRACK", "number_list", "RSQBRACK"]},
-    {"name": "list", "symbols": ["LSQBRACK", "RSQBRACK"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "EQ", "NUMBER"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "EQ", "IDENTIFIER"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "EQ", "IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK", "EQ", "NUMBER"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK", "EQ", "IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK"]},
-    {"name": "assignment_statement", "symbols": ["IDENTIFIER", "EQ", "list"]},
-    {"name": "statement", "symbols": ["IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK"]},
-    {"name": "print_func", "symbols": ["PRINT", "LPAREN", "RPAREN"]},
-    {"name": "print_func", "symbols": ["PRINT", "LPAREN", "NUMBER", "RPAREN"]},
-    {"name": "print_func", "symbols": ["PRINT", "LPAREN", "IDENTIFIER", "LSQBRACK", "NUMBER", "RSQBRACK", "RPAREN"]}
+    {"name": "main", "symbols": ["statement_list"], "postprocess": id},
+    {"name": "NUMBER", "symbols": [(lexer.has("HEX") ? {type: "HEX"} : HEX)], "postprocess": id},
+    {"name": "NUMBER", "symbols": [(lexer.has("BINARY") ? {type: "BINARY"} : BINARY)], "postprocess": id},
+    {"name": "NUMBER", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": id},
+    {"name": "number_list", "symbols": ["NUMBER"], "postprocess": d => [d[0]]},
+    {"name": "number_list", "symbols": ["NUMBER", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
+    {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "number_list", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: d[1] })},
+    {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: [] })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), "NUMBER"], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", var: d[0], value: { type: "array_access", array: d[2], index: d[4] } })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("EQ") ? {type: "EQ"} : EQ), "NUMBER"], "postprocess": d => ({ type: "statement", array: d[0], index: d[2], value: d[5] })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("EQ") ? {type: "EQ"} : EQ), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", array: d[0], index: d[2], value: { type: "array_access", array: d[5], index: d[7] } })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("EQ") ? {type: "EQ"} : EQ), "list"], "postprocess": d => ({ type: "statement", var: d[0], value: d[2] })},
+    {"name": "statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "statement", array: d[0], index: d[2] })},
+    {"name": "statement", "symbols": ["print_func"], "postprocess": id},
+    {"name": "statement_list", "symbols": ["statement"], "postprocess": d => [d[0]]},
+    {"name": "statement_list", "symbols": ["statement", "statement_list"], "postprocess": d => [d[0], ...d[1]]},
+    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [] })},
+    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "NUMBER", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [d[2]] })},
+    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [d[2]] })},
+    {"name": "print_func", "symbols": [(lexer.has("PRINT") ? {type: "PRINT"} : PRINT), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "NUMBER", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "print", args: [{ type: "array_access", array: d[2], index: d[4] }] })}
 ]
-  , ParserStart: "IDENTIFIER"
+  , ParserStart: "main"
 }
 if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
    module.exports = grammar;
