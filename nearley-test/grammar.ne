@@ -6,8 +6,8 @@ const lexer = moo.compile({
     // WHITESPACE
     WS: /[ \t]+/,
 
-    // COMMENTS (talk to Prof O about this one)
-    COMMENT: {match: /#.*?/},
+    // COMMENTS
+    COMMENT: {match: /#.*/},
 
     // KEYWORDS
     PRINT: "print",
@@ -45,33 +45,36 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 # "return whatever was matched and not altered"
 
 # d (data) -> when a rule matches, nearley passes this array containing all matched parts
-# example -> if we match NUMBER -> %DECIMAL {% id %}, d = [Token{ type: "DECIMAL", value: "5" }], so {% id %} returns d[0] which is the DECIMAL tok
+# example -> if we match number -> %DECIMAL {% id %}, d = [Token{ type: "DECIMAL", value: "5" }], so {% id %} returns d[0] which is the DECIMAL tok
 
-main -> statement_list {% id %}
+program -> statement_list {% id %}
 
-NUMBER -> %HEX {% id %}
+number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
 
-number_list -> NUMBER {% d => [d[0]] %} |
-                 NUMBER %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
+number_list -> number {% d => [d[0]] %} |
+                 number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
          %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
 
-statement -> %IDENTIFIER %EQ NUMBER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = 5, num = 2 
-              %IDENTIFIER %EQ %IDENTIFIER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = num, num = other_num 
-              %IDENTIFIER %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", var: d[0], value: { type: "array_access", array: d[2], index: d[4] } }) %} | # num = nums[1] 
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ NUMBER {% d => ({ type: "statement", array: d[0], index: d[2], value: d[5] }) %} | # nums[1] = 5 
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", array: d[0], index: d[2], value: { type: "array_access", array: d[5], index: d[7] } }) %} | # nums[1] = nums[4] 
-              %IDENTIFIER %EQ list {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # nums = [1, 2, 3]
-              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK {% d => ({ type: "statement", array: d[0], index: d[2] }) %} | # nums[1]
-              print_func {% id %} 
+statement -> assignment_statement |
+            print_func {% id %}
 
-statement_list -> statement {% d => [d[0]] %} |
-                    statement statement_list {% d => [d[0], ...d[1]] %}
+assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %} | # i = 5, num = 2, nums[1] = 5 
+           
+array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
+
+assignable_expression -> IDENTIFIER {% id %} |
+            array_access
+
+expression -> assignable_expression |
+            list |
+            number
+
+statement_list -> statement {% id %} |
+                    statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array 
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
-               %PRINT %LPAREN NUMBER %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(5) 
-               %PRINT %LPAREN %IDENTIFIER %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(num)
-               %PRINT %LPAREN %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %RPAREN {% d => ({ type: "print", args: [{ type: "array_access", array: d[2], index: d[4] }] }) %} # print(nums[0]) 
+               %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(5) 
