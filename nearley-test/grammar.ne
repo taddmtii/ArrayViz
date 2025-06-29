@@ -29,9 +29,15 @@ const lexer = moo.compile({
     EQ: "="
 });
 
+// Overrides next method from lexer, automatically skips whitespace tokens.
+// IIFE (Immediately Invoked Function Expression)
+lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
+    let tok;
+    while ((tok = next.call(lexer)) && tok.type === "WS") {} // keep getting tokens and disgard any tokens with type WS
+    return tok; // return first non WS token
+})(lexer.next);
+
 %}
-
-
 
 @lexer lexer
 
