@@ -41,21 +41,33 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 @lexer lexer
 
-number_list : NUMBER (COMMA number_list):? # 3 OR 3, OR 3, 4 OR 3, 4, 
+# {% id %} = semantic action, tell nearley what to do with data. how we built our AST, id is nearleys built in identtity function
+# "return whatever was matched and not altered"
 
-list : LSQBRACK number_list RSQBRACK | # [1, 2, 3] 
-         LSQBRACK RSQBRACK # [] (or empty list) 
+# d (data) -> when a rule matches, nearley passes this array containing all matched parts
+# example -> if we match NUMBER -> %DECIMAL {% id %}, d = [Token{ type: "DECIMAL", value: "5" }], so {% id %} returns d[0] which is the DECIMAL tok
 
-assignment_statement : IDENTIFIER EQ NUMBER | # i = 5, num = 2 
-              IDENTIFIER EQ IDENTIFIER | # i = num, num = other_num 
-              IDENTIFIER EQ IDENTIFIER LSQBRACK NUMBER RSQBRACK | # num = nums[1] 
-              IDENTIFIER LSQBRACK NUMBER RSQBRACK EQ NUMBER | # nums[1] = 5 
-              IDENTIFIER LSQBRACK NUMBER RSQBRACK EQ IDENTIFIER LSQBRACK NUMBER RSQBRACK | # nums[1] = nums[4] 
-              IDENTIFIER EQ list # nums = [1, 2, 3] 
-              
+main -> statement_list {% id %}
 
-statement : IDENTIFIER LSQBRACK NUMBER RSQBRACK # nums[1] 
+NUMBER -> %HEX {% id %}
+        | %BINARY {% id %}
+        | %DECIMAL {% id %}
 
-print_func : PRINT LPAREN RPAREN | # print() 
-               PRINT LPAREN NUMBER RPAREN | # print(5) 
-               PRINT LPAREN IDENTIFIER LSQBRACK NUMBER RSQBRACK RPAREN # print(nums[0]) 
+number_list -> NUMBER (%COMMA number_list):? # 3 OR 3, OR 3, 4 OR 3, 4, 
+
+list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
+         %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
+
+statement -> %IDENTIFIER %EQ NUMBER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = 5, num = 2 
+              %IDENTIFIER %EQ %IDENTIFIER {% d => ({ type: "statement", var: d[0], value: d[2] }) %} | # i = num, num = other_num 
+              %IDENTIFIER %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK | # num = nums[1] 
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ NUMBER | # nums[1] = 5 
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %EQ %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK | # nums[1] = nums[4] 
+              %IDENTIFIER %EQ list | # nums = [1, 2, 3]
+              %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK # nums[1] 
+
+statement_list -> statement statement_list
+
+print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
+               %PRINT %LPAREN NUMBER %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} | # print(5) 
+               %PRINT %LPAREN %IDENTIFIER %LSQBRACK NUMBER %RSQBRACK %RPAREN # print(nums[0]) 
