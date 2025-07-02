@@ -17,6 +17,7 @@ const lexer = moo.compile({
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
     DECIMAL: /[1-9][0-9]*/,
+    ZERO: /0/,
 
     // IDENTIFIER
     IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
@@ -31,7 +32,6 @@ const lexer = moo.compile({
 });
 
 // Overrides next method from lexer, automatically skips whitespace tokens.
-// IIFE (Immediately Invoked Function Expression)
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
     while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "NL")) {} // keep getting tokens and disgard any tokens with type WS
@@ -53,14 +53,16 @@ program -> statement_list {% id %}
 number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
+        | %ZERO {% id %}
 
-number_list -> number {% d => [d[0]] %} |
-                 number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
+number_list -> number {% id %} |
+               number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
          %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
 
 statement -> assignment_statement |
+            expression |
             print_func {% id %}
 
 assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
