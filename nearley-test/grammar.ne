@@ -12,6 +12,15 @@ const lexer = moo.compile({
 
     // KEYWORDS
     PRINT: "print",
+    IF: "if",
+    ELSE: "else",
+
+    // LIST METHODS
+    APPEND: "append",
+    SORT: "sort",
+    REMOVE: "remove",
+    COUNT: "count",
+    INSERT: "insert",
 
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
@@ -33,7 +42,12 @@ const lexer = moo.compile({
     RSQBRACK: "]",
     LPAREN: "(",
     RPAREN: ")",
-    EQ: "="
+    EQ: "=",
+    EQUALITY: "==",
+    LTHAN: "<",
+    GRTHAN: ">",
+    LTHAN_EQ: "<=",
+    GRTHAN_EQ: ">="
 });
 
 // Overrides next method from lexer, automatically skips whitespace tokens.
@@ -92,7 +106,7 @@ expression -> assignable_expression |
             arithmetic_expression
 
 statement_list -> statement {% id %} |
-                    statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array 
+                    statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
               %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} # print(5) 
