@@ -16,8 +16,7 @@ const lexer = moo.compile({
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
-    DECIMAL: /[1-9][0-9]*/,
-    ZERO: /0/,
+    DECIMAL: /0|[1-9][0-9]*/,
 
     // IDENTIFIER
     IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
@@ -55,7 +54,7 @@ number -> %HEX {% id %}
         | %DECIMAL {% id %}
         | %ZERO {% id %}
 
-number_list -> number {% id %} |
+number_list -> number {% d => [d[0]] %} |
                number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 

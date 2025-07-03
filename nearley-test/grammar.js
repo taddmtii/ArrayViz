@@ -20,8 +20,7 @@ const lexer = moo.compile({
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
-    DECIMAL: /[1-9][0-9]*/,
-    ZERO: /0/,
+    DECIMAL: /0|[1-9][0-9]*/,
 
     // IDENTIFIER
     IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
@@ -36,7 +35,6 @@ const lexer = moo.compile({
 });
 
 // Overrides next method from lexer, automatically skips whitespace tokens.
-// IIFE (Immediately Invoked Function Expression)
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
     while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "NL")) {} // keep getting tokens and disgard any tokens with type WS
@@ -51,7 +49,7 @@ var grammar = {
     {"name": "number", "symbols": [(lexer.has("BINARY") ? {type: "BINARY"} : BINARY)], "postprocess": id},
     {"name": "number", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": id},
     {"name": "number", "symbols": [(lexer.has("ZERO") ? {type: "ZERO"} : ZERO)], "postprocess": id},
-    {"name": "number_list", "symbols": ["number"], "postprocess": id},
+    {"name": "number_list", "symbols": ["number"], "postprocess": d => [d[0]]},
     {"name": "number_list", "symbols": ["number", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "number_list", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: d[1] })},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: [] })},
