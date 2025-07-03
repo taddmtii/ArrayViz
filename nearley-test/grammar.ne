@@ -21,6 +21,12 @@ const lexer = moo.compile({
     // IDENTIFIER
     IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
 
+    // ARITHMETIC
+    PLUS: "+",
+    SUB: "-",
+    MULT: "*",
+    DIV: "/",
+
     //SYMBOLS
     COMMA: ",",
     LSQBRACK: "[",
@@ -54,6 +60,11 @@ number -> %HEX {% id %}
         | %DECIMAL {% id %}
         | %ZERO {% id %}
 
+arithmetic_operand -> %PLUS {% id %}
+                    | %SUB {% id %}
+                    | %MULT {% id %}
+                    | %DIV {% id %}
+
 number_list -> number {% d => [d[0]] %} |
                number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
@@ -71,9 +82,14 @@ array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "arr
 assignable_expression -> %IDENTIFIER {% id %} |
             array_access
 
+arithmetic_expression -> %IDENTIFIER arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # i - 1
+                         number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1
+                         assignable_expression arithmetic_operand assignable_expression {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} # i - j, num1 - num2
+
 expression -> assignable_expression |
             list |
-            number
+            number |
+            arithmetic_expression
 
 statement_list -> statement {% id %} |
                     statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array 
