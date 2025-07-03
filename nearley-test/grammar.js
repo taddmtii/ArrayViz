@@ -16,6 +16,15 @@ const lexer = moo.compile({
 
     // KEYWORDS
     PRINT: "print",
+    IF: "if",
+    ELSE: "else",
+
+    // LIST METHODS
+    APPEND: "append",
+    SORT: "sort",
+    REMOVE: "remove",
+    COUNT: "count",
+    INSERT: "insert",
 
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
@@ -30,9 +39,15 @@ const lexer = moo.compile({
     SUB: "-",
     MULT: "*",
     DIV: "/",
+    LTHAN: "<",
+    GRTHAN: ">",
+    LTHAN_EQ: "<=",
+    GRTHAN_EQ: ">=",
+    EQUALITY: "==",
 
     //SYMBOLS
     COMMA: ",",
+    COLON: ":",
     LSQBRACK: "[",
     RSQBRACK: "]",
     LPAREN: "(",
@@ -59,13 +74,24 @@ var grammar = {
     {"name": "arithmetic_operand", "symbols": [(lexer.has("SUB") ? {type: "SUB"} : SUB)], "postprocess": id},
     {"name": "arithmetic_operand", "symbols": [(lexer.has("MULT") ? {type: "MULT"} : MULT)], "postprocess": id},
     {"name": "arithmetic_operand", "symbols": [(lexer.has("DIV") ? {type: "DIV"} : DIV)], "postprocess": id},
+    {"name": "comparison_operand", "symbols": [(lexer.has("LTHAN") ? {type: "LTHAN"} : LTHAN)], "postprocess": id},
+    {"name": "comparison_operand", "symbols": [(lexer.has("GRTHAN") ? {type: "GRTHAN"} : GRTHAN)], "postprocess": id},
+    {"name": "comparison_operand", "symbols": [(lexer.has("LTHAN_EQ") ? {type: "LTHAN_EQ"} : LTHAN_EQ)], "postprocess": id},
+    {"name": "comparison_operand", "symbols": [(lexer.has("GRTHAN_EQ") ? {type: "GRTHAN_EQ"} : GRTHAN_EQ)], "postprocess": id},
+    {"name": "comparison_operand", "symbols": [(lexer.has("EQUALITY") ? {type: "EQUALITY"} : EQUALITY)], "postprocess": id},
     {"name": "number_list", "symbols": ["number"], "postprocess": d => [d[0]]},
     {"name": "number_list", "symbols": ["number", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "number_list", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: d[1] })},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: [] })},
     {"name": "statement", "symbols": ["assignment_statement"]},
     {"name": "statement", "symbols": ["expression"]},
+    {"name": "statement", "symbols": ["if_statement"]},
     {"name": "statement", "symbols": ["print_func"], "postprocess": id},
+    {"name": "if_statement", "symbols": [(lexer.has("IF") ? {type: "IF"} : IF), "conditional_statement", (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": d => ({ type: "if_statement", conditional: d[1] })},
+    {"name": "else_statement", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": id},
+    {"name": "conditional_statement", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), "comparison_operand", "number"], "postprocess": d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] })},
+    {"name": "conditional_statement", "symbols": ["number", "comparison_operand", "number"], "postprocess": d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] })},
+    {"name": "conditional_statement", "symbols": ["assignable_expression", "comparison_operand", "assignable_expression"], "postprocess": d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] })},
     {"name": "assignment_statement", "symbols": ["assignable_expression", (lexer.has("EQ") ? {type: "EQ"} : EQ), "expression"], "postprocess": d => ({ type: "assignment_statement", var: d[0], value: d[2] })},
     {"name": "array_access", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "array_access", array: d[0], index: d[2] })},
     {"name": "assignable_expression", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": id},

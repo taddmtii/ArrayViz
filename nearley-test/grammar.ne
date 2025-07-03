@@ -35,19 +35,20 @@ const lexer = moo.compile({
     SUB: "-",
     MULT: "*",
     DIV: "/",
+    LTHAN: "<",
+    GRTHAN: ">",
+    LTHAN_EQ: "<=",
+    GRTHAN_EQ: ">=",
+    EQUALITY: "==",
 
     //SYMBOLS
     COMMA: ",",
+    COLON: ":",
     LSQBRACK: "[",
     RSQBRACK: "]",
     LPAREN: "(",
     RPAREN: ")",
-    EQ: "=",
-    EQUALITY: "==",
-    LTHAN: "<",
-    GRTHAN: ">",
-    LTHAN_EQ: "<=",
-    GRTHAN_EQ: ">="
+    EQ: "="
 });
 
 // Overrides next method from lexer, automatically skips whitespace tokens.
@@ -79,6 +80,12 @@ arithmetic_operand -> %PLUS {% id %}
                     | %MULT {% id %}
                     | %DIV {% id %}
 
+comparison_operand -> %LTHAN {% id %}
+                    | %GRTHAN {% id %}
+                    | %LTHAN_EQ {% id %}
+                    | %GRTHAN_EQ {% id %}
+                    | %EQUALITY {% id %}
+
 number_list -> number {% d => [d[0]] %} |
                number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
@@ -87,10 +94,19 @@ list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] })
 
 statement -> assignment_statement |
             expression |
+            if_statement |
             print_func {% id %}
 
+if_statement -> %IF conditional_statement %COLON {% d => ({ type: "if_statement", conditional: d[1] }) %}
+
+else_statement -> %ELSE %COLON {% id %}
+
+conditional_statement -> %IDENTIFIER comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # i < 1
+                         number comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 > 1
+                         assignable_expression comparison_operand assignable_expression {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} # i == j, num1 < num2
+
 assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
-           
+
 array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
 assignable_expression -> %IDENTIFIER {% id %} |
