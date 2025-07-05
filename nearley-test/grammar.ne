@@ -42,6 +42,7 @@ const lexer = moo.compile({
     EQUALITY: "==",
 
     //SYMBOLS
+    DOT: ".",
     COMMA: ",",
     COLON: ":",
     LSQBRACK: "[",
@@ -95,11 +96,12 @@ list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] })
 statement -> assignment_statement |
             expression |
             if_statement |
-            print_func {% id %}
+            print_func {% id %} |
+            list_method_call
 
 if_statement -> %IF conditional_statement %COLON {% d => ({ type: "if_statement", conditional: d[1] }) %}
 
-else_statement -> %ELSE %COLON {% id %}
+else_statement -> %ELSE %COLON {% d => ({ type: "else_statement" }) %}
 
 conditional_statement -> %IDENTIFIER comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # i < 1
                          number comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 > 1
@@ -111,6 +113,14 @@ array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "arr
 
 assignable_expression -> %IDENTIFIER {% id %} |
             array_access
+
+list_method -> %APPEND |
+                %SORT |
+                %REMOVE |
+                %COUNT |
+                %INSERT
+
+list_method_call -> %IDENTIFIER %DOT list_method %LPAREN (%IDENTIFIER | number) %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2], value: d[4]}) %} #list.append(num)
 
 arithmetic_expression -> %IDENTIFIER arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # i - 1
                          number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1
