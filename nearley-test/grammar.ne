@@ -14,6 +14,10 @@ const lexer = moo.compile({
     PRINT: "print",
     IF: "if",
     ELSE: "else",
+    WHILE: "while",
+    FOR: "for",
+    RANGE: "range",
+    IN: "in",
 
     // LIST METHODS
     APPEND: "append",
@@ -96,12 +100,20 @@ list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] })
 statement -> assignment_statement |
             expression |
             if_statement |
+            else_statement |
+            for_loop |
+            while_loop |
             print_func {% id %} |
             list_method_call
 
-if_statement -> %IF conditional_statement %COLON {% d => ({ type: "if_statement", conditional: d[1] }) %}
+for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5] }) %} |
+            %FOR %IDENTIFIER %IN %IDENTIFIER %COLON {% d => ({ type: "for_loop", temp_var: d[1], range: d[3] }) %}
 
-else_statement -> %ELSE %COLON {% d => ({ type: "else_statement" }) %}
+while_loop -> %WHILE conditional_statement %COLON {% d => ({ type: "while_loop", conditional_statement: d[1]}) %}
+
+if_statement -> %IF conditional_statement %COLON {% d => ({ type: "if_statement", conditional: d[1] }) %} # maybe structure with statement_list at the end, and else always requires the presence of a complete if statment after. Talk to Prof O. (DOES NOT WORK)
+
+else_statement -> %ELSE %COLON  {% d => ({ type: "else_statement" }) %}
 
 conditional_statement -> %IDENTIFIER comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # i < 1
                          number comparison_operand number {% d => ({ type: "conditional_statement", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 > 1
@@ -120,7 +132,8 @@ list_method -> %APPEND |
                 %COUNT |
                 %INSERT
 
-list_method_call -> %IDENTIFIER %DOT list_method %LPAREN (%IDENTIFIER | number) %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2], value: d[4]}) %} #list.append(num)
+list_method_call -> %IDENTIFIER %DOT (%APPEND | %REMOVE | %INSERT) %LPAREN (%IDENTIFIER | number) %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2], value: d[4]}) %} | #list.append(num)
+                    %IDENTIFIER %DOT (%SORT | %COUNT) %LPAREN %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2]}) %} #list.sort() -> sort and count do not take arguments
 
 arithmetic_expression -> %IDENTIFIER arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # i - 1
                          number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1
@@ -131,7 +144,7 @@ expression -> assignable_expression |
             number |
             arithmetic_expression
 
-statement_list -> statement {% id %} |
+statement_list -> statement {% d => [d[0]] %} |
                     statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
