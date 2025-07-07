@@ -8,7 +8,7 @@ const IndentationLexer = require('moo-indentation-lexer')
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
-    commentType: 'comment',
+    commentType: 'COMMENT',
     indentName: 'INDENT',
     dedentName: 'DEDENT',
     lexer: moo.compile({
@@ -21,31 +21,30 @@ const lexer = new IndentationLexer({
     // COMMENTS
     COMMENT: {match: /#.*/},
 
-    // KEYWORDS
-    IF: "if",
-    ELSE: "else",
-    WHILE: "while",
-    FOR: "for",
-    IN: "in",
-
-    // BUILT IN FUNCTIONS
-    PRINT: "print",
-    RANGE: "range",
-
-    // LIST METHODS
-    APPEND: "append",
-    SORT: "sort",
-    REMOVE: "remove",
-    COUNT: "count",
-    INSERT: "insert",
+    // IDENTIFIER / KEYWORDS
+    IDENTIFIER: {
+        match: /[a-zA-Z_][a-zA-Z0-9_]*/,
+        type: moo.keywords({
+            IF: "if",
+            ELSE: "else",
+            ELIF: "elif",
+            WHILE: "while",
+            FOR: "for",
+            IN: "in",
+            PRINT: "print",
+            RANGE: "range",
+            APPEND: "append",
+            SORT: "sort",
+            REMOVE: "remove",
+            COUNT: "count",
+            INSERT: "insert",
+        })
+    },
 
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
     DECIMAL: /0|[1-9][0-9]*/,
-
-    // IDENTIFIER
-    IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
 
     // ARITHMETIC
     PLUS: "+",
@@ -84,7 +83,6 @@ var grammar = {
     {"name": "number", "symbols": [(lexer.has("HEX") ? {type: "HEX"} : HEX)], "postprocess": id},
     {"name": "number", "symbols": [(lexer.has("BINARY") ? {type: "BINARY"} : BINARY)], "postprocess": id},
     {"name": "number", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": id},
-    {"name": "number", "symbols": [(lexer.has("ZERO") ? {type: "ZERO"} : ZERO)], "postprocess": id},
     {"name": "arithmetic_operand", "symbols": [(lexer.has("PLUS") ? {type: "PLUS"} : PLUS)], "postprocess": id},
     {"name": "arithmetic_operand", "symbols": [(lexer.has("SUB") ? {type: "SUB"} : SUB)], "postprocess": id},
     {"name": "arithmetic_operand", "symbols": [(lexer.has("MULT") ? {type: "MULT"} : MULT)], "postprocess": id},
@@ -98,19 +96,24 @@ var grammar = {
     {"name": "number_list", "symbols": ["number", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "number_list"], "postprocess": d => [d[0], ...d[2]]},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "number_list", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: d[1] })},
     {"name": "list", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "list", values: [] })},
-    {"name": "statement", "symbols": ["assignment_statement"]},
+    {"name": "statement", "symbols": ["assignment_statement", (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "statement", "symbols": ["expression", (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "statement", "symbols": ["if_statement"]},
-    {"name": "statement", "symbols": ["else_statement"]},
+    {"name": "statement", "symbols": ["else_block"]},
     {"name": "statement", "symbols": ["for_loop"]},
     {"name": "statement", "symbols": ["while_loop"]},
     {"name": "statement", "symbols": ["print_func", (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "statement", "symbols": ["list_method_call"]},
-    {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("RANGE") ? {type: "RANGE"} : RANGE), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "number", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5] })},
-    {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": d => ({ type: "for_loop", temp_var: d[1], range: d[3] })},
+    {"name": "statement", "symbols": ["list_method_call", (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("RANGE") ? {type: "RANGE"} : RANGE), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "number", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] })},
+    {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] })},
     {"name": "while_loop", "symbols": [(lexer.has("WHILE") ? {type: "WHILE"} : WHILE), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": d => ({ type: "while_loop", expression: d[1]})},
     {"name": "if_statement", "symbols": [(lexer.has("IF") ? {type: "IF"} : IF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "if_statement", expression: d[1], body: d[3] })},
-    {"name": "else_statement", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON)], "postprocess": d => ({ type: "else_statement" })},
+    {"name": "if_statement", "symbols": [(lexer.has("IF") ? {type: "IF"} : IF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "elif_statement"], "postprocess": d => ({ type: "if_statement", expression: d[1], body: d[3] })},
+    {"name": "if_statement", "symbols": [(lexer.has("IF") ? {type: "IF"} : IF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "else_block"], "postprocess": d => ({ type: "if_statement", expression: d[1], body: d[3] })},
+    {"name": "elif_statement", "symbols": [(lexer.has("ELIF") ? {type: "ELIF"} : ELIF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "elif_statement"], "postprocess": d => ({ type: "elif_statement", expression: d[1], body: d[3] })},
+    {"name": "elif_statement", "symbols": [(lexer.has("ELIF") ? {type: "ELIF"} : ELIF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "else_block"], "postprocess": d => ({ type: "elif_statement", expression: d[1], body: d[3] })},
+    {"name": "elif_statement", "symbols": [(lexer.has("ELIF") ? {type: "ELIF"} : ELIF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "elif_statement", expression: d[1], body: d[3] })},
+    {"name": "else_block", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "else_block", body: d[2] })},
     {"name": "conditional_expression", "symbols": ["expression", "comparison_operand", "expression"], "postprocess": d => ({ type: "conditional_expression", value1: d[0], operand: d[1], value2: d[2] })},
     {"name": "assignment_statement", "symbols": ["assignable_expression", (lexer.has("EQ") ? {type: "EQ"} : EQ), "expression"], "postprocess": d => ({ type: "assignment_statement", var: d[0], value: d[2] })},
     {"name": "array_access", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "array_access", array: d[0], index: d[2] })},

@@ -1,0 +1,4 @@
+val = 42
+nums = [0]
+nums[0] = val
+print(nums[0])

@@ -4,7 +4,7 @@ const IndentationLexer = require('moo-indentation-lexer')
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
-    commentType: 'comment',
+    commentType: 'COMMENT',
     indentName: 'INDENT',
     dedentName: 'DEDENT',
     lexer: moo.compile({
@@ -17,31 +17,30 @@ const lexer = new IndentationLexer({
     // COMMENTS
     COMMENT: {match: /#.*/},
 
-    // KEYWORDS
-    IF: "if",
-    ELSE: "else",
-    WHILE: "while",
-    FOR: "for",
-    IN: "in",
-
-    // BUILT IN FUNCTIONS
-    PRINT: "print",
-    RANGE: "range",
-
-    // LIST METHODS
-    APPEND: "append",
-    SORT: "sort",
-    REMOVE: "remove",
-    COUNT: "count",
-    INSERT: "insert",
+    // IDENTIFIER / KEYWORDS
+    IDENTIFIER: {
+        match: /[a-zA-Z_][a-zA-Z0-9_]*/,
+        type: moo.keywords({
+            IF: "if",
+            ELSE: "else",
+            ELIF: "elif",
+            WHILE: "while",
+            FOR: "for",
+            IN: "in",
+            PRINT: "print",
+            RANGE: "range",
+            APPEND: "append",
+            SORT: "sort",
+            REMOVE: "remove",
+            COUNT: "count",
+            INSERT: "insert",
+        })
+    },
 
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
     DECIMAL: /0|[1-9][0-9]*/,
-
-    // IDENTIFIER
-    IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
 
     // ARITHMETIC
     PLUS: "+",
@@ -88,7 +87,6 @@ program -> statement_list {% id %}
 number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
-        | %ZERO {% id %}
 
 arithmetic_operand -> %PLUS {% id %}
                     | %SUB {% id %}
@@ -107,25 +105,29 @@ number_list -> number {% d => [d[0]] %} |
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
          %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
 
-statement -> assignment_statement |
+statement -> assignment_statement %NL |
             expression %NL |
             if_statement |
-            else_statement |
+            else_block |
             for_loop |
             while_loop |
             print_func %NL |
-            list_method_call
+            list_method_call %NL
 
-for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5] }) %} |
-            %FOR %IDENTIFIER %IN %IDENTIFIER %COLON {% d => ({ type: "for_loop", temp_var: d[1], range: d[3] }) %}
+for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
+            %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
 
 while_loop -> %WHILE expression %COLON {% d => ({ type: "while_loop", expression: d[1]}) %}
 
-if_statement -> %IF expression %COLON block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} 
+if_statement -> %IF expression %COLON block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
+                %IF expression %COLON block elif_statement {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
+                %IF expression %COLON block else_block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %}
 
-# elif_statement
+elif_statement -> %ELIF expression %COLON block elif_statement {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %} |
+                  %ELIF expression %COLON block else_block {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %} |
+                  %ELIF expression %COLON block {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %}
 
-else_statement -> %ELSE %COLON  {% d => ({ type: "else_statement" }) %}
+else_block -> %ELSE %COLON block {% d => ({ type: "else_block", body: d[2] }) %}
 
 conditional_expression -> expression comparison_operand expression {% d => ({ type: "conditional_expression", value1: d[0], operand: d[1], value2: d[2] }) %} # i < 1
 
@@ -159,10 +161,7 @@ expression -> assignable_expression |
             conditional_expression
 
 statement_list -> statement {% d => [d[0]] %} |
-                  statement statement_list {% d => [d[0], ...d[1]] %} # ... (spread syntax) use array
+                  statement statement_list {% d => [d[0], ...d[1]] %}
 
 print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
               %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} # print(5) 
-
-
-#parser - write a function, give it a string, throw errors based on empty results | bad return
