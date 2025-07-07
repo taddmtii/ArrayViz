@@ -117,7 +117,7 @@ statement -> assignment_statement %NL |
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
 
-while_loop -> %WHILE expression %COLON {% d => ({ type: "while_loop", expression: d[1]}) %}
+while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
 
 if_statement -> %IF expression %COLON block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
                 %IF expression %COLON block elif_statement {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
