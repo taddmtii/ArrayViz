@@ -27,7 +27,9 @@ const lexer = new IndentationLexer({
             WHILE: "while",
             FOR: "for",
             IN: "in",
-            RANGE: "range"
+            RANGE: "range",
+            RETURN: "return",
+            DEF: "def"
         })
     },
 
@@ -105,8 +107,10 @@ statement -> assignment_statement %NL |
             else_block |
             for_loop |
             while_loop |
-            function_call %NL |
-            method_call %NL
+            # function_call %NL |
+            # method_call %NL |
+            func_def |
+            return_statement %NL
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
@@ -132,6 +136,12 @@ array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "arr
 assignable_expression -> %IDENTIFIER {% id %} |
             array_access
 
+return_statement -> %RETURN expression {% d => ({ type: "return_statement", value: d[1]}) %} |
+                    %RETURN {% d => ({ type: "return_statement"}) %}
+
+func_def -> %DEF %IDENTIFIER %LPAREN arg_list %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %} |
+            %DEF %IDENTIFIER %LPAREN %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: [], body: d[5]}) %}
+
 function_call -> expression %LPAREN %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: []}) %} |
                  expression %LPAREN arg_list %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
@@ -151,7 +161,9 @@ expression -> assignable_expression |
             list |
             number |
             arithmetic_expression |
-            conditional_expression
+            conditional_expression |
+            function_call |
+            method_call
 
 statement_list -> statement {% d => [d[0]] %} |
                   statement statement_list {% d => [d[0], ...d[1]] %}

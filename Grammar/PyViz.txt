@@ -60,7 +60,7 @@ for x in nums1:
 ------------------------------------
 Level 5
 
-- function defintiions and calls
+- function definitions and calls
 - built in function calls
 
 def one():

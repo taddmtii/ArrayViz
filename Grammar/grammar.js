@@ -31,7 +31,9 @@ const lexer = new IndentationLexer({
             WHILE: "while",
             FOR: "for",
             IN: "in",
-            RANGE: "range"
+            RANGE: "range",
+            RETURN: "return",
+            DEF: "def"
         })
     },
 
@@ -96,8 +98,8 @@ var grammar = {
     {"name": "statement", "symbols": ["else_block"]},
     {"name": "statement", "symbols": ["for_loop"]},
     {"name": "statement", "symbols": ["while_loop"]},
-    {"name": "statement", "symbols": ["function_call", (lexer.has("NL") ? {type: "NL"} : NL)]},
-    {"name": "statement", "symbols": ["method_call", (lexer.has("NL") ? {type: "NL"} : NL)]},
+    {"name": "statement", "symbols": ["func_def"]},
+    {"name": "statement", "symbols": ["return_statement", (lexer.has("NL") ? {type: "NL"} : NL)]},
     {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("RANGE") ? {type: "RANGE"} : RANGE), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "number", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] })},
     {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] })},
     {"name": "while_loop", "symbols": [(lexer.has("WHILE") ? {type: "WHILE"} : WHILE), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "while_loop", expression: d[1], body: d[3]})},
@@ -113,6 +115,10 @@ var grammar = {
     {"name": "array_access", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "array_access", array: d[0], index: d[2] })},
     {"name": "assignable_expression", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": id},
     {"name": "assignable_expression", "symbols": ["array_access"]},
+    {"name": "return_statement", "symbols": [(lexer.has("RETURN") ? {type: "RETURN"} : RETURN), "expression"], "postprocess": d => ({ type: "return_statement", value: d[1]})},
+    {"name": "return_statement", "symbols": [(lexer.has("RETURN") ? {type: "RETURN"} : RETURN)], "postprocess": d => ({ type: "return_statement"})},
+    {"name": "func_def", "symbols": [(lexer.has("DEF") ? {type: "DEF"} : DEF), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "arg_list", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]})},
+    {"name": "func_def", "symbols": [(lexer.has("DEF") ? {type: "DEF"} : DEF), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({type: "function_definition", func_name: d[1], args: [], body: d[5]})},
     {"name": "function_call", "symbols": ["expression", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "function_call", func_name: d[0], args: []})},
     {"name": "function_call", "symbols": ["expression", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "arg_list", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "function_call", func_name: d[0], args: d[2]})},
     {"name": "method_call", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("DOT") ? {type: "DOT"} : DOT), "expression", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "arg_list", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({type: "method_call", list: d[0], action: d[2], args: d[4]})},
@@ -131,6 +137,8 @@ var grammar = {
     {"name": "expression", "symbols": ["number"]},
     {"name": "expression", "symbols": ["arithmetic_expression"]},
     {"name": "expression", "symbols": ["conditional_expression"]},
+    {"name": "expression", "symbols": ["function_call"]},
+    {"name": "expression", "symbols": ["method_call"]},
     {"name": "statement_list", "symbols": ["statement"], "postprocess": d => [d[0]]},
     {"name": "statement_list", "symbols": ["statement", "statement_list"], "postprocess": d => [d[0], ...d[1]]}
 ]
