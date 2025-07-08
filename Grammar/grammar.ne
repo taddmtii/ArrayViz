@@ -27,13 +27,7 @@ const lexer = new IndentationLexer({
             WHILE: "while",
             FOR: "for",
             IN: "in",
-            PRINT: "print",
-            RANGE: "range",
-            APPEND: "append",
-            SORT: "sort",
-            REMOVE: "remove",
-            COUNT: "count",
-            INSERT: "insert",
+            RANGE: "range"
         })
     },
 
@@ -111,8 +105,8 @@ statement -> assignment_statement %NL |
             else_block |
             for_loop |
             while_loop |
-            print_func %NL |
-            list_method_call %NL
+            function_call %NL |
+            method_call %NL
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
@@ -138,14 +132,13 @@ array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "arr
 assignable_expression -> %IDENTIFIER {% id %} |
             array_access
 
-list_method -> %APPEND |
-                %SORT |
-                %REMOVE |
-                %COUNT |
-                %INSERT
+function_call -> expression %LPAREN %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: []}) %} |
+                 expression %LPAREN arg_list %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-list_method_call -> %IDENTIFIER %DOT (%APPEND | %REMOVE | %INSERT) %LPAREN (%IDENTIFIER | number) %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2], value: d[4]}) %} | #list.append(num)
-                    %IDENTIFIER %DOT (%SORT | %COUNT) %LPAREN %RPAREN {% d => ({type: "append_method_call", list: d[0], type: d[2]}) %} #list.sort() -> sort and count do not take arguments
+method_call -> %IDENTIFIER %DOT expression %LPAREN arg_list %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %} | # nums.remove(5) || nums.remove(num)
+               %IDENTIFIER %DOT expression %LPAREN %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: []}) %}
+
+arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 arithmetic_expression -> %IDENTIFIER arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # i - 1
                          number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1
@@ -163,5 +156,3 @@ expression -> assignable_expression |
 statement_list -> statement {% d => [d[0]] %} |
                   statement statement_list {% d => [d[0], ...d[1]] %}
 
-print_func -> %PRINT %LPAREN %RPAREN {% d => ({ type: "print", args: [] }) %} | # print() 
-              %PRINT %LPAREN expression %RPAREN {% d => ({ type: "print", args: [d[2]] }) %} # print(5) 
