@@ -109,8 +109,8 @@ statement -> assignment_statement %NL |
             while_loop |
             # function_call %NL |
             # method_call %NL |
-            func_def |
-            return_statement %NL
+            func_def (%NL):* |
+            return_statement
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
@@ -162,7 +162,7 @@ expression -> assignable_expression |
             number |
             arithmetic_expression |
             conditional_expression |
-            function_call |
+            function_call (%NL):* |
             method_call
 
 statement_list -> statement {% d => [d[0]] %} |
