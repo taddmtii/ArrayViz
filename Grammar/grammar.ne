@@ -40,7 +40,7 @@ const lexer = new IndentationLexer({
 
     // ARITHMETIC
     PLUS: "+",
-    SUB: "-",
+    MINUS: "-",
     MULT: "*",
     DIV: "/",
     LTHAN: "<",
@@ -84,8 +84,8 @@ number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
 
-arithmetic_operand -> %PLUS {% id %}
-                    | %SUB {% id %}
+arithmetic_operand -> %PLUS {% id %} 
+                    | %MINUS {% id %}
                     | %MULT {% id %}
                     | %DIV {% id %}
 
@@ -101,16 +101,15 @@ number_list -> number {% d => [d[0]] %} |
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} | # [1, 2, 3] 
          %LSQBRACK %RSQBRACK {% d => ({ type: "list", values: [] }) %} # [] (or empty list) 
 
-statement -> assignment_statement %NL |
-            expression %NL |
+statement -> assignment_statement |
+            expression |
             if_statement |
             else_block |
             for_loop |
             while_loop |
-            # function_call %NL |
-            # method_call %NL |
-            func_def (%NL):* |
-            return_statement
+            func_def |
+            return_statement |
+            %NL
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
@@ -162,7 +161,7 @@ expression -> assignable_expression |
             number |
             arithmetic_expression |
             conditional_expression |
-            function_call (%NL):* |
+            function_call |
             method_call
 
 statement_list -> statement {% d => [d[0]] %} |
