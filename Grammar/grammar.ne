@@ -45,7 +45,8 @@ const lexer = new IndentationLexer({
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
-    DECIMAL: /0|[1-9][0-9]*/,
+    FLOAT: /[+-]?(?:[0-9]+\.[0-9]*)/,
+    DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // ARITHMETIC
     PLUS: "+",
@@ -88,6 +89,7 @@ program -> statement_list {% id %}
 number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
+        | %FLOAT {% id %}
 
 expression -> or_expression
 
@@ -140,12 +142,18 @@ primary -> number
          | method_call
          | assignable_expression
          | list
+         | list_slice
          | %NONE
          | %TRUE
          | %FALSE
+         | %BREAK
+         | %CONTINUE
+         | %PASS
          | %LPAREN expression %RPAREN # FOR GROUPING EXPRESSIONS
 
 list -> %LSQBRACK (arg_list):? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
+
+list_slice -> %IDENTIFIER %LSQBRACK number %COLON number (%COLON number):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
 
 statement -> assignment_statement
            | expression
@@ -200,10 +208,10 @@ statement_list -> statement {% d => [d[0]] %} |
 # 1. True/False (CHECK)
 # 2. None (CHECK)
 # 3. Unary +/- (CHECK)
-# 5. Slices
+# 5. Slices (CHECK)
 # 6. Grouping () (CHECK)
 # 7. Expressions in list literal [1+2, 5+6] (CHECK)
 # 8. Add floor division + Mod (remainder) (//, %) (CHECK)
-# 9. Add float support
+# 9. Add float support (CHECK)
 # 10. and, or, not keyword implementation (CHECK)
-# 11. break, continue, pass keywords
+# 11. break, continue, pass keywords (CHECK)
