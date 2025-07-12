@@ -139,16 +139,14 @@ primary -> number
          | %IDENTIFIER
          | function_call
          | method_call
+         | assignable_expression
          | list
          | %NONE
          | %TRUE
          | %FALSE
          | %LPAREN expression %RPAREN # FOR GROUPING EXPRESSIONS
 
-number_list -> number {% d => [d[0]] %}
-             | number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
-
-list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} # [1, 2, 3] 
+list -> %LSQBRACK (arg_list):? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
 statement -> assignment_statement
            | expression
@@ -205,7 +203,7 @@ statement_list -> statement {% d => [d[0]] %} |
 # 3. Unary +/- (CHECK)
 # 5. Slices
 # 6. Grouping () (CHECK)
-# 7. Expressions in list literal [1+2, 5+6]
+# 7. Expressions in list literal [1+2, 5+6] (CHECK)
 # 8. Add floor division + Mod (remainder) (//, %) (CHECK)
 # 9. Add float support
 # 10. and, or, not keyword implementation (CHECK)
