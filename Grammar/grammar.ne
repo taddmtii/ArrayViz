@@ -136,7 +136,6 @@ unary -> %PLUS unary
 #-----------------------------------------------------------------------------------------
 
 primary -> number
-         | %IDENTIFIER
          | function_call
          | method_call
          | assignable_expression
@@ -177,14 +176,14 @@ assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "a
 
 array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
-assignable_expression -> %IDENTIFIER {% id %} |
-            array_access
+assignable_expression -> %IDENTIFIER {% id %}
+                       | array_access
 
 return_statement -> %RETURN (expression):? {% d => ({ type: "return_statement", value: d[1]}) %} 
 
 func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
 
-function_call -> expression %LPAREN (arg_list):? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
+function_call -> %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
 method_call -> expression %DOT %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 

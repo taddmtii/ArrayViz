@@ -12,6 +12,7 @@ fs.readdirSync(testdir).forEach(file => {
     try {
         parser.feed(input);
         console.log(`${file}: parsed successfully.`);
+        console.log("Parses:", parser.results.length);
     } catch (err) {
         console.error(`${file}: parse error.`);
         console.error(err.message);
