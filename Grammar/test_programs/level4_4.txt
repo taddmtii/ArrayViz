@@ -4,6 +4,5 @@ for x in a:
    for y in b:
       print(x)
 
-while True:
+while True and not x:
    print(1)
-

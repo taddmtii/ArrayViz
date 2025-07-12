@@ -89,9 +89,28 @@ number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
 
-expression -> comparison
+expression -> or_expression
+
+#-----------------------------------------------------------------------------------------
+# LOGIC EXPRESSIONS (LOWEST PRECEDENCE)
+#-----------------------------------------------------------------------------------------
+
+or_expression -> and_expression (%OR and_expression):*
+
+and_expression -> not_expression (%AND not_expression):*
+
+not_expression -> %NOT not_expression
+                | comparison
+
+#-----------------------------------------------------------------------------------------
+# COMPARISON EXPRESSIONS
+#-----------------------------------------------------------------------------------------
 
 comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) additive):*
+
+#-----------------------------------------------------------------------------------------
+# ARITHMETIC EXPRESSIONS
+#-----------------------------------------------------------------------------------------
 
 # + or - (binary)
 # LOWEST PRECEDENCE
@@ -112,7 +131,10 @@ unary -> %PLUS unary
        | %MINUS unary
        | primary
 
-# Primary IS an expression.
+#-----------------------------------------------------------------------------------------
+# PRIMARY EXPRESSIONS (general expressions)
+#-----------------------------------------------------------------------------------------
+
 primary -> number
          | %IDENTIFIER
          | function_call
@@ -123,20 +145,20 @@ primary -> number
          | %FALSE
          | %LPAREN expression %RPAREN # FOR GROUPING EXPRESSIONS
 
-number_list -> number {% d => [d[0]] %} |
-               number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
+number_list -> number {% d => [d[0]] %}
+             | number %COMMA number_list {% d => [d[0], ...d[2]] %} # 3 OR 3, OR 3, 4 OR 3, 4, 
 
 list -> %LSQBRACK number_list %RSQBRACK {% d => ({ type: "list", values: d[1] }) %} # [1, 2, 3] 
 
-statement -> assignment_statement |
-            expression |
-            if_statement |
-            else_block |
-            for_loop |
-            while_loop |
-            func_def |
-            return_statement |
-            %NL
+statement -> assignment_statement
+           | expression
+           | if_statement
+           | else_block 
+           | for_loop 
+           | while_loop 
+           | func_def 
+           | return_statement 
+           | %NL
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
             %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
@@ -160,11 +182,9 @@ array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "arr
 assignable_expression -> %IDENTIFIER {% id %} |
             array_access
 
-return_statement -> %RETURN expression {% d => ({ type: "return_statement", value: d[1]}) %} |
-                    %RETURN {% d => ({ type: "return_statement"}) %}
+return_statement -> %RETURN (expression):? {% d => ({ type: "return_statement", value: d[1]}) %} 
 
-func_def -> %DEF %IDENTIFIER %LPAREN arg_list %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %} |
-            %DEF %IDENTIFIER %LPAREN %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: [], body: d[5]}) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
 
 function_call -> expression %LPAREN (arg_list):? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
@@ -172,8 +192,8 @@ method_call -> expression %DOT %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => 
 
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
-block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %} |
-         statement
+block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
+       | statement
 
 statement_list -> statement {% d => [d[0]] %} |
                   statement statement_list {% d => [d[0], ...d[1]] %}
