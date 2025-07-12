@@ -208,5 +208,5 @@ statement_list -> statement {% d => [d[0]] %} |
 # 7. Expressions in list literal [1+2, 5+6]
 # 8. Add floor division + Mod (remainder) (//, %) (CHECK)
 # 9. Add float support
-# 10. and, or, not keyword implementation
+# 10. and, or, not keyword implementation (CHECK)
 # 11. break, continue, pass keywords
