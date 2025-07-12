@@ -29,7 +29,10 @@ const lexer = new IndentationLexer({
             IN: "in",
             RANGE: "range",
             RETURN: "return",
-            DEF: "def"
+            DEF: "def",
+            TRUE: "True",
+            FALSE: "False",
+            NONE: "None"
         })
     },
 
@@ -84,6 +87,8 @@ number -> %HEX {% id %}
         | %BINARY {% id %}
         | %DECIMAL {% id %}
 
+# # expressions (in expressions section)
+# https://docs.python.org/3/reference/grammar.html
 arithmetic_operand -> %PLUS {% id %} 
                     | %MINUS {% id %}
                     | %MULT {% id %}
@@ -141,16 +146,16 @@ return_statement -> %RETURN expression {% d => ({ type: "return_statement", valu
 func_def -> %DEF %IDENTIFIER %LPAREN arg_list %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %} |
             %DEF %IDENTIFIER %LPAREN %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: [], body: d[5]}) %}
 
-function_call -> expression %LPAREN %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: []}) %} |
-                 expression %LPAREN arg_list %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
+function_call -> # expression %LPAREN %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: []}) %} |
+                 expression %LPAREN (arg_list):? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-method_call -> %IDENTIFIER %DOT expression %LPAREN arg_list %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %} | # nums.remove(5) || nums.remove(num)
-               %IDENTIFIER %DOT expression %LPAREN %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: []}) %}
+method_call -> expression %DOT %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
+            #  expression %DOT %IDENTIFIER %LPAREN %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: []}) %} # name of method is an identifier
 
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 arithmetic_expression -> %IDENTIFIER arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # i - 1
-                         number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1
+                         number arithmetic_operand number {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} | # 5 - 1 (NOTE)
                          assignable_expression arithmetic_operand assignable_expression {% d => ({ type: "arithmetic_expression", value1: d[0], operand: d[1], value2: d[2] }) %} # i - j, num1 - num2
 
 block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %} |
@@ -162,8 +167,21 @@ expression -> assignable_expression |
             arithmetic_expression |
             conditional_expression |
             function_call |
-            method_call
+            method_call |
+            %NONE
 
 statement_list -> statement {% d => [d[0]] %} |
                   statement statement_list {% d => [d[0], ...d[1]] %}
 
+# TODO:
+# 1a. Precedence
+# 1. True/False
+# 2. None
+# 3. Unary +/-
+# 5. Slices
+# 6. Grouping ()
+# 7. Expressions in list literal [1+2, 5+6]
+# 8. Add floor division + Mod (remainder) (//, %)
+# 9. Add float support
+# 10. and, or, not keyword implementation
+# 11. break, continue, pass keywords
