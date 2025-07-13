@@ -1,1 +1,3 @@
 neg_float = -0.412312
+
+not not True

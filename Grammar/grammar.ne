@@ -51,15 +51,17 @@ const lexer = new IndentationLexer({
     // ARITHMETIC
     PLUS: "+",
     MINUS: "-",
+    POWER: "**",
     MULT: "*",
     INTDIV: "//",
     DIV: "/",
-    EQUALITY: "==",
-    EQ: "=",
-    LTHAN_EQ: "<=",
-    GRTHAN_EQ: ">=",
-    LTHAN: "<",
-    GRTHAN: ">",
+    NEQ: "!=",
+    EQ: "==",
+    ASSIGNMENT: "=",
+    LTE: "<=",
+    GTE: ">=",
+    LT: "<",
+    GT: ">",
     MOD: "%",
 
     //SYMBOLS
@@ -90,24 +92,37 @@ number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
         | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
         | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
 
-expression -> or_expression
+expression -> conditional_expression
 
 #-----------------------------------------------------------------------------------------
-# LOGIC EXPRESSIONS (LOWEST PRECEDENCE)
+# CONDITIONAL EXPRESSIONS (LOWEST PRECEDENCE)
 #-----------------------------------------------------------------------------------------
 
-or_expression -> and_expression (%OR and_expression):* {% d => ({ type: "or_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
+conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => ({ type: "conditional_expression", left: d[0], condition: d[2], right: d[4]})  %}
+                        | or_expression
 
-and_expression -> not_expression (%AND not_expression):* {% d => ({ type: "and_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
+#-----------------------------------------------------------------------------------------
+# LOGIC EXPRESSIONS 
+#-----------------------------------------------------------------------------------------
+
+# or_expression -> and_expression (%OR and_expression):* {% d => ({ type: "or_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
+or_expression -> or_expression %OR and_expression {% d => ({ type: "or_expression", left: d[0], right: d[2] })  %}
+               | and_expression
+
+# dos ame thing from or to (and + comparison)
+
+and_expression -> and_expression %AND not_expression {% d => ({ type: "and_expression", left: d[0], right: d[2] })  %}
+                | not_expression
 
 not_expression -> %NOT not_expression {% d => ({ type: "not_expression", expression: d[1]}) %}
-                | comparison
+                | comparison_expression
 
 #-----------------------------------------------------------------------------------------
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) additive):* {% d => ({ type: "comparison_expression", left: d[0], operator: d[1], right: d[2] })  %}
+comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => ({ type: "comparison_expression", left: d[0], operator: d[1], right: d[2] })  %}
+            | additive
 
 #-----------------------------------------------------------------------------------------
 # ARITHMETIC EXPRESSIONS
@@ -115,45 +130,45 @@ comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) 
 
 # + or - (binary)
 # LOWEST PRECEDENCE
-additive -> additive %PLUS multiplicative {% d => ({type: "additive", left: d[0], operator: d[1], right: d[2]}) %}
-          | additive %MINUS multiplicative {% d => ({type: "", left: d[0], operator: d[1], right: d[2]}) %}
+additive -> additive (%PLUS | %MINUS) multiplicative {% d => ({type: "additive", left: d[0], operator: d[1], right: d[2]}) %}
           | multiplicative
 
 # *, /, //, %
-multiplicative -> multiplicative %MULT unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
-                | multiplicative %INTDIV unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
-                | multiplicative %DIV unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
-                | multiplicative %MOD unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
                 | unary
 
 # + or - (unary)
+unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
+       | power
+
+# ** (power)
 # HIGHEST PRECEDENCE
-unary -> %PLUS unary {% d => ({type: "unary", operator: d[0], number: d[1]}) %}
-       | %MINUS unary {% d => ({type: "unary", operator: d[0], number: d[1]}) %}
-       | primary
+power -> primary %POWER unary {% d => ({type: "power", left: d[0], right: d[2]}) %}
+       | primary 
 
 #-----------------------------------------------------------------------------------------
 # PRIMARY EXPRESSIONS (general expressions)
 #-----------------------------------------------------------------------------------------
 
-primary -> number
-         | function_call
+primary -> function_call
          | method_call
          | array_access
-         | %IDENTIFIER
-         | list
          | list_slice
-         | %NONE
-         | %TRUE
-         | %FALSE
-         | %BREAK
-         | %CONTINUE
-         | %PASS
-         | %LPAREN expression %RPAREN {% d => ({type: "grouped_expression", expression: d[1]}) %} # FOR GROUPING EXPRESSIONS
+         | atom
+
+list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
+
+atom -> number
+      | %IDENTIFIER
+      | list
+      | %NONE
+      | %TRUE
+      | %FALSE
+      | group
+
+group -> %LPAREN expression %RPAREN {% d => ({type: "grouped_expression", expression: d[1]}) %} # FOR GROUPING EXPRESSIONS
 
 list -> %LSQBRACK (arg_list):? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
-
-list_slice -> %IDENTIFIER %LSQBRACK number %COLON number (%COLON number):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
 
 statement -> assignment_statement
            | expression
@@ -163,6 +178,9 @@ statement -> assignment_statement
            | while_loop 
            | func_def 
            | return_statement 
+           | %BREAK
+           | %CONTINUE
+           | %PASS
            | %NL
 
 for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
@@ -180,7 +198,7 @@ elif_statement -> %ELIF expression %COLON block elif_statement {% d => ({ type: 
 
 else_block -> %ELSE %COLON block {% d => ({ type: "else_block", body: d[2] }) %}
 
-assignment_statement -> (%IDENTIFIER | array_access) %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
+assignment_statement -> (%IDENTIFIER | array_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
 
 array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
