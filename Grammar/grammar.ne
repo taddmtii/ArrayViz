@@ -45,21 +45,22 @@ const lexer = new IndentationLexer({
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
-    FLOAT: /[+-]?(?:[0-9]+\.[0-9]*)/,
-    DECIMAL: /0|[+-]?[1-9][0-9]*/,
+    FLOAT: /(?:[0-9]+\.[0-9]*)/,
+    DECIMAL: /0|[1-9][0-9]*/,
 
     // ARITHMETIC
     PLUS: "+",
     MINUS: "-",
     MULT: "*",
+    INTDIV: "//",
     DIV: "/",
+    EQUALITY: "==",
+    EQ: "=",
+    LTHAN_EQ: "<=",
+    GRTHAN_EQ: ">=",
     LTHAN: "<",
     GRTHAN: ">",
     MOD: "%",
-    INTDIV: "//",
-    LTHAN_EQ: "<=",
-    GRTHAN_EQ: ">=",
-    EQUALITY: "==",
 
     //SYMBOLS
     DOT: ".",
@@ -68,15 +69,13 @@ const lexer = new IndentationLexer({
     LSQBRACK: "[",
     RSQBRACK: "]",
     LPAREN: "(",
-    RPAREN: ")",
-    EQ: "="
+    RPAREN: ")"
 })});
-
 
 // Overrides next method from lexer, automatically skips whitespace tokens.
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
-    while ((tok = next.call(lexer)) && (tok.type === "WS")) {} // keep getting tokens and disgard any tokens with type WS or NL
+    while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "COMMENT")) {} // keep getting tokens and disgard any tokens with type WS or NL
     return tok; // return first non WS token
 })(lexer.next);
 
@@ -84,12 +83,12 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 @lexer lexer
 
-program -> statement_list {% id %}
+program -> statement_list 
 
-number -> %HEX {% id %}
-        | %BINARY {% id %}
-        | %DECIMAL {% id %}
-        | %FLOAT {% id %}
+number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
+        | %BINARY {% d => ({type: "binary", number: d[0].value}) %}
+        | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
+        | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
 
 expression -> or_expression
 
@@ -97,18 +96,18 @@ expression -> or_expression
 # LOGIC EXPRESSIONS (LOWEST PRECEDENCE)
 #-----------------------------------------------------------------------------------------
 
-or_expression -> and_expression (%OR and_expression):*
+or_expression -> and_expression (%OR and_expression):* {% d => ({ type: "or_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
 
-and_expression -> not_expression (%AND not_expression):*
+and_expression -> not_expression (%AND not_expression):* {% d => ({ type: "and_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
 
-not_expression -> %NOT not_expression
+not_expression -> %NOT not_expression {% d => ({ type: "not_expression", expression: d[1]}) %}
                 | comparison
 
 #-----------------------------------------------------------------------------------------
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) additive):*
+comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) additive):* {% d => ({ type: "comparison_expression", left: d[0], operator: d[1], right: d[2] })  %}
 
 #-----------------------------------------------------------------------------------------
 # ARITHMETIC EXPRESSIONS
@@ -116,21 +115,21 @@ comparison -> additive ((%LTHAN | %GRTHAN | %LTHAN_EQ | %GRTHAN_EQ | %EQUALITY) 
 
 # + or - (binary)
 # LOWEST PRECEDENCE
-additive -> additive %PLUS multiplicative 
-          | additive %MINUS multiplicative
+additive -> additive %PLUS multiplicative {% d => ({type: "additive", left: d[0], operator: d[1], right: d[2]}) %}
+          | additive %MINUS multiplicative {% d => ({type: "", left: d[0], operator: d[1], right: d[2]}) %}
           | multiplicative
 
 # *, /, //, %
-multiplicative -> multiplicative %MULT unary
-                | multiplicative %DIV unary
-                | multiplicative %INTDIV unary
-                | multiplicative %MOD unary
+multiplicative -> multiplicative %MULT unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+                | multiplicative %INTDIV unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+                | multiplicative %DIV unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+                | multiplicative %MOD unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
                 | unary
 
 # + or - (unary)
 # HIGHEST PRECEDENCE
-unary -> %PLUS unary
-       | %MINUS unary
+unary -> %PLUS unary {% d => ({type: "unary", operator: d[0], number: d[1]}) %}
+       | %MINUS unary {% d => ({type: "unary", operator: d[0], number: d[1]}) %}
        | primary
 
 #-----------------------------------------------------------------------------------------
@@ -140,7 +139,8 @@ unary -> %PLUS unary
 primary -> number
          | function_call
          | method_call
-         | assignable_expression
+         | array_access
+         | %IDENTIFIER
          | list
          | list_slice
          | %NONE
@@ -149,7 +149,7 @@ primary -> number
          | %BREAK
          | %CONTINUE
          | %PASS
-         | %LPAREN expression %RPAREN # FOR GROUPING EXPRESSIONS
+         | %LPAREN expression %RPAREN {% d => ({type: "grouped_expression", expression: d[1]}) %} # FOR GROUPING EXPRESSIONS
 
 list -> %LSQBRACK (arg_list):? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
@@ -180,12 +180,9 @@ elif_statement -> %ELIF expression %COLON block elif_statement {% d => ({ type: 
 
 else_block -> %ELSE %COLON block {% d => ({ type: "else_block", body: d[2] }) %}
 
-assignment_statement -> assignable_expression %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
+assignment_statement -> (%IDENTIFIER | array_access) %EQ expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
 
 array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
-
-assignable_expression -> %IDENTIFIER {% id %}
-                       | array_access
 
 return_statement -> %RETURN (expression):? {% d => ({ type: "return_statement", value: d[1]}) %} 
 

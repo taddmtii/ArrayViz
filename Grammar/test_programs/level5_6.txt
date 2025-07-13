@@ -3,3 +3,5 @@ nums[2:7]
 
 def gas():
     pass
+
+2 * 3 + 4
