@@ -27,7 +27,6 @@ const lexer = new IndentationLexer({
             WHILE: "while",
             FOR: "for",
             IN: "in",
-            RANGE: "range",
             RETURN: "return",
             DEF: "def",
             TRUE: "True",
@@ -74,7 +73,7 @@ const lexer = new IndentationLexer({
     RPAREN: ")"
 })});
 
-// Overrides next method from lexer, automatically skips whitespace tokens.
+// Overrides next method from lexer, automatically skips whitespace and comments.
 lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
     let tok;
     while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "COMMENT")) {} // keep getting tokens and disgard any tokens with type WS or NL
@@ -85,21 +84,51 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 @lexer lexer
 
-program -> statement_list 
+program -> statement_list {% id %}
 
-number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
-        | %BINARY {% d => ({type: "binary", number: d[0].value}) %}
-        | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
-        | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
+statement_list -> statement %NL:+ {% d => ({ type: "statement_list", statements: [d[0]]}) %} |
+                  statement %NL:+ statement_list {% d => ({ type: "statement_list", statements: [d[0], ...d[2].statements]}) %}
 
-expression -> conditional_expression
+statement -> assignment_statement {% id %}
+           | if_statement {% id %}
+           | for_loop {% id %}
+           | while_loop {% id %}
+           | func_def  {% id %}
+           | return_statement {% id %}
+           | %BREAK  {% d => ({ type: "break_statement"}) %}
+           | %CONTINUE {% d => ({ type: "continue_statement"}) %}
+           | %PASS {% d => ({ type: "pass_statement"}) %}
+           | expression {% d => ({ type: "expression_statement", expr: d[0]}) %}
+
+assignment_statement -> (%IDENTIFIER | array_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5
+
+if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] }) %}
+
+elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] }) %}
+
+else_block -> %ELSE %COLON block {% d => d[2] %}
+
+for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
+
+while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
+
+func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
+
+arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
+
+block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
+       | statement
+
+return_statement -> %RETURN expression:? {% d => ({ type: "return_statement", value: (d[1] ? d[1] : null) }) %} 
+
+expression -> conditional_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
 # CONDITIONAL EXPRESSIONS (LOWEST PRECEDENCE)
 #-----------------------------------------------------------------------------------------
 
 conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => ({ type: "conditional_expression", left: d[0], condition: d[2], right: d[4]})  %}
-                        | or_expression
+                        | or_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
 # LOGIC EXPRESSIONS 
@@ -107,22 +136,20 @@ conditional_expression -> or_expression %IF or_expression %ELSE conditional_expr
 
 # or_expression -> and_expression (%OR and_expression):* {% d => ({ type: "or_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
 or_expression -> or_expression %OR and_expression {% d => ({ type: "or_expression", left: d[0], right: d[2] })  %}
-               | and_expression
-
-# dos ame thing from or to (and + comparison)
+               | and_expression {% id %}
 
 and_expression -> and_expression %AND not_expression {% d => ({ type: "and_expression", left: d[0], right: d[2] })  %}
-                | not_expression
+                | not_expression {% id %}
 
 not_expression -> %NOT not_expression {% d => ({ type: "not_expression", expression: d[1]}) %}
-                | comparison_expression
+                | comparison_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
 comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => ({ type: "comparison_expression", left: d[0], operator: d[1], right: d[2] })  %}
-            | additive
+            | additive {% id %}
 
 #-----------------------------------------------------------------------------------------
 # ARITHMETIC EXPRESSIONS
@@ -131,102 +158,52 @@ comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | 
 # + or - (binary)
 # LOWEST PRECEDENCE
 additive -> additive (%PLUS | %MINUS) multiplicative {% d => ({type: "additive", left: d[0], operator: d[1], right: d[2]}) %}
-          | multiplicative
+          | multiplicative {% id %}
 
 # *, /, //, %
-multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
-                | unary
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) power {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+                | power {% id %}
 
 # + or - (unary)
-unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
-       | power
+# unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
+#        | power
 
 # ** (power)
 # HIGHEST PRECEDENCE
-power -> primary %POWER unary {% d => ({type: "power", left: d[0], right: d[2]}) %}
-       | primary 
+power -> primary %POWER multiplicative {% d => ({type: "power", left: d[0], right: d[2]}) %}
+       | primary {% id %}
 
 #-----------------------------------------------------------------------------------------
 # PRIMARY EXPRESSIONS (general expressions)
 #-----------------------------------------------------------------------------------------
 
-primary -> function_call
-         | method_call
-         | array_access
-         | list_slice
-         | atom
+primary -> function_call {% id %}
+         | method_call {% id %}
+         | array_access {% id %}
+         | list_slice {% id %}
+         | atom {% id %}
 
-list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
+function_call -> expression %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-atom -> number
-      | %IDENTIFIER
-      | list
-      | %NONE
-      | %TRUE
-      | %FALSE
-      | group
+array_access -> expression %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
-group -> %LPAREN expression %RPAREN {% d => ({type: "grouped_expression", expression: d[1]}) %} # FOR GROUPING EXPRESSIONS
+method_call -> expression %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 
-list -> %LSQBRACK (arg_list):? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
+list_slice -> expression %LSQBRACK expression:? %COLON expression:? (%COLON expression):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
 
-statement -> assignment_statement
-           | expression
-           | if_statement
-           | else_block 
-           | for_loop 
-           | while_loop 
-           | func_def 
-           | return_statement 
-           | %BREAK
-           | %CONTINUE
-           | %PASS
-           | %NL
+atom -> number {% id %}
+      | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
+      | list_literal {% id %}
+      | %NONE {% d => ({ type: "none_literal"}) %}
+      | %TRUE {% d => ({ type: "bool_true"}) %}
+      | %FALSE {% d => ({ type: "bool_false"}) %}
+      | group {% id %}
 
-for_loop -> %FOR %IDENTIFIER %IN %RANGE %LPAREN number %RPAREN %COLON block {% d => ({ type: "for_in_range_loop", temp_var: d[1], range: d[5], body: d[8] }) %} |
-            %FOR %IDENTIFIER %IN %IDENTIFIER %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
+number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
+        | %BINARY {% d => ({type: "binary", number: d[0].value}) %}
+        | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
+        | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
 
-while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
+list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
-if_statement -> %IF expression %COLON block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
-                %IF expression %COLON block elif_statement {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %} |
-                %IF expression %COLON block else_block {% d => ({ type: "if_statement", expression: d[1], body: d[3] }) %}
-
-elif_statement -> %ELIF expression %COLON block elif_statement {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %} |
-                  %ELIF expression %COLON block else_block {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %} |
-                  %ELIF expression %COLON block {% d => ({ type: "elif_statement", expression: d[1], body: d[3] }) %}
-
-else_block -> %ELSE %COLON block {% d => ({ type: "else_block", body: d[2] }) %}
-
-assignment_statement -> (%IDENTIFIER | array_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5 
-
-array_access -> %IDENTIFIER %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
-
-return_statement -> %RETURN (expression):? {% d => ({ type: "return_statement", value: d[1]}) %} 
-
-func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
-
-function_call -> %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
-
-method_call -> expression %DOT %IDENTIFIER %LPAREN (arg_list):? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
-
-arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
-
-block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
-       | statement
-
-statement_list -> statement {% d => [d[0]] %} |
-                  statement statement_list {% d => [d[0], ...d[1]] %}
-
-# TODO:
-# 1a. Precedence (CHECK)
-# 1. True/False (CHECK)
-# 2. None (CHECK)
-# 3. Unary +/- (CHECK)
-# 5. Slices (CHECK)
-# 6. Grouping () (CHECK)
-# 7. Expressions in list literal [1+2, 5+6] (CHECK)
-# 8. Add floor division + Mod (remainder) (//, %) (CHECK)
-# 9. Add float support (CHECK)
-# 10. and, or, not keyword implementation (CHECK)
-# 11. break, continue, pass keywords (CHECK)
+group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} # FOR GROUPING EXPRESSIONS
