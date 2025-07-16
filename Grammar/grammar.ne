@@ -44,8 +44,8 @@ const lexer = new IndentationLexer({
     // NUMBERS
     HEX: /0x[0-9a-fA-F]+/,
     BINARY: /0b[01]+/,
-    FLOAT: /(?:[0-9]+\.[0-9]*)/,
-    DECIMAL: /0|[1-9][0-9]*/,
+    FLOAT: /(?:[+-]?[0-9]+\.[0-9]*)/,
+    DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // ARITHMETIC
     PLUS: "+",
@@ -167,16 +167,16 @@ additive -> additive (%PLUS | %MINUS) multiplicative {% d => ({type: "additive",
           | multiplicative {% id %}
 
 # *, /, //, %
-multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) power {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
-                | power {% id %}
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+                | unary {% id %}
 
 # + or - (unary)
-# unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
-#        | power
+unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
+       | power
 
 # ** (power)
 # HIGHEST PRECEDENCE
-power -> primary %POWER multiplicative {% d => ({type: "power", left: d[0], right: d[2]}) %}
+power -> primary %POWER unary {% d => ({type: "power", left: d[0], right: d[2]}) %}
        | primary {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -195,7 +195,7 @@ array_access -> expression %LSQBRACK expression %RSQBRACK {% d => ({ type: "arra
 
 method_call -> expression %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 
-list_slice -> expression %LSQBRACK expression:? %COLON expression:? (%COLON expression):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[6]}) %}
+list_slice -> expression %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
 
 atom -> number {% id %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
