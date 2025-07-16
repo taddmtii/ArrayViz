@@ -10,7 +10,7 @@ fs.readdirSync(testdir).forEach(file => {
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
 
     try {
-        parser.feed(input);
+        parser.feed(input + '\n');
         console.log(`${file}: parsed successfully.`);
         console.log("Parses:", parser.results.length);
     } catch (err) {

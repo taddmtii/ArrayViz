@@ -79,20 +79,16 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
     return tok; // return first non WS token
 })(lexer.next);
 
-lexer.reset(`a = [1, 2]
-b = [3, 4]
-for x in a:
-   for y in b:
-      print(x)
+lexer.reset(`def one():
+   return 1
    
-
-while True and not x:
-   print(1)
+def sub(a, b):
+   return a - b
 
 `)
 
 // no newline between dedents
 
 for (let tok of lexer) {
-    console.log(tok.type);
+    console.log(tok.type + " : " + tok.text);
 }

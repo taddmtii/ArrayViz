@@ -86,19 +86,25 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 program -> statement_list {% id %}
 
-statement_list -> statement %NL:+ {% d => ({ type: "statement_list", statements: [d[0]]}) %} |
-                  statement %NL:+ statement_list {% d => ({ type: "statement_list", statements: [d[0], ...d[2].statements]}) %}
+statement_list -> statement:+ {% d => ({ type: "statement_list", statements: d[0].filter( i => i !== null )}) %}
 
-statement -> assignment_statement {% id %}
-           | if_statement {% id %}
-           | for_loop {% id %}
-           | while_loop {% id %}
-           | func_def  {% id %}
-           | return_statement {% id %}
-           | %BREAK  {% d => ({ type: "break_statement"}) %}
-           | %CONTINUE {% d => ({ type: "continue_statement"}) %}
-           | %PASS {% d => ({ type: "pass_statement"}) %}
-           | expression {% d => ({ type: "expression_statement", expr: d[0]}) %}
+statement -> simple_statement %NL {% d => [d[0]] %} 
+           | compound_statement {% id %} # compound statement already eats newline. 
+           | %NL {% d => null %}
+
+# A simple statement is a standalone statement.
+simple_statement -> assignment_statement {% id %}
+                  | return_statement {% id %}
+                  | %BREAK  {% d => ({ type: "break_statement"}) %}
+                  | %CONTINUE {% d => ({ type: "continue_statement"}) %}
+                  | %PASS {% d => ({ type: "pass_statement"}) %}
+                  | expression {% d => ({ type: "expression_statement", expr: d[0]}) %}
+
+# A compound statement is a statement is a statement explitly followed by a block (or a list of statements).
+compound_statement -> if_statement {% id %}
+                    | for_loop {% id %}
+                    | while_loop {% id %}
+                    | func_def  {% id %}
 
 assignment_statement -> (%IDENTIFIER | array_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5
 
@@ -117,7 +123,7 @@ func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => (
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
-       | statement
+       | simple_statement %NL {% d => ({type: "block", statements: [d[0]]}) %}
 
 return_statement -> %RETURN expression:? {% d => ({ type: "return_statement", value: (d[1] ? d[1] : null) }) %} 
 
