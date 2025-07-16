@@ -114,12 +114,15 @@ elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? 
 
 else_block -> %ELSE %COLON block {% d => d[2] %}
 
+# may later need to deal with multiple assignment/unpacking (for x, y in enumerate()) may affect assignment statement
 for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
 
 while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
 
+# possibly include ignoring type annotations (type hints)
 func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
 
+# split into arg_list and annotated_arg_list to create SoC when it comes to regular argument lists and list literals
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
@@ -189,13 +192,13 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> expression %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-array_access -> expression %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
+array_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
 
-method_call -> expression %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
+method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 
-list_slice -> expression %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
+list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
 
 atom -> number {% id %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
@@ -210,6 +213,7 @@ number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
         | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
         | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
 
+# refer to arg_list for changes
 list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
 group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} # FOR GROUPING EXPRESSIONS
