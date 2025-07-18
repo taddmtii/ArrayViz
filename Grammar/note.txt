@@ -1,0 +1,32 @@
+class Interpreter(AST parse_tree) {
+
+// keeps track of where we are in the parse parse_tree 
+Stack s = []
+
+// runtime/execution stack
+Stack rt = []
+
+// where objects live
+Heap objects = []
+
+// undo stack, captures the whole interperter state each step
+Stack undo = []
+
+prev_expression() {
+    
+}
+
+next_expression() {
+
+}
+
+prev_statement() {
+
+}
+
+next_statement() {
+
+}
+
+
+}
