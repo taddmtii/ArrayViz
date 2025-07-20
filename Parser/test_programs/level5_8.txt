@@ -13,3 +13,5 @@ length = len(5)
 absolute_val = abs(x)
 sum_of_nums = sum(nums)
 sorted_nums = sorted(nums)
+
+nums_string = "cut it off!"

@@ -16,6 +16,9 @@ const lexer = new IndentationLexer({
     // COMMENTS
     COMMENT: {match: /#.*/},
 
+    // STRINGS
+    STRING_CONTENT: /[a-zA-Z0-9_]+/,
+
     // IDENTIFIER / KEYWORDS
     IDENTIFIER: {
         match: /[a-zA-Z_][a-zA-Z0-9_]*/,
@@ -79,13 +82,7 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
     return tok; // return first non WS token
 })(lexer.next);
 
-lexer.reset(`def one():
-   return 1
-   
-def sub(a, b):
-   return a - b
-
-`)
+lexer.reset(` "hello world" `)
 
 // no newline between dedents
 

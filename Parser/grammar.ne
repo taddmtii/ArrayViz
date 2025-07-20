@@ -47,6 +47,9 @@ const lexer = new IndentationLexer({
     FLOAT: /(?:[+-]?[0-9]+\.[0-9]*)/,
     DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
+    // STRINGS
+    STRING: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
+
     // ARITHMETIC
     PLUS: "+",
     MINUS: "-",
@@ -71,6 +74,7 @@ const lexer = new IndentationLexer({
     RSQBRACK: "]",
     LPAREN: "(",
     RPAREN: ")"
+
 })});
 
 // Overrides next method from lexer, automatically skips whitespace and comments.
@@ -82,7 +86,7 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 %}
 
-@preprocessor typescript
+# @preprocessor typescript
 @lexer lexer
 
 program -> statement_list {% id %}
@@ -125,6 +129,8 @@ func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => (
 
 # split into arg_list and annotated_arg_list to create SoC when it comes to regular argument lists and list literals
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
+
+type_annotations -> 
 
 block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
        | simple_statement %NL {% d => ({type: "block", statements: [d[0]]}) %}
@@ -202,6 +208,7 @@ method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({typ
 list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
 
 atom -> number {% id %}
+      | %STRING {% d => ({ type: "string", content: d[0].value}) %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
       | list_literal {% id %}
       | %NONE {% d => ({ type: "none_literal"}) %}

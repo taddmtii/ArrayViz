@@ -42,6 +42,8 @@ declare var POWER: any;
 declare var LSQBRACK: any;
 declare var RSQBRACK: any;
 declare var DOT: any;
+declare var QUOTATION: any;
+declare var STRING_CONTENT: any;
 declare var NONE: any;
 declare var TRUE: any;
 declare var FALSE: any;
@@ -67,6 +69,9 @@ const lexer = new IndentationLexer({
 
     // COMMENTS
     COMMENT: {match: /#.*/},
+
+    // STRINGS
+    STRING_CONTENT: /[a-zA-Z0-9_]+/,
 
     // IDENTIFIER / KEYWORDS
     IDENTIFIER: {
@@ -121,7 +126,8 @@ const lexer = new IndentationLexer({
     LSQBRACK: "[",
     RSQBRACK: "]",
     LPAREN: "(",
-    RPAREN: ")"
+    RPAREN: ")",
+    QUOTATION: '"'
 })});
 
 // Overrides next method from lexer, automatically skips whitespace and comments.
@@ -266,7 +272,9 @@ const grammar: Grammar = {
     {"name": "list_slice$ebnf$3", "symbols": ["list_slice$ebnf$3$subexpression$1"], "postprocess": id},
     {"name": "list_slice$ebnf$3", "symbols": [], "postprocess": () => null},
     {"name": "list_slice", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "list_slice$ebnf$1", (lexer.has("COLON") ? {type: "COLON"} : COLON), "list_slice$ebnf$2", "list_slice$ebnf$3", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null})},
+    {"name": "string_literal", "symbols": [(lexer.has("QUOTATION") ? {type: "QUOTATION"} : QUOTATION), (lexer.has("STRING_CONTENT") ? {type: "STRING_CONTENT"} : STRING_CONTENT), (lexer.has("QUOTATION") ? {type: "QUOTATION"} : QUOTATION)], "postprocess": d => ({ type: "string", content: d[1]})},
     {"name": "atom", "symbols": ["number"], "postprocess": id},
+    {"name": "atom", "symbols": ["string_literal"], "postprocess": id},
     {"name": "atom", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": d => ({ type: "identifier", name: d[0]})},
     {"name": "atom", "symbols": ["list_literal"], "postprocess": id},
     {"name": "atom", "symbols": [(lexer.has("NONE") ? {type: "NONE"} : NONE)], "postprocess": d => ({ type: "none_literal"})},
