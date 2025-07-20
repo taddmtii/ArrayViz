@@ -1,7 +1,54 @@
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
-(function () {
-function id(x) { return x[0]; }
+// Bypasses TS6133. Allow declared but unused functions.
+// @ts-ignore
+function id(d: any[]): any { return d[0]; }
+declare var NL: any;
+declare var BREAK: any;
+declare var CONTINUE: any;
+declare var PASS: any;
+declare var IDENTIFIER: any;
+declare var ASSIGNMENT: any;
+declare var IF: any;
+declare var COLON: any;
+declare var ELIF: any;
+declare var ELSE: any;
+declare var FOR: any;
+declare var IN: any;
+declare var WHILE: any;
+declare var DEF: any;
+declare var LPAREN: any;
+declare var RPAREN: any;
+declare var COMMA: any;
+declare var INDENT: any;
+declare var DEDENT: any;
+declare var RETURN: any;
+declare var OR: any;
+declare var AND: any;
+declare var NOT: any;
+declare var LT: any;
+declare var GT: any;
+declare var LTE: any;
+declare var GTE: any;
+declare var EQ: any;
+declare var NEQ: any;
+declare var PLUS: any;
+declare var MINUS: any;
+declare var MULT: any;
+declare var INTDIV: any;
+declare var DIV: any;
+declare var MOD: any;
+declare var POWER: any;
+declare var LSQBRACK: any;
+declare var RSQBRACK: any;
+declare var DOT: any;
+declare var NONE: any;
+declare var TRUE: any;
+declare var FALSE: any;
+declare var HEX: any;
+declare var BINARY: any;
+declare var DECIMAL: any;
+declare var FLOAT: any;
 
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
@@ -84,12 +131,40 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
     return tok; // return first non WS token
 })(lexer.next);
 
-var grammar = {
-    Lexer: lexer,
-    ParserRules: [
+
+interface NearleyToken {
+  value: any;
+  [key: string]: any;
+};
+
+interface NearleyLexer {
+  reset: (chunk: string, info: any) => void;
+  next: () => NearleyToken | undefined;
+  save: () => any;
+  formatError: (token: never) => string;
+  has: (tokenType: string) => boolean;
+};
+
+interface NearleyRule {
+  name: string;
+  symbols: NearleySymbol[];
+  postprocess?: (d: any[], loc?: number, reject?: {}) => any;
+};
+
+type NearleySymbol = string | { literal: any } | { test: (token: any) => boolean };
+
+interface Grammar {
+  Lexer: NearleyLexer | undefined;
+  ParserRules: NearleyRule[];
+  ParserStart: string;
+};
+
+const grammar: Grammar = {
+  Lexer: lexer,
+  ParserRules: [
     {"name": "program", "symbols": ["statement_list"], "postprocess": id},
     {"name": "statement_list$ebnf$1", "symbols": ["statement"]},
-    {"name": "statement_list$ebnf$1", "symbols": ["statement_list$ebnf$1", "statement"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "statement_list$ebnf$1", "symbols": ["statement_list$ebnf$1", "statement"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "statement_list", "symbols": ["statement_list$ebnf$1"], "postprocess": d => ({ type: "statement_list", statements: d[0].filter( i => i !== null )})},
     {"name": "statement", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => [d[0]]},
     {"name": "statement", "symbols": ["compound_statement"], "postprocess": id},
@@ -110,28 +185,28 @@ var grammar = {
     {"name": "if_statement$ebnf$1$subexpression$1", "symbols": ["elif_statement"]},
     {"name": "if_statement$ebnf$1$subexpression$1", "symbols": ["else_block"]},
     {"name": "if_statement$ebnf$1", "symbols": ["if_statement$ebnf$1$subexpression$1"], "postprocess": id},
-    {"name": "if_statement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "if_statement$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "if_statement", "symbols": [(lexer.has("IF") ? {type: "IF"} : IF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "if_statement$ebnf$1"], "postprocess": d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] })},
     {"name": "elif_statement$ebnf$1$subexpression$1", "symbols": ["elif_statement"]},
     {"name": "elif_statement$ebnf$1$subexpression$1", "symbols": ["else_block"]},
     {"name": "elif_statement$ebnf$1", "symbols": ["elif_statement$ebnf$1$subexpression$1"], "postprocess": id},
-    {"name": "elif_statement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "elif_statement$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "elif_statement", "symbols": [(lexer.has("ELIF") ? {type: "ELIF"} : ELIF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "elif_statement$ebnf$1"], "postprocess": d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] })},
     {"name": "else_block", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => d[2]},
     {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] })},
     {"name": "while_loop", "symbols": [(lexer.has("WHILE") ? {type: "WHILE"} : WHILE), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "while_loop", expression: d[1], body: d[3]})},
     {"name": "func_def$ebnf$1$subexpression$1", "symbols": ["arg_list"]},
     {"name": "func_def$ebnf$1", "symbols": ["func_def$ebnf$1$subexpression$1"], "postprocess": id},
-    {"name": "func_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "func_def$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "func_def", "symbols": [(lexer.has("DEF") ? {type: "DEF"} : DEF), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "func_def$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]})},
     {"name": "arg_list$ebnf$1", "symbols": []},
     {"name": "arg_list$ebnf$1$subexpression$1", "symbols": [(lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "expression"]},
-    {"name": "arg_list$ebnf$1", "symbols": ["arg_list$ebnf$1", "arg_list$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "arg_list$ebnf$1", "symbols": ["arg_list$ebnf$1", "arg_list$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "arg_list", "symbols": ["expression", "arg_list$ebnf$1"], "postprocess": d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])]},
     {"name": "block", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL), (lexer.has("INDENT") ? {type: "INDENT"} : INDENT), "statement_list", (lexer.has("DEDENT") ? {type: "DEDENT"} : DEDENT)], "postprocess": d => ({type: "block", statements: d[2]})},
     {"name": "block", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => ({type: "block", statements: [d[0]]})},
     {"name": "return_statement$ebnf$1", "symbols": ["expression"], "postprocess": id},
-    {"name": "return_statement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "return_statement$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "return_statement", "symbols": [(lexer.has("RETURN") ? {type: "RETURN"} : RETURN), "return_statement$ebnf$1"], "postprocess": d => ({ type: "return_statement", value: (d[1] ? d[1] : null) })},
     {"name": "expression", "symbols": ["conditional_expression"], "postprocess": id},
     {"name": "conditional_expression", "symbols": ["or_expression", (lexer.has("IF") ? {type: "IF"} : IF), "or_expression", (lexer.has("ELSE") ? {type: "ELSE"} : ELSE), "conditional_expression"], "postprocess": d => ({ type: "conditional_expression", left: d[0], condition: d[2], right: d[4]})},
@@ -175,21 +250,21 @@ var grammar = {
     {"name": "primary", "symbols": ["list_slice"], "postprocess": id},
     {"name": "primary", "symbols": ["atom"], "postprocess": id},
     {"name": "function_call$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
-    {"name": "function_call$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "function_call$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "function_call", "symbols": ["primary", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "function_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "function_call", func_name: d[0], args: d[2]})},
     {"name": "array_access", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({ type: "array_access", array: d[0], index: d[2] })},
     {"name": "method_call$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
-    {"name": "method_call$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "method_call$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "method_call", "symbols": ["primary", (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "method_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({type: "method_call", list: d[0], action: d[2], args: d[4]})},
     {"name": "list_slice$ebnf$1", "symbols": ["expression"], "postprocess": id},
-    {"name": "list_slice$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "list_slice$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "list_slice$ebnf$2", "symbols": ["expression"], "postprocess": id},
-    {"name": "list_slice$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "list_slice$ebnf$2", "symbols": [], "postprocess": () => null},
     {"name": "list_slice$ebnf$3$subexpression$1$ebnf$1", "symbols": ["expression"], "postprocess": id},
-    {"name": "list_slice$ebnf$3$subexpression$1$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "list_slice$ebnf$3$subexpression$1$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "list_slice$ebnf$3$subexpression$1", "symbols": [(lexer.has("COLON") ? {type: "COLON"} : COLON), "list_slice$ebnf$3$subexpression$1$ebnf$1"]},
     {"name": "list_slice$ebnf$3", "symbols": ["list_slice$ebnf$3$subexpression$1"], "postprocess": id},
-    {"name": "list_slice$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "list_slice$ebnf$3", "symbols": [], "postprocess": () => null},
     {"name": "list_slice", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "list_slice$ebnf$1", (lexer.has("COLON") ? {type: "COLON"} : COLON), "list_slice$ebnf$2", "list_slice$ebnf$3", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null})},
     {"name": "atom", "symbols": ["number"], "postprocess": id},
     {"name": "atom", "symbols": [(lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER)], "postprocess": d => ({ type: "identifier", name: d[0]})},
@@ -203,15 +278,11 @@ var grammar = {
     {"name": "number", "symbols": [(lexer.has("DECIMAL") ? {type: "DECIMAL"} : DECIMAL)], "postprocess": d => ({type: "decimal", number: d[0].value})},
     {"name": "number", "symbols": [(lexer.has("FLOAT") ? {type: "FLOAT"} : FLOAT)], "postprocess": d => ({type: "float", number: d[0].value})},
     {"name": "list_literal$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
-    {"name": "list_literal$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "list_literal$ebnf$1", "symbols": [], "postprocess": () => null},
     {"name": "list_literal", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "list_literal$ebnf$1", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => ({type: "list_literal", args: d[1]})},
     {"name": "group", "symbols": [(lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "expression", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => ({ type: "grouped_expr", expr: d[1] })}
-]
-  , ParserStart: "program"
-}
-if (typeof module !== 'undefined'&& typeof module.exports !== 'undefined') {
-   module.exports = grammar;
-} else {
-   window.grammar = grammar;
-}
-})();
+  ],
+  ParserStart: "program",
+};
+
+export default grammar;
