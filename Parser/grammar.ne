@@ -50,6 +50,9 @@ const lexer = new IndentationLexer({
     // STRINGS
     STRING: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
 
+    
+    ARROW: "->",
+
     // ARITHMETIC
     PLUS: "+",
     MINUS: "-",
@@ -124,13 +127,13 @@ for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => ({ type: "for_l
 
 while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
 
-# possibly include ignoring type annotations (type hints)
-func_def -> %DEF %IDENTIFIER %LPAREN (arg_list):? %RPAREN %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]}) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (arg_list | annotated_arg_list):? %RPAREN (%ARROW expression):? %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]}) %}
 
-# split into arg_list and annotated_arg_list to create SoC when it comes to regular argument lists and list literals
+annotated_arg_list -> (expression | annotation) (%COMMA (expression | annotation)):* {% d => ({type: "annotated_arg_list"}) %}
+
+annotation -> expression %COLON expression
+
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
-
-type_annotations -> 
 
 block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
        | simple_statement %NL {% d => ({type: "block", statements: [d[0]]}) %}

@@ -52,8 +52,11 @@ const lexer = new IndentationLexer({
     DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // STRINGS
-    STRING: /"(?:[^"\\]|\\.)*"/,
+    STRING: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
 
+    
+    ARROW: "->",
+    
     // ARITHMETIC
     PLUS: "+",
     MINUS: "-",
@@ -125,9 +128,22 @@ var grammar = {
     {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] })},
     {"name": "while_loop", "symbols": [(lexer.has("WHILE") ? {type: "WHILE"} : WHILE), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({ type: "while_loop", expression: d[1], body: d[3]})},
     {"name": "func_def$ebnf$1$subexpression$1", "symbols": ["arg_list"]},
+    {"name": "func_def$ebnf$1$subexpression$1", "symbols": ["annotated_arg_list"]},
     {"name": "func_def$ebnf$1", "symbols": ["func_def$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "func_def$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "func_def", "symbols": [(lexer.has("DEF") ? {type: "DEF"} : DEF), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "func_def$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[6]})},
+    {"name": "func_def$ebnf$2$subexpression$1", "symbols": [(lexer.has("ARROW") ? {type: "ARROW"} : ARROW), "expression"]},
+    {"name": "func_def$ebnf$2", "symbols": ["func_def$ebnf$2$subexpression$1"], "postprocess": id},
+    {"name": "func_def$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "func_def", "symbols": [(lexer.has("DEF") ? {type: "DEF"} : DEF), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "func_def$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN), "func_def$ebnf$2", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]})},
+    {"name": "annotated_arg_list$subexpression$1", "symbols": ["expression"]},
+    {"name": "annotated_arg_list$subexpression$1", "symbols": ["annotation"]},
+    {"name": "annotated_arg_list$ebnf$1", "symbols": []},
+    {"name": "annotated_arg_list$ebnf$1$subexpression$1$subexpression$1", "symbols": ["expression"]},
+    {"name": "annotated_arg_list$ebnf$1$subexpression$1$subexpression$1", "symbols": ["annotation"]},
+    {"name": "annotated_arg_list$ebnf$1$subexpression$1", "symbols": [(lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "annotated_arg_list$ebnf$1$subexpression$1$subexpression$1"]},
+    {"name": "annotated_arg_list$ebnf$1", "symbols": ["annotated_arg_list$ebnf$1", "annotated_arg_list$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "annotated_arg_list", "symbols": ["annotated_arg_list$subexpression$1", "annotated_arg_list$ebnf$1"], "postprocess": d => ({type: "annotated_arg_list"})},
+    {"name": "annotation", "symbols": ["expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression"], "postprocess": d => ({type: "annotation"})},
     {"name": "arg_list$ebnf$1", "symbols": []},
     {"name": "arg_list$ebnf$1$subexpression$1", "symbols": [(lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "expression"]},
     {"name": "arg_list$ebnf$1", "symbols": ["arg_list$ebnf$1", "arg_list$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
