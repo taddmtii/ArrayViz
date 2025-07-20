@@ -1,0 +1,1 @@
+type PythonValue = number | string | PythonValue[]

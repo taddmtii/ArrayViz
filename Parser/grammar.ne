@@ -228,17 +228,3 @@ number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
 list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
 group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} # FOR GROUPING EXPRESSIONS
-
-# TODO:
-# 1. Implement strings and type annotations
-# 2. build explicit nodes in ts file
-#   - IMPORTANT EXPRESSION NODES
-#   - BinaryOpNode
-#   - UnaryOpNode
-#   - ConditionalExpressionNode
-#   - NumberLiteralNode
-#   - ListLiteralNode
-#
-#
-#
-# 3. build out types in Interpreter.ts 

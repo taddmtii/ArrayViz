@@ -8,16 +8,6 @@ interface Command {
   execute(): void;
 }
 
-type PythonValue = number | strin
-
-interface Expression {
-  evaluate(): ; 
-}
-
-interface Statement {
-
-}
-
 // Internal object, not to be directly binded with UI. Notify other objects when things are changed.
 class State {
   private _programCounter: number;
