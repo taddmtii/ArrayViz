@@ -15,7 +15,7 @@ class Interpreter {
   }
 }
 
-// Invoker: component that uses command to carry out an operation.
+// Sender/Invoker: initiates requests, triggers command instead of sending request to receiver directly.
 
 
 
