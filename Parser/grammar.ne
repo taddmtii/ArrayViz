@@ -1,7 +1,9 @@
 
 @{%
-import * as moo from 'moo';
-import IndentationLexer from 'moo-indentation-lexer';
+// import * as moo from 'moo';
+// import IndentationLexer from 'moo-indentation-lexer';
+const moo = require("moo");
+const IndentationLexer = require('moo-indentation-lexer')
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
@@ -94,7 +96,7 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 %}
 
-@preprocessor typescript
+# @preprocessor typescript
 @lexer lexer
 
 program -> statement_list {% id %}

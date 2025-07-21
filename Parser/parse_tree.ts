@@ -50,7 +50,7 @@ interface Statement {
 }
 
 interface Expression {
-    evaluate(): PythonValue;
+    // evaluate(): PythonValue;
 }
 
 interface Function {
@@ -224,12 +224,13 @@ class IdentifierExpressionNode {
 }
 
 class FormalParamsListExpressionNode implements Expression {
-   private _params_list: IdentifierExpressionNode[];
-   constructor(_params_list: IdentifierExpressionNode[]) {
-     this._params_list = _params_list;
+   private _paramsList: IdentifierExpressionNode[];
+   constructor(_paramsList: IdentifierExpressionNode[]) {
+     this._paramsList = _paramsList;
    }
  }
 
 class ListAccessExpresssionNode {
 
 }
+
