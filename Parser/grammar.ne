@@ -136,14 +136,6 @@ while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expr
 
 func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]}) %}
 
-# annotated_params_list -> (expression | annotation) (%COMMA (expression | annotation)):* {% d => ({type: "annotated_arg_list"}) %}
-
-# annotation -> expression %COLON expression
-
-# formal_params_list -> %IDENTIFIER (%COLON )
-
-# type_annotation -> 
-
 formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
@@ -217,7 +209,7 @@ primary -> function_call {% id %}
 
 function_call -> primary %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-list_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "list_access", array: d[0], index: d[2] }) %} # nums[1]
+list_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "list_access", list: d[0], index: d[2] }) %} # nums[1]
 
 method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 
