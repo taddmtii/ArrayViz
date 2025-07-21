@@ -139,54 +139,96 @@ class PassStatementNode implements Statement{
 
 class IfStatementNode implements Statement {
     private _condition: ExpressionNode;
-    private _then_branch: BlockStatementNode;
-    private _else_branch: ElseBlockStatementNode;
-    constructor(_condition: ExpressionNode, _then_branch: BlockStatementNode, _else_branch: ElseBlockStatementNode) {
+    private _thenBranch: BlockStatementNode;
+    private _elseBranch: ElseBlockStatementNode;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
         this._condition = _condition;
-        this._then_branch = _then_branch;
-        this._else_branch = _else_branch;
+        this._thenBranch = _thenBranch;
+        this._elseBranch = _elseBranch;
     }
 }
 
 class ForStatementNode implements Statement {
-
+    private _loopVar: IdentifierExpressionNode;
+    private _iterable: ExpressionNode;
+    private _block: BlockStatementNode;
+    constructor(_loopVar: IdentifierExpressionNode, _iterable: ExpressionNode, _block: BlockStatementNode) {
+     this._loopVar = _loopVar;
+     this._iterable = _iterable;
+     this._block = _block;
+   }
 }
 
 class WhileStatementNode implements Statement {
-
+    private _expression: ExpressionNode;
+    private _block: BlockStatementNode;
+    constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
+      this._expression = _expression;
+      this._block = _block;
+   }
 }
 
 class FuncDefStatementNode implements Statement {
-    
+    private _name: IdentifierExpressionNode;
+    private _formalParamList: FormalParamsListExpressionNode;
+    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode) {
+      this._name = _name;
+      this._formalParamList = _formalParamList;
+   }
 }
 
 class ElifStatementNode implements Statement {
-    
+    private _condition: ExpressionNode;
+    private _thenBranch: BlockStatementNode;
+    private _elseBranch: ElseBlockStatementNode;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
+        this._condition = _condition;
+        this._thenBranch = _thenBranch;
+        this._elseBranch = _elseBranch;
+    }
 }
 
 class ElseBlockStatementNode implements Statement {
-    
+    private _block : BlockStatementNode;
+    constructor(_block: BlockStatementNode) {
+     this._block = _block;
+   }
 }
 
 class ExpresssionStatementNode implements Statement {
-    
+    private _expression: ExpressionNode;
+    constructor(_expression: ExpressionNode) {
+     this._expression = _expression;
+   }
 }
 
 class BlockStatementNode implements Statement {
-
+    private _statementList: StatementNode[];
+    constructor(_statementList: StatementNode[]) {
+     this._statementList = _statementList;
+   }
 }
 
+
 // ------------------------------------------------------------------
-// Statement Nodes
+// Expression Nodes
 // ------------------------------------------------------------------
 
 class ExpressionNode {
 
 }
 
+
 class IdentifierExpressionNode {
 
 }
+
+class FormalParamsListExpressionNode implements Expression {
+   private _params_list: IdentifierExpressionNode[];
+   constructor(_params_list: IdentifierExpressionNode[]) {
+     this._params_list = _params_list;
+   }
+ }
 
 class ListAccessExpresssionNode {
 
