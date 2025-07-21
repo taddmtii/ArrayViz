@@ -1,6 +1,7 @@
+
 @{%
-const moo = require("moo");
-const IndentationLexer = require('moo-indentation-lexer')
+import * as moo from 'moo';
+import IndentationLexer from 'moo-indentation-lexer';
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
@@ -48,9 +49,13 @@ const lexer = new IndentationLexer({
     DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // STRINGS
-    STRING: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
 
-    
+    // also account for escape single and double quotes within string
+    // also add f-strings
+    STRING_SINGLE: /'(?:[^'\\]|\\.)*'/, // matches anything but single quotes and backslashes.
+    STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
+    STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/, // come back to this, triple double and single + allow for new lines
+
     ARROW: "->",
 
     // ARITHMETIC
@@ -89,7 +94,7 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 %}
 
-# @preprocessor typescript
+@preprocessor typescript
 @lexer lexer
 
 program -> statement_list {% id %}
@@ -114,7 +119,7 @@ compound_statement -> if_statement {% id %}
                     | while_loop {% id %}
                     | func_def  {% id %}
 
-assignment_statement -> (%IDENTIFIER | array_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5
+assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5
 
 if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] }) %}
 
@@ -127,11 +132,17 @@ for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => ({ type: "for_l
 
 while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
 
-func_def -> %DEF %IDENTIFIER %LPAREN (arg_list | annotated_arg_list):? %RPAREN (%ARROW expression):? %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]}) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]}) %}
 
-annotated_arg_list -> (expression | annotation) (%COMMA (expression | annotation)):* {% d => ({type: "annotated_arg_list"}) %}
+# annotated_params_list -> (expression | annotation) (%COMMA (expression | annotation)):* {% d => ({type: "annotated_arg_list"}) %}
 
-annotation -> expression %COLON expression
+# annotation -> expression %COLON expression
+
+# formal_params_list -> %IDENTIFIER (%COLON )
+
+# type_annotation -> 
+
+formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
@@ -198,20 +209,21 @@ power -> primary %POWER unary {% d => ({type: "power", left: d[0], right: d[2]})
 
 primary -> function_call {% id %}
          | method_call {% id %}
-         | array_access {% id %}
+         | list_access {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
 function_call -> primary %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
 
-array_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "array_access", array: d[0], index: d[2] }) %} # nums[1]
+list_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "list_access", array: d[0], index: d[2] }) %} # nums[1]
 
 method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
 
 list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
 
 atom -> number {% id %}
-      | %STRING {% d => ({ type: "string", content: d[0].value}) %}
+      | %STRING_SINGLE {% d => ({ type: "string_single", content: d[0].value}) %}
+      | %STRING_DOUBLE {% d => ({ type: "string_double", content: d[0].value}) %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
       | list_literal {% id %}
       | %NONE {% d => ({ type: "none_literal"}) %}
@@ -224,7 +236,6 @@ number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
         | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
         | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
 
-# refer to arg_list for changes
 list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
 
-group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} # FOR GROUPING EXPRESSIONS
+group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} 

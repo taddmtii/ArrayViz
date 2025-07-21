@@ -14,5 +14,9 @@
     "moo": "^0.5.2",
     "moo-indentation-lexer": "^6.0.0",
     "nearley": "^2.20.1"
+  },
+  "devDependencies": {
+    "@types/moo": "^0.5.10",
+    "@types/nearley": "^2.11.5"
   }
 }

@@ -17,6 +17,7 @@
     - ElifStatementNode
     - ElseBlockStatementNode
     - ExpresssionStatementNode
+    - BlockStatementNode
     
     Expression Nodes:
 
@@ -35,26 +36,36 @@
     - StringLiteralExpressionNode
     - IdentifierExpressionNode
 
-- What to do with BlockNode?
-
  */
+// ------------------------------------------------------------------
+// Imports
+// ------------------------------------------------------------------
+import * as moo from 'moo';
 
 // ------------------------------------------------------------------
 // Interfaces
 // ------------------------------------------------------------------
 interface Statement {
-    execute(): void;
+    // execute(): void;
 }
 
 interface Expression {
-    evaluate(): void;
+    evaluate(): PythonValue;
+}
+
+interface Function {
+    invoke(): PythonValue;
 }
 
 // ------------------------------------------------------------------
 // Custom Types
 // ------------------------------------------------------------------
 
-type PythonValue = Number | String | PythonValue[]
+// type None = null
+
+type Assignable = IdentifierExpressionNode | ListAccessExpresssionNode
+
+type PythonValue = Number | String | PythonValue[] | Function | Boolean | Assignable | null
 
 type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//"
 
@@ -68,8 +79,8 @@ type UnaryOp = "-" | "+" | "!"
 // ------------------------------------------------------------------
 
 class ProgramNode {
-    private _statementList: Statement[];
-    constructor(_statementList: Statement[]) {
+    private _statementList: StatementNode[];
+    constructor(_statementList: StatementNode[]) {
         this._statementList = _statementList;
     }
 }
@@ -78,6 +89,9 @@ class ProgramNode {
 // Statement Nodes
 // ------------------------------------------------------------------
 
+// Implements = interface
+// extends = class
+
 class StatementNode {
     private _statement: Statement;
     constructor(_statement: Statement) {
@@ -85,35 +99,45 @@ class StatementNode {
     }
 }
 
-class AssignmentStatementNode {
-    private _left: String; // variable name
-    private _right: PythonValue; // value
-    constructor(_left: String, _right: PythonValue) {
+class AssignmentStatementNode implements Statement {
+    private _left: Assignable; // variable name
+    private _right: Expression; // value
+    constructor(_left: Assignable, _right: Expression) {
         this._left = _left;
         this._right = _right;
     }
+
 }
 
-class ReturnStatementNode {
-    private _value: PythonValue; // value by default should be null.
-    constructor(_value: PythonValue) {
+class ReturnStatementNode implements Statement {
+    private _value: Expression; // value by default should be null.
+    constructor(_value: Expression) {
         this._value = _value;
     }
 }
 
-class BreakStatementNode {
-    // ????
+class BreakStatementNode implements Statement {
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        this._tok = _tok;
+    }
 }
 
-class ContinueStatementNode {
-    // ????
+class ContinueStatementNode implements Statement{
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        this._tok = _tok;
+    }
 }
 
-class PassStatementNode {
-    // ????
+class PassStatementNode implements Statement{
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        this._tok = _tok;
+    }
 }
 
-class IfStatementNode {
+class IfStatementNode implements Statement {
     private _condition: ExpressionNode;
     private _then_branch: BlockStatementNode;
     private _else_branch: ElseBlockStatementNode;
@@ -124,31 +148,31 @@ class IfStatementNode {
     }
 }
 
-class ForStatementNode {
+class ForStatementNode implements Statement {
 
 }
 
-class WhileStatementNode {
+class WhileStatementNode implements Statement {
 
 }
 
-class FuncDefStatementNode {
+class FuncDefStatementNode implements Statement {
     
 }
 
-class ElifStatementNode {
+class ElifStatementNode implements Statement {
     
 }
 
-class ElseBlockStatementNode {
+class ElseBlockStatementNode implements Statement {
     
 }
 
-class ExpresssionStatementNode {
+class ExpresssionStatementNode implements Statement {
     
 }
 
-class BlockStatementNode {
+class BlockStatementNode implements Statement {
 
 }
 
@@ -157,5 +181,13 @@ class BlockStatementNode {
 // ------------------------------------------------------------------
 
 class ExpressionNode {
+
+}
+
+class IdentifierExpressionNode {
+
+}
+
+class ListAccessExpresssionNode {
 
 }

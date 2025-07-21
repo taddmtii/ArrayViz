@@ -1,6 +1,0 @@
-
-def addNums(a, b: int):
-    return a + b
-
-
-addNums(5,3)
