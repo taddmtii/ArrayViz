@@ -152,37 +152,39 @@ compound_statement -> if_statement {% id %}
                     | while_loop {% id %}
                     | func_def  {% id %}
 
-assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2])) %}
+assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], new ExpressionNode(d[2]))) %}
 
-if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4])) %}
+if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]), new ElseBlockStatementNode(d[4]))) %}
 
-elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(d[1], d[3], d[4])) %}
+elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]), new ElseBlockStatementNode(d[4]))) %}
 
-else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(d[2])) %}
+else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(new BlockStatementNode(d[2]))) %}
 
 # may later need to deal with multiple assignment/unpacking (for x, y in enumerate()) may affect assignment statement
-for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(d[1], d[3], d[5])) %}
+for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(new IdentifierExpressionNode(d[1]), new ExpressionNode(d[3]), new BlockStatementNode(d[5]))) %}
 
-while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(d[1], d[3])) %}
+while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]))) %}
 
-func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(d[1], d[3])) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), new FormalParamsListExpressionNode(d[3]))) %}
 
+# TODO: figure out how many new nodes to create based on input.
 formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), new IdentifierExpressionNode(...(d[1] ? d[1].map(x => x[1]) : []))) %}
 
+# TODO: figure out how many new nodes to create based on input.
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
-block -> %NL %INDENT statement_list %DEDENT {% d => ({type: "block", statements: d[2]}) %}
-       | simple_statement %NL {% d => ({type: "block", statements: [d[0]]}) %}
+block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2])) %}
+       | simple_statement %NL {% d => (new BlockStatementNode(d[0])) %}
 
-return_statement -> %RETURN expression:? {% d => ({ type: "return_statement", value: (d[1] ? d[1] : null) }) %} 
+return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1])) %} 
 
 expression -> conditional_expression {% id %}
-
+# TODO: figure out how many new nodes to create based on input.
 #-----------------------------------------------------------------------------------------
 # CONDITIONAL EXPRESSIONS (LOWEST PRECEDENCE)
 #-----------------------------------------------------------------------------------------
 
-conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => ({ type: "conditional_expression", left: d[0], condition: d[2], right: d[4]})  %}
+conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => (new ConditionalExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4])) ) %}
                         | or_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -190,20 +192,20 @@ conditional_expression -> or_expression %IF or_expression %ELSE conditional_expr
 #-----------------------------------------------------------------------------------------
 
 # or_expression -> and_expression (%OR and_expression):* {% d => ({ type: "or_expression", left: d[0], right: [...(d[1] ? d[1].map(x => x[1]) : [])] })  %}
-or_expression -> or_expression %OR and_expression {% d => ({ type: "or_expression", left: d[0], right: d[2] })  %}
+or_expression -> or_expression %OR and_expression {% d => (new BinaryExpressionNode(new ExpressionNode(d[0], d[1], new BinaryExpressionNode(d[2])))) %}
                | and_expression {% id %}
 
-and_expression -> and_expression %AND not_expression {% d => ({ type: "and_expression", left: d[0], right: d[2] })  %}
-                | not_expression {% id %}
+and_expression -> and_expression %AND not_expression {% d => (new BinaryExpressionNode(new ExpressionNode(d[0], d[1], new BinaryExpressionNode(d[2])))) %}
+                | not_expression {% id %} 
 
-not_expression -> %NOT not_expression {% d => ({ type: "not_expression", expression: d[1]}) %}
+not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0], new ExpressionNode(d[1]))) %}
                 | comparison_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => ({ type: "comparison_expression", left: d[0], operator: d[1], right: d[2] })  %}
+comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => (new ComparisonExpressionNode(new ExpressionNode(d[0]), d[1].value, new ExpressionNode(d[2]))) %}
             | additive {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -212,20 +214,20 @@ comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | 
 
 # + or - (binary)
 # LOWEST PRECEDENCE
-additive -> additive (%PLUS | %MINUS) multiplicative {% d => ({type: "additive", left: d[0], operator: d[1], right: d[2]}) %}
+additive -> additive (%PLUS | %MINUS) multiplicative {% d => (new BinaryExpressionNode(new ExpressionNode(d[0], d[1].value, new BinaryExpressionNode(d[2])))) %}
           | multiplicative {% id %}
 
 # *, /, //, %
-multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => ({type: "multiplicative", left: d[0], operator: d[1], right: d[2]}) %}
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (new BinaryExpressionNode(new ExpressionNode(d[0], d[1].value, new BinaryExpressionNode(d[2])))) %}
                 | unary {% id %}
 
 # + or - (unary)
-unary -> (%PLUS | %MINUS) unary {% d => ({type: "unary", operator: d[0], operand: d[1]}) %}
+unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0].value, new ExpressionNode(d[1]))) %}
        | power
 
 # ** (power)
 # HIGHEST PRECEDENCE
-power -> primary %POWER unary {% d => ({type: "power", left: d[0], right: d[2]}) %}
+power -> primary %POWER unary {% d => (new BinaryExpressionNode(new ExpressionNode(d[0], d[1].value, new BinaryExpressionNode(d[2])))) %}
        | primary {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -238,29 +240,30 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> primary %LPAREN arg_list:? %RPAREN {% d => ({ type: "function_call", func_name: d[0], args: d[2]}) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(new ExpressionNode(d[0]), new ArgListExpressionNode(d[2]))) %}
 
-list_access -> primary %LSQBRACK expression %RSQBRACK {% d => ({ type: "list_access", list: d[0], index: d[2] }) %} # nums[1]
+list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]))) %}
 
-method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({type: "method_call", list: d[0], action: d[2], args: d[4]}) %}  # nums.remove(5) || nums.remove(num)
+method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(new ExpressionNode(d[0]), new IdentifierExpressionNode(d[2]), new ArgListExpressionNode(d[4]))) %}  # nums.remove(5) || nums.remove(num)
 
-list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
+#May cause problems
+list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => (new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4]), new ExpressionNode(d[5]) )) %}
 
-atom -> number {% d => (new NumberLiteralExpressionNode(d[0])) %}
-      | %STRING_SINGLE {% d => ({ type: "string_single", content: d[0].value}) %}
-      | %STRING_DOUBLE {% d => ({ type: "string_double", content: d[0].value}) %}
+atom -> number {% id %}
+      | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0].value)) %}
+      | %STRING_DOUBLE {% d => (new StringLiteralExpressionNode(d[0].value)) %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
       | list_literal {% id %}
-      | %NONE {% d => ({ type: "none_literal"}) %}
-      | %TRUE {% d => ({ type: "bool_true"}) %}
-      | %FALSE {% d => ({ type: "bool_false"}) %}
+      | %NONE {% d => null %}
+      | %TRUE {% d => (new BooleanLiteralExpressionNode(d[0].value)) %}
+      | %FALSE {% d => (new BooleanLiteralExpressionNode(d[0].value)) %}
       | group {% id %}
 
-number -> %HEX {% d => ({type: "hex", number: d[0].value}) %}
-        | %BINARY {% d => ({type: "binary", number: d[0].value}) %}
-        | %DECIMAL {% d => ({type: "decimal", number: d[0].value}) %}
-        | %FLOAT {% d => ({type: "float", number: d[0].value}) %}
+number -> %HEX {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
+        | %BINARY {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
+        | %DECIMAL {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
+        | %FLOAT {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
 
-list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => ({type: "list_literal", args: d[1]}) %}
+list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => (new ListLiteralExpressionNode(d[1])) %}
 
-group -> %LPAREN expression %RPAREN {% d => ({ type: "grouped_expr", expr: d[1] }) %} 
+group -> %LPAREN expression %RPAREN {% d => d[1] %} 

@@ -26,11 +26,11 @@ type Assignable = IdentifierExpressionNode | ListAccessExpresssionNode
 
 type PythonValue = Number | String | PythonValue[] | Function | Boolean | Assignable | null
 
-type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//"
+type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 
 type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
 
-type UnaryOp = "-" | "+" | "!"
+type UnaryOp = "-" | "+" | "!" | "not"
 
 
 // ------------------------------------------------------------------
@@ -60,8 +60,8 @@ export class StatementNode {
 
 export class AssignmentStatementNode implements Statement {
     private _left: Assignable; // variable name
-    private _right: Expression; // value
-    constructor(_left: Assignable, _right: Expression) {
+    private _right: ExpressionNode; // value
+    constructor(_left: Assignable, _right: ExpressionNode) {
         this._left = _left;
         this._right = _right;
     }
@@ -69,8 +69,8 @@ export class AssignmentStatementNode implements Statement {
 }
 
 export class ReturnStatementNode implements Statement {
-    private _value: Expression; // value by default should be null.
-    constructor(_value: Expression) {
+    private _value: ExpressionNode; // value by default should be null.
+    constructor(_value: ExpressionNode) {
         this._value = _value;
     }
 }
