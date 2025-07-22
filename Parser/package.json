@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/node": "^24.0.15",
     "moo": "^0.5.2",
     "moo-indentation-lexer": "^6.0.0",
     "nearley": "^2.20.1"

@@ -37,7 +37,7 @@ type UnaryOp = "-" | "+" | "!"
 // Program
 // ------------------------------------------------------------------
 
-class ProgramNode {
+export class ProgramNode {
     private _statementList: StatementNode[];
     constructor(_statementList: StatementNode[]) {
         this._statementList = _statementList;
@@ -51,14 +51,14 @@ class ProgramNode {
 // Implements = interface
 // extends = class
 
-class StatementNode {
+export class StatementNode {
     private _statement: Statement;
     constructor(_statement: Statement) {
         this._statement = _statement;
     }
 }
 
-class AssignmentStatementNode implements Statement {
+export class AssignmentStatementNode implements Statement {
     private _left: Assignable; // variable name
     private _right: Expression; // value
     constructor(_left: Assignable, _right: Expression) {
@@ -68,35 +68,35 @@ class AssignmentStatementNode implements Statement {
 
 }
 
-class ReturnStatementNode implements Statement {
+export class ReturnStatementNode implements Statement {
     private _value: Expression; // value by default should be null.
     constructor(_value: Expression) {
         this._value = _value;
     }
 }
 
-class BreakStatementNode implements Statement {
+export class BreakStatementNode implements Statement {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
     }
 }
 
-class ContinueStatementNode implements Statement{
+export class ContinueStatementNode implements Statement{
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
     }
 }
 
-class PassStatementNode implements Statement{
+export class PassStatementNode implements Statement{
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
     }
 }
 
-class IfStatementNode implements Statement {
+export class IfStatementNode implements Statement {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode;
     private _elseBranch: ElseBlockStatementNode;
@@ -107,7 +107,7 @@ class IfStatementNode implements Statement {
     }
 }
 
-class ForStatementNode implements Statement {
+export class ForStatementNode implements Statement {
     private _loopVar: IdentifierExpressionNode;
     private _iterable: ExpressionNode;
     private _block: BlockStatementNode;
@@ -118,7 +118,7 @@ class ForStatementNode implements Statement {
    }
 }
 
-class WhileStatementNode implements Statement {
+export class WhileStatementNode implements Statement {
     private _expression: ExpressionNode;
     private _block: BlockStatementNode;
     constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
@@ -127,7 +127,7 @@ class WhileStatementNode implements Statement {
    }
 }
 
-class FuncDefStatementNode implements Statement {
+export class FuncDefStatementNode implements Statement {
     private _name: IdentifierExpressionNode;
     private _formalParamList: FormalParamsListExpressionNode;
     constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode) {
@@ -136,7 +136,7 @@ class FuncDefStatementNode implements Statement {
    }
 }
 
-class ElifStatementNode implements Statement {
+export class ElifStatementNode implements Statement {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode;
     private _elseBranch: ElseBlockStatementNode;
@@ -147,21 +147,21 @@ class ElifStatementNode implements Statement {
     }
 }
 
-class ElseBlockStatementNode implements Statement {
+export class ElseBlockStatementNode implements Statement {
     private _block : BlockStatementNode;
     constructor(_block: BlockStatementNode) {
      this._block = _block;
    }
 }
 
-class ExpresssionStatementNode implements Statement {
+export class ExpresssionStatementNode implements Statement {
     private _expression: ExpressionNode;
     constructor(_expression: ExpressionNode) {
      this._expression = _expression;
    }
 }
 
-class BlockStatementNode implements Statement {
+export class BlockStatementNode implements Statement {
     private _statementList: StatementNode[];
     constructor(_statementList: StatementNode[]) {
      this._statementList = _statementList;
@@ -173,21 +173,21 @@ class BlockStatementNode implements Statement {
 // Expression Nodes
 // ------------------------------------------------------------------
 
-class ExpressionNode {
+export class ExpressionNode {
     private _expression: Expression;
     constructor(_expression: Expression) {
       this._expression = _expression;
    }
 }
 
-class FormalParamsListExpressionNode implements Expression {
+export class FormalParamsListExpressionNode implements Expression {
    private _paramsList: IdentifierExpressionNode[];
    constructor(_paramsList: IdentifierExpressionNode[]) {
      this._paramsList = _paramsList;
   }
 }
 
-class ConditionalExpressionNode implements Expression {
+export class ConditionalExpressionNode implements Expression {
     private _left: ExpressionNode;
     private _condition: ExpressionNode;
     private _right: ExpressionNode;
@@ -198,14 +198,14 @@ class ConditionalExpressionNode implements Expression {
    }
  }
 
-class ArgListExpressionNode implements Expression {
+export class ArgListExpressionNode implements Expression {
     private _argsList: ExpressionNode[];
     constructor(_argsList: ExpressionNode[]) {
      this._argsList = _argsList;
    }
  }
 
-class ComparisonExpressionNode implements Expression {
+export class ComparisonExpressionNode implements Expression {
     private _left: ExpressionNode;
     private _operator: ComparisonOp;
     private _right: ExpressionNode;
@@ -216,7 +216,7 @@ class ComparisonExpressionNode implements Expression {
    }
  }
 
-class BinaryExpressionNode implements Expression {
+export class BinaryExpressionNode implements Expression {
     private _left: ExpressionNode;
     private _operator: BinaryOp;
     private _right: ExpressionNode;
@@ -227,7 +227,7 @@ class BinaryExpressionNode implements Expression {
    }
  }
 
-class UnaryExpressionNode implements Expression {
+export class UnaryExpressionNode implements Expression {
     private _operator: UnaryOp;
     private _operand: ExpressionNode;
     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
@@ -236,7 +236,7 @@ class UnaryExpressionNode implements Expression {
    }
  }
 
-class FuncCallExpresssionNode implements Expression {
+export class FuncCallExpresssionNode implements Expression {
     private _func_name: ExpressionNode;
     private _args_list: ArgListExpressionNode;
     constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
@@ -245,7 +245,7 @@ class FuncCallExpresssionNode implements Expression {
    }
  }
 
-class ListAccessExpresssionNode implements Expression {
+export class ListAccessExpresssionNode implements Expression {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
     constructor(_list: ExpressionNode, _index: ExpressionNode) {
@@ -254,7 +254,7 @@ class ListAccessExpresssionNode implements Expression {
    }
  }
 
-class MethodCallExpressionNode implements Expression {
+export class MethodCallExpressionNode implements Expression {
     private _list: ExpressionNode;
     private _methodName: IdentifierExpressionNode;
     private _argsList: ArgListExpressionNode;
@@ -265,7 +265,7 @@ class MethodCallExpressionNode implements Expression {
    }
  }
 
-class ListSliceExpressionNode implements Expression {
+export class ListSliceExpressionNode implements Expression {
     private _list: ExpressionNode;
     private _start: ExpressionNode;
     private _stop: ExpressionNode;
@@ -278,35 +278,35 @@ class ListSliceExpressionNode implements Expression {
   }
  }
 
-class NumberLiteralExpressionNode implements Expression {
+export class NumberLiteralExpressionNode implements Expression {
     private _value: Number;
     constructor(_value: Number) {
       this._value = _value;
   }
  }
 
-class ListLiteralExpressionNode implements Expression {
+export class ListLiteralExpressionNode implements Expression {
     private _values: PythonValue[];
     constructor(_values: PythonValue[]) {
       this._values = _values;
   }
  }
 
-class BooleanLiteralExpressionNode implements Expression {
+export class BooleanLiteralExpressionNode implements Expression {
     private _value: Boolean;
     constructor(_value: Boolean) {
       this._value = _value;
   }
  }
 
-class StringLiteralExpressionNode implements Expression {
+export class StringLiteralExpressionNode implements Expression {
     private _value: String;
     constructor(_value: String) {
       this._value = _value;
   }
  }
 
-class IdentifierExpressionNode implements Expression {
+export class IdentifierExpressionNode implements Expression {
     private _name: String;
     constructor(_name: String) {
       this._name = _name;

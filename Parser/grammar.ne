@@ -1,9 +1,41 @@
 
 @{%
-// import * as moo from 'moo';
-// import IndentationLexer from 'moo-indentation-lexer';
+//import * as moo from 'moo';
+//import IndentationLexer from 'moo-indentation-lexer';
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
+const { ProgramNode, 
+        StatementNode, 
+        AssignmentStatementNode, 
+        ReturnStatementNode,
+        BreakStatementNode, 
+        ContinueStatementNode, 
+        PassStatementNode,
+        IfStatementNode,
+        ForStatementNode,
+        WhileStatementNode,
+        FuncDefStatementNode,
+        ElifStatementNode,
+        ElseBlockStatementNode,
+        ExpresssionStatementNode,
+        BlockStatementNode,
+        ExpressionNode,
+        FormalParamsListExpressionNode,
+        ConditionalExpressionNode,
+        ArgListExpressionNode,
+        ComparisonExpressionNode,
+        BinaryExpressionNode,
+        UnaryExpressionNode,
+        FuncCallExpresssionNode,
+        ListAccessExpresssionNode,
+        MethodCallExpressionNode,
+        ListSliceExpressionNode,
+        NumberLiteralExpressionNode,
+        ListLiteralExpressionNode,
+        BooleanLiteralExpressionNode,
+        StringLiteralExpressionNode,
+        IdentifierExpressionNode
+        } = require('./parse_tree.js');
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
@@ -96,12 +128,11 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 %}
 
-# @preprocessor typescript
 @lexer lexer
 
 program -> statement_list {% id %}
 
-statement_list -> statement:+ {% d => ({ type: "statement_list", statements: d[0].filter( i => i !== null )}) %}
+statement_list -> statement:+ {% d => (new ProgramNode(new StatementNode(d[0]))) %}
 
 statement -> simple_statement %NL {% d => [d[0]] %} 
            | compound_statement {% id %} # compound statement already eats newline. 
@@ -110,10 +141,10 @@ statement -> simple_statement %NL {% d => [d[0]] %}
 # A simple statement is a standalone statement.
 simple_statement -> assignment_statement {% id %}
                   | return_statement {% id %}
-                  | %BREAK  {% d => ({ type: "break_statement"}) %}
-                  | %CONTINUE {% d => ({ type: "continue_statement"}) %}
-                  | %PASS {% d => ({ type: "pass_statement"}) %}
-                  | expression {% d => ({ type: "expression_statement", expr: d[0]}) %}
+                  | %BREAK  {% d => (new BreakStatementNode(d[0])) %}
+                  | %CONTINUE {% d => (new ContinueStatementNode(d[0])) %}
+                  | %PASS {% d => (new PassStatementNode(d[0])) %}
+                  | expression {% d => (new ExpressionNode(d[0])) %}
 
 # A compound statement is a statement is a statement explitly followed by a block (or a list of statements).
 compound_statement -> if_statement {% id %}
@@ -121,22 +152,22 @@ compound_statement -> if_statement {% id %}
                     | while_loop {% id %}
                     | func_def  {% id %}
 
-assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => ({ type: "assignment_statement", var: d[0], value: d[2] }) %}  # i = 5, num = 2, nums[1] = 5
+assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2])) %}
 
-if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] }) %}
+if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4])) %}
 
-elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => ({ type: "if_statement", condition: d[1], then_branch: d[3], else_branch: d[4] }) %}
+elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(d[1], d[3], d[4])) %}
 
-else_block -> %ELSE %COLON block {% d => d[2] %}
+else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(d[2])) %}
 
 # may later need to deal with multiple assignment/unpacking (for x, y in enumerate()) may affect assignment statement
-for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => ({ type: "for_loop", temp_var: d[1], range: d[3], body: d[5] }) %}
+for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(d[1], d[3], d[5])) %}
 
-while_loop -> %WHILE expression %COLON block {% d => ({ type: "while_loop", expression: d[1], body: d[3]}) %}
+while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(d[1], d[3])) %}
 
-func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => ({type: "function_definition", func_name: d[1], args: d[3], body: d[7]}) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(d[1], d[3])) %}
 
-formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
+formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), new IdentifierExpressionNode(...(d[1] ? d[1].map(x => x[1]) : []))) %}
 
 arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
 
@@ -215,7 +246,7 @@ method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => ({typ
 
 list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => ({type: "list_slice", list: d[0], start: d[2], stop: d[4], step: d[5] ? d[5][1] : null}) %}
 
-atom -> number {% id %}
+atom -> number {% d => (new NumberLiteralExpressionNode(d[0])) %}
       | %STRING_SINGLE {% d => ({ type: "string_single", content: d[0].value}) %}
       | %STRING_DOUBLE {% d => ({ type: "string_double", content: d[0].value}) %}
       | %IDENTIFIER {% d => ({ type: "identifier", name: d[0]}) %}
