@@ -130,9 +130,11 @@ export class WhileStatementNode implements Statement {
 export class FuncDefStatementNode implements Statement {
     private _name: IdentifierExpressionNode;
     private _formalParamList: FormalParamsListExpressionNode;
-    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode) {
+    private _block: BlockStatementNode;
+    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode) {
       this._name = _name;
       this._formalParamList = _formalParamList;
+      this._block = _block;
    }
 }
 

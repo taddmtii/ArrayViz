@@ -86,9 +86,10 @@ var WhileStatementNode = /** @class */ (function () {
 }());
 exports.WhileStatementNode = WhileStatementNode;
 var FuncDefStatementNode = /** @class */ (function () {
-    function FuncDefStatementNode(_name, _formalParamList) {
+    function FuncDefStatementNode(_name, _formalParamList, _block) {
         this._name = _name;
         this._formalParamList = _formalParamList;
+        this._block = _block;
     }
     return FuncDefStatementNode;
 }());
