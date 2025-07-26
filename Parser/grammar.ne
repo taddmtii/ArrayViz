@@ -167,11 +167,9 @@ while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(new
 
 func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), new FormalParamsListExpressionNode(d[3]), new BlockStatementNode(d[7]))) %}
 
-# TODO: figure out how many new nodes to create based on multiple arguments.
-formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), new IdentifierExpressionNode(...(d[1] ? d[1].map(x => x[1]) : []))) %}
+formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), ...(d[1] ? d[1].map(x => new IdentifierExpressionNode(x[1])) : [])) %}
 
-# TODO: figure out how many new nodes to create based on multiple arguments.
-arg_list -> expression (%COMMA expression):* {% d => [d[0], ...(d[1] ? d[1].map(x => x[1]) : [])] %}
+arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode(new ExpressionNode(d[0]), ...(d[1] ? d[1].map(x => new ExpressionNode(x[1])) : [])) %}
 
 block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2])) %}
        | simple_statement %NL {% d => (new BlockStatementNode(d[0])) %}
@@ -246,8 +244,13 @@ list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExp
 
 method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(new ExpressionNode(d[0]), new IdentifierExpressionNode(d[2]), new ArgListExpressionNode(d[4]))) %}  # nums.remove(5) || nums.remove(num)
 
-#IS causing problems, come back.
-list_slice -> primary %LSQBRACK expression:? %COLON expression:? (%COLON expression:?):? %RSQBRACK {% d => (new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[5]), new ExpressionNode(d[6]) )) %}
+list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4]), new ExpressionNode(d[6])) %} # nums[1:2:1]
+            | primary %LSQBRACK expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4]), null) %} # nums[2:5]
+            | primary %LSQBRACK %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, new ExpressionNode(d[3]), new ExpressionNode(d[5])) %} # nums[:1:2]
+            | primary %LSQBRACK %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, new ExpressionNode(d[3]), null) %} # nums[:2]
+            | primary %LSQBRACK expression %COLON %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), null, null) %} # nums[2:]
+            | primary %LSQBRACK %COLON %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, null, null) %} # nums[:]
+
 
 atom -> number {% id %}
       | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0].value)) %}
