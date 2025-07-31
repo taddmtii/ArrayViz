@@ -2,8 +2,9 @@
 // https://medium.com/@alessandro.traversi/understanding-the-command-design-pattern-in-typescript-1d2ee3615da8
 // https://refactoring.guru/design-patterns/command
 
-// Command: interface that tells us how to carry out an operation.
-// Each step that needs to be executed.
+// ---------------------------------------------------------------------------------------
+// INTERFACES AND CLASSES
+// ---------------------------------------------------------------------------------------
 abstract class Command {
   protected _undoCommand: Command;
   abstract do(_currentState: State): void;
@@ -20,21 +21,27 @@ interface Statement {
   execute(): Command[];
 }
 
-
-// Internal object, not to be directly binded with UI. Notify other objects when things are changed.
+// ---------------------------------------------------------------------------------------
+// MACHINE STATE
+// ---------------------------------------------------------------------------------------
 class State {
   private _programCounter: number;
   private _lineCount: number;
   private _currentExpression: Expression;
+  private _currentStatement: Statement;
   private _callStack: Expression[]; 
   private _steps: Command[];
+  private _variables: Map<String, number>;
+  private _debugOutput: string[]; 
 
-  constructor(_programCounter: number, _lineCount: number, _currentExpression: Expression, _callStack: Expression[], _steps: Command[]) {
+  constructor(_programCounter: number, _lineCount: number, _currentExpression: Expression, _callStack: Expression[], _steps: Command[], _variables: Map<String, number>, _debugOutput: string[]) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
     this._currentExpression = _currentExpression;
     this._callStack = _callStack;
     this._steps = _steps;
+    this._variables = _variables;
+    this._debugOutput = _debugOutput;
   }
   
   public get programCounter() {
@@ -46,40 +53,54 @@ class State {
       throw new Error("Invalid PC");
     }
     this._programCounter = val;
-    // iterate over subscribers, notify value has changed.
   }
+
+  public get lineCount() {
+    return this._lineCount;
+  }
+
+  public set lineCount(val: number) {
+    this._lineCount = val;
+  }
+
+  public get currentExpression() {
+    return this._currentExpression;
+  }
+
+  public set currentExpression(expr: Expression) {
+    this._currentExpression = expr;
+  }
+
+  public get currentStatement() {
+    return this._currentStatement;
+  }
+
+  public set currentStatement(stmt: Statement) {
+    this._currentStatement = stmt;
+  }
+
+  public pushCallStack(func: Expression) {
+    this._callStack.push(func); // pushes element onto stack
+  }
+
+  public popCallStack() {
+    return this._callStack.pop(); // gets element from top of stack
+  }
+
+  public addStep(step: Command) {
+    this._steps.push(step);
+  }
+
+  public set steps(step: Command) {
+    this._steps.push(step);
+  }
+
 }
 
+// ---------------------------------------------------------------------------------------
+// COMMANDS
+// ---------------------------------------------------------------------------------------
 
-// // Sender: UI
-// class UI {
-//   private _interpreter: Interpreter;
-//   constructor(_interpreter: Interpreter) {
-//     this._interpreter = _interpreter;
-//   }
-//   public stepForward(): void {
-//     this._interpreter.stepForward();
-//   };
-//   public stepBack(): void {
-
-//   };
-
-// }
-
-// // Invoker/Receiver: component that knows how to perform operations.
-// class Interpreter {
-//   // private _prevCommandList: Command[];
-//   // private _currentCommandList: 
-//   private _nextCommandList: Command[];
-//   public stepForward(): void {
-//       this._nextCommandList.shift()?.execute(); // gets first command in list and calls execute on that command
-//   };
-// }
-
-
-// Commands/Change: 
-
-// Arrow that indicates which line we are currently executing.
 class MoveLinePointerCommand extends Command {
   private _lineNum: number;
   constructor(_lineNum: number) {
@@ -94,42 +115,38 @@ class MoveLinePointerCommand extends Command {
 }
 
 // Highlights expression that is being evaluated.
-class HighlightExpressionCommand implements Command {
+class HighlightExpressionCommand extends Command {
   private _expression: Expression;
-  constructor(_expression: number) {
+  constructor(_expression: Expression) {
     super(); // call superclass constructor
     this._expression = _expression;
   }
 
   do(_currentState: State) {
-    this._undoCommand = new MoveLinePointerCommand(_currentState.programCounter);
-    _currentState.programCounter = this._lineNum;
+    this._undoCommand = new HighlightExpressionCommand(_currentState.currentExpression);
+    _currentState.currentExpression = this._expression;
   }
   // where is expression
   // tell state what current expression is
   // do work
 }
 
-class RetrieveValueCommand implements Command {
-  private interpreter: Interpreter; // reference to Interpreter (receiver)
+class RetrieveValueCommand extends Command {
   private name: String; // variable name whose value we want to retrieve
 
 }
 
 // For evaluating arithmetic operations
-class BinaryOpCommand implements Command {
-  private interpreter: Interpreter; // reference to Interpreter (receiver)
+class BinaryOpCommand extends Command {
 
 }
 
 // For assignments to a variable
-class ChangeVariableCommand implements Command {
-  private interpreter: Interpreter; // reference to Interpreter (receiver)
+class ChangeVariableCommand extends Command {
   private name: String; // variable name
   private value: Number; // value to be connected to variable
 
-  constructor(interpreter: Interpreter, name: String, value: Number) {
-    this.interpreter = interpreter;
+  constructor(name: String, value: Number) {
     this.name = name;
     this.value = value;
   } 
