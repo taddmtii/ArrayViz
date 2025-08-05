@@ -24,7 +24,7 @@ interface Function {
 
 type Assignable = IdentifierExpressionNode | ListAccessExpresssionNode
 
-type PythonValue = Number | String | PythonValue[] | Function | Boolean | Assignable | null
+type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | Assignable | null
 
 type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 
@@ -313,4 +313,14 @@ export class IdentifierExpressionNode implements Expression {
     constructor(_name: String) {
       this._name = _name;
   }
+}
+
+export class EvaluatedExpressionNode implements Expression {
+    private _value: PythonValue;
+    constructor(_value: PythonValue) {
+        this._value = _value;
+    }
+    evaluate() {
+        
+    }
 }

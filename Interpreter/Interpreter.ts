@@ -1,4 +1,5 @@
 import * as parse_tree_nodes from '../Parser/parse_tree.js'
+import { EvaluatedExpressionNode } from '../Parser/parse_tree';
 // References:
 // https://medium.com/@alessandro.traversi/understanding-the-command-design-pattern-in-typescript-1d2ee3615da8
 // https://refactoring.guru/design-patterns/command
@@ -14,7 +15,7 @@ abstract class Command {
   }
 }
 
-type PythonValue = Number | String | PythonValue[] | Function | Boolean | null
+type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
 
 type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 
@@ -23,11 +24,11 @@ type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
 type UnaryOp = "-" | "+" | "!" | "not"
 
 interface Expression {
-  evaluate(_currentState: State): Command[];
+  evaluate(): Command[];
 }
 
 interface Statement {
-  execute(_currentState: State): Command[];
+  execute(): Command[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -132,8 +133,8 @@ class NumberLiteralExpression implements Expression {
     this._value = value;
   }
 
-  evaluate(_currentState: State): Command[] {
-    let numValue: number;
+  evaluate(): Command[] {
+    let numValue: Number | BigInt;
     if (this.value.startsWith('0x')) { // hexadecimal
       numValue = parseInt(this.value, 16);
     } else if (this.value.startsWith('0b')) { // binary
@@ -141,16 +142,15 @@ class NumberLiteralExpression implements Expression {
     } else if (this.value.includes('.')) { // float
       numValue = parseFloat(this.value);
     } else {
-      numValue = parseInt(this.value, 10); // regular integer, base 10.
+      numValue = BigInt(this.value); // regular integer, base 10.
     }
     
     // Create list of commands and return as result to add to overall steps.
     return [
       new HighlightExpressionCommand(this), // visually indicate what expression to highlight.
-      new PushValueCommand(numValue) // push value onto stack.
+      new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(numValue))
     ];
   }
-
 }
 
 // ---------------------------------------------------------------------------------------
@@ -194,6 +194,22 @@ class HighlightExpressionCommand extends Command {
   // where is expression
   // tell state what current expression is
   // do work
+}
+
+class ReplaceHighlightedExpression extends Command {
+  private _oldExpression: Expression;
+  private _newExpression: Expression;
+  constructor(_oldExpression: Expression, _newExpression: Expression) {
+    super();
+    this._oldExpression = _oldExpression;
+    this._newExpression = _newExpression;
+  }
+    do(_currentState: State) {
+    this._undoCommand = new ReplaceHighlightedExpression(this._newExpression, this._oldExpression);
+    _currentState.currentExpression = this._newExpression;
+  }
+  // decide: parse tree mutable or nah? If not mutable, we need to produce new parse tree branch whcih is identical to original to reflect changes
+  // if mutable, change in place. other nodes that have a connection need to be rerouted. 
 }
 
 class PushValueCommand extends Command { // push value onto stack
