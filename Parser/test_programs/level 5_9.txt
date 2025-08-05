@@ -1,0 +1,3 @@
+list = [1, 2, 3]
+slice_no_step = [1:3]
+slice_with_step = [1:4:2]
