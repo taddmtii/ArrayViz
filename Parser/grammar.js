@@ -38,7 +38,7 @@ const { ProgramNode,
         BooleanLiteralExpressionNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
-        } = require('./parse_tree.js');
+        } = require('../Interpreter/Interpreter.js');
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',

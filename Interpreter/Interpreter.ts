@@ -12,6 +12,73 @@ abstract class Command {
   }
 }
 
+// ---------------------------------------------------------------------------------------
+// MACHINE STATE
+// ---------------------------------------------------------------------------------------
+class State {
+  private _programCounter: number = 0; // which line of execution are we on.
+  private _lineCount: number = 0; // all lines in program.
+  private _currentLine: number = 1; // current line number
+  private _currentExpression: ExpressionNode; // current highlighted expression we are evaluating
+  private _currentStatement: StatementNode; // what statement are we on
+  private _callStack: ExpressionNode[];  // function call stack
+  private _history: Command[]; // history of all commands
+  private _variables: Map<String, PythonValue> = new Map(); // storage for variables and thier values
+  private _evaluationStack: PythonValue[]; // stack for expression evaluation
+  private _debugOutput: string[];  // debug messages
+
+  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<String, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
+    this._programCounter = _programCounter;
+    this._lineCount = _lineCount;
+    this._currentExpression = _currentExpression;
+    this._callStack = _callStack;
+    this._history = _history;
+    this._variables = _variables;
+    this._debugOutput = _debugOutput;
+    this._currentLine = _currentLine;
+    this._evaluationStack = _evaluationStack;
+  }
+  
+  public get programCounter() { return this._programCounter;}
+  public set programCounter(val: number) {
+    if (val < 1 || val > this._lineCount) {
+      throw new Error("Invalid PC");
+    }
+    this._programCounter = val;
+  }
+
+  public get lineCount() { return this._lineCount; }
+  public set lineCount(val: number) { this._lineCount = val; }
+
+  public get currentLine() { return this._currentLine; }
+  public set currentLine(val: number) { this._currentLine = val; }
+
+  public get currentExpression() { return this._currentExpression; }
+  public set currentExpression(expr: ExpressionNode) { this._currentExpression = expr; }
+
+  public get currentStatement() { return this._currentStatement; }
+  public set currentStatement(stmt: StatementNode) {this._currentStatement = stmt; }
+
+  public get evaluationStack() { return this._evaluationStack; }
+  public get variables() { return this._variables; }
+  public get debugOutput() { return this._debugOutput; }
+
+  public setVariable(name: string, value: PythonValue) {
+    this._variables.set(name, value); // adds new key value into variables map.
+  }
+
+  public getVariable(name: string): PythonValue {
+    return this._variables.get(name) || null; // could be nullable upon lookup. null is important here.
+  }
+
+  public pushCallStack(func: ExpressionNode) { this._callStack.push(func); } // pushes element onto stack
+  public popCallStack() { return this._callStack.pop(); } // gets element from top of stack
+
+  public addHistoryCommand(step: Command) { this._history.push(step); }
+  public getMostRecentHistoryCommand(): Command { return this._history.pop(); } 
+
+}
+
 type Assignable = AssignmentStatementNode; // change later, placeholder.
 
 type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
@@ -22,20 +89,11 @@ type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
 
 type UnaryOp = "-" | "+" | "!" | "not"
 
-interface Expression {
-  evaluate(): Command[];
-}
-
-interface Statement {
-  execute(): Command[];
-}
-
-
 // ------------------------------------------------------------------
 // Program
 // ------------------------------------------------------------------
 
-export class ProgramNode {
+class ProgramNode {
     private _statementList: StatementNode[];
     constructor(_statementList: StatementNode[]) {
         this._statementList = _statementList;
@@ -48,31 +106,53 @@ export class ProgramNode {
 
 // Implements = interface
 // extends = class
+// Abstract = class that cannot be instantiated on its own, serves as a blueprint for derived classes.
 
-export class StatementNode implements Statement {
-    private _statement: Statement;
-    constructor(_statement: Statement) {
-        this._statement = _statement;
-    }
-    execute(): Command[] {
-      return [];
-    }
+// Statement Node is the base class for all statement type nodes.
+abstract class StatementNode {
+    abstract execute(): Command[];
 }
 
-export class AssignmentStatementNode implements Statement {
-    private _left: Assignable; // variable name
+class AssignmentStatementNode extends StatementNode {
+    private _left: Assignable | string; // variable name
     private _right: ExpressionNode; // value
-    constructor(_left: Assignable, _right: ExpressionNode) {
+    constructor(_left: Assignable | string, _right: ExpressionNode) {
+        super();
         this._left = _left;
         this._right = _right;
     }
 
     execute(): Command[] {
-      return [];
+      // 1. Highlight Statement
+      // 2. Evaluate right hand expression
+      // 3. Bind result from eval stack to variable
+      // 4. Move to next line
+        const commands: Command[] = [];
+      
+        commands.push(new HighlightStatementCommand(this)); // Highlight
+        commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
+        commands.push(new AssignVariableCommand(this._left)); // Bind variable.
+        commands.push(new IncrementProgramCounterCommand());
+        
+        return commands;
+      // return [
+      //   new HighlightStatementCommand(this),
+      //   new ...this._right.evaluate(),
+
+      // ]
     }
 }
 
-export class ReturnStatementNode implements Statement {
+// The idea: use evaluation stack to get value since we have a chain of evaluate methods ebing called all going to the evaluation stack.
+class AssignVariableCommand extends Command {
+
+}
+
+class IncrementProgramCounterCommand extends Command {
+
+}
+
+class ReturnStatementNode extends StatementNode {
     private _value: ExpressionNode; // value by default should be null.
     constructor(_value: ExpressionNode) {
         this._value = _value;
@@ -82,7 +162,7 @@ export class ReturnStatementNode implements Statement {
     }
 }
 
-export class BreakStatementNode implements Statement {
+class BreakStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
@@ -92,7 +172,7 @@ export class BreakStatementNode implements Statement {
     }
 }
 
-export class ContinueStatementNode implements Statement {
+class ContinueStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
@@ -102,7 +182,7 @@ export class ContinueStatementNode implements Statement {
     }
 }
 
-export class PassStatementNode implements Statement {
+class PassStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         this._tok = _tok;
@@ -112,7 +192,7 @@ export class PassStatementNode implements Statement {
     }
 }
 
-export class IfStatementNode implements Statement {
+class IfStatementNode extends StatementNode {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode;
     private _elseBranch: ElseBlockStatementNode;
@@ -126,7 +206,7 @@ export class IfStatementNode implements Statement {
     }
 }
 
-export class ForStatementNode implements Statement {
+class ForStatementNode extends StatementNode {
     private _loopVar: IdentifierExpressionNode;
     private _iterable: ExpressionNode;
     private _block: BlockStatementNode;
@@ -140,7 +220,7 @@ export class ForStatementNode implements Statement {
     }
 }
 
-export class WhileStatementNode implements Statement {
+class WhileStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     private _block: BlockStatementNode;
     constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
@@ -152,7 +232,7 @@ export class WhileStatementNode implements Statement {
     }
 }
 
-export class FuncDefStatementNode implements Statement {
+class FuncDefStatementNode extends StatementNode {
     private _name: IdentifierExpressionNode;
     private _formalParamList: FormalParamsListExpressionNode;
     private _block: BlockStatementNode;
@@ -166,7 +246,7 @@ export class FuncDefStatementNode implements Statement {
     }
 }
 
-export class ElifStatementNode implements Statement {
+class ElifStatementNode extends StatementNode {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode;
     private _elseBranch: ElseBlockStatementNode;
@@ -180,7 +260,7 @@ export class ElifStatementNode implements Statement {
     }
 }
 
-export class ElseBlockStatementNode implements Statement {
+class ElseBlockStatementNode extends StatementNode {
     private _block : BlockStatementNode;
     constructor(_block: BlockStatementNode) {
      this._block = _block;
@@ -190,7 +270,7 @@ export class ElseBlockStatementNode implements Statement {
     }
 }
 
-export class ExpresssionStatementNode implements Statement {
+class ExpresssionStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     constructor(_expression: ExpressionNode) {
      this._expression = _expression;
@@ -200,7 +280,7 @@ export class ExpresssionStatementNode implements Statement {
     }
 }
 
-export class BlockStatementNode implements Statement {
+class BlockStatementNode extends StatementNode {
     private _statementList: StatementNode[];
     constructor(_statementList: StatementNode[]) {
      this._statementList = _statementList;
@@ -215,27 +295,38 @@ export class BlockStatementNode implements Statement {
 // Expression Nodes
 // ------------------------------------------------------------------
 
-export class ExpressionNode {
-    private _expression: Expression;
-    constructor(_expression: Expression) {
-      this._expression = _expression;
+abstract class ExpressionNode {
+    public _tok: moo.Token; 
+    constructor(_tok: moo.Token) {
+      this._tok = _tok;
    }
-  evaluate(): Command[] {
-    return [];
-   }
+  abstract evaluate(): Command[];
+  public get lineNum() {return this._tok.line};
+  public get startLine() {return this._tok.line};
+  public get endLine() {return this._tok.line};
+  public get startCol() {return this._tok.col};
+  public get endCol() {return this._tok.col + (this._tok.text.length - 1)};
 }
 
-export class FormalParamsListExpressionNode implements Expression {
+class FormalParamsListExpressionNode extends ExpressionNode {
    private _paramsList: IdentifierExpressionNode[];
    constructor(_paramsList: IdentifierExpressionNode[]) {
+     super(_paramsList[0]._tok);
      this._paramsList = _paramsList;
   }
    evaluate(): Command[] {
     return [];
    }
+   override public get endLine() {
+    return this._paramsList[this._paramsList.length - 1]._tok.line
+  }
+   override public get endCol() {
+    let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
+    return _lastTok.col + (_lastTok.text.length - 1);
+  }
 }
 
-export class ConditionalExpressionNode implements Expression {
+class ConditionalExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _condition: ExpressionNode;
     private _right: ExpressionNode;
@@ -249,21 +340,21 @@ export class ConditionalExpressionNode implements Expression {
     }
  }
 
-export class ArgListExpressionNode implements Expression {
+class ArgListExpressionNode extends ExpressionNode {
     private _argsList: ExpressionNode[];
     constructor(_argsList: ExpressionNode[]) {
      this._argsList = _argsList;
    }
    this._args_list.ForEach(function (arg) {
     new HighlightExpressionCommand(arg);
-    new ReplaceHighlightedExpression(arg, new EvaluatedExpressionNode()); // what to pass in here?
+    new ReplaceHighlightedExpressionCommand(arg, new EvaluatedExpressionNode()); // what to pass in here?
    })
     evaluate(): Command[] {
       return [];
     }
  }
 
-export class ComparisonExpressionNode implements Expression {
+class ComparisonExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _operator: ComparisonOp;
     private _right: ExpressionNode;
@@ -277,7 +368,7 @@ export class ComparisonExpressionNode implements Expression {
     }
  }
 
-export class BinaryExpressionNode implements Expression {
+class BinaryExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _operator: BinaryOp;
     private _right: ExpressionNode;
@@ -291,7 +382,7 @@ export class BinaryExpressionNode implements Expression {
     }
  }
 
-export class UnaryExpressionNode implements Expression {
+class UnaryExpressionNode extends ExpressionNode {
     private _operator: UnaryOp;
     private _operand: ExpressionNode;
     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
@@ -303,7 +394,7 @@ export class UnaryExpressionNode implements Expression {
     }
  }
 
-export class FuncCallExpresssionNode implements Expression {
+class FuncCallExpresssionNode extends ExpressionNode {
     private _func_name: ExpressionNode;
     private _args_list: ArgListExpressionNode;
     constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
@@ -315,7 +406,7 @@ export class FuncCallExpresssionNode implements Expression {
     }
  }
 
-export class ListAccessExpresssionNode implements Expression  {
+class ListAccessExpresssionNode extends ExpressionNode  {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
     constructor(_list: ExpressionNode, _index: ExpressionNode) {
@@ -327,7 +418,7 @@ export class ListAccessExpresssionNode implements Expression  {
     }
  }
 
-export class MethodCallExpressionNode implements Expression {
+class MethodCallExpressionNode extends ExpressionNode {
     private _list: ExpressionNode;
     private _methodName: IdentifierExpressionNode;
     private _argsList: ArgListExpressionNode;
@@ -341,7 +432,7 @@ export class MethodCallExpressionNode implements Expression {
     }
  }
 
-export class ListSliceExpressionNode implements Expression {
+class ListSliceExpressionNode extends ExpressionNode {
     private _list: ExpressionNode;
     private _start: ExpressionNode;
     private _stop: ExpressionNode;
@@ -356,16 +447,16 @@ export class ListSliceExpressionNode implements Expression {
       let operations: ExpressionNode[] = [this._start, this._stop, this._step];
       operations.forEach(function (val) { // for each element here, highlight and evaluate
         new HighlightExpressionCommand(val);
-        new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(val));
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(val));
       })
       return [
         new HighlightExpressionCommand(this), // the idea is to then highlight the entire thing.
-        new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode())
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode())
       ];
     }
  }
 
-export class NumberLiteralExpressionNode implements Expression {
+class NumberLiteralExpressionNode extends ExpressionNode {
   private _value: string;
   constructor(private value: string) {
     this._value = value;
@@ -386,12 +477,12 @@ export class NumberLiteralExpressionNode implements Expression {
     // Create list of commands and return as result to add to overall steps.
     return [
       new HighlightExpressionCommand(this), // visually indicate what expression to highlight.
-      new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(numValue))
+      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(numValue))
     ];
   }
  }
 
-export class ListLiteralExpressionNode implements Expression {
+class ListLiteralExpressionNode extends ExpressionNode {
     private _values: PythonValue[];
     constructor(_values: PythonValue[]) {
       this._values = _values;
@@ -399,12 +490,12 @@ export class ListLiteralExpressionNode implements Expression {
   evaluate(): Command[] {
     return [
       new HighlightExpressionCommand(this),
-      new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(this._values))
+      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._values))
     ];
   }
  }
 
-export class BooleanLiteralExpressionNode implements Expression {
+class BooleanLiteralExpressionNode extends ExpressionNode {
     private _value: Boolean;
     constructor(_value: Boolean) {
       this._value = _value;
@@ -412,37 +503,41 @@ export class BooleanLiteralExpressionNode implements Expression {
   evaluate(): Command[] {
     return [
       new HighlightExpressionCommand(this), // highlight
-      new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(this._value)) // replace
+      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
     ]
   }
  }
 
-export class StringLiteralExpressionNode implements Expression {
-    private _value: String;
-    constructor(_value: String) {
+class StringLiteralExpressionNode extends ExpressionNode {
+    private _value: moo.Token;
+    constructor(_value: moo.Token) {
+      super(_value);
       this._value = _value;
   }
     evaluate(): Command[] {
       return [
         new HighlightExpressionCommand(this), // highlight
-        new ReplaceHighlightedExpression(this, new EvaluatedExpressionNode(this._value)) // replace
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
     ]
     }
  }
 
-export class IdentifierExpressionNode implements Expression {
-    private _name: String;
-    constructor(_name: String) {
+class IdentifierExpressionNode extends ExpressionNode {
+    private _name: moo.Token;
+    constructor(_name: moo.Token) {
+      super(_name);
       this._name = _name;
   }
     evaluate(): Command[] {
       return [
         new HighlightExpressionCommand(this), // highlight, no need for replace.
-    ]
+        // lookup its value, show visually where the variable is being looked up
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(null)) // val we just looked up passed into EvaluatedExpressionNode
+      ]
     }
 }
 
-export class EvaluatedExpressionNode implements Expression {
+class EvaluatedExpressionNode extends ExpressionNode {
     private _value: PythonValue | PythonValue[] | ExpressionNode;
     constructor(_value: PythonValue | PythonValue[] | ExpressionNode) {
         this._value = _value;
@@ -450,112 +545,6 @@ export class EvaluatedExpressionNode implements Expression {
     evaluate(): Command[] {
         return [];
     }
-}
-
-
-// References:
-// https://medium.com/@alessandro.traversi/understanding-the-command-design-pattern-in-typescript-1d2ee3615da8
-// https://refactoring.guru/design-patterns/command
-
-// ---------------------------------------------------------------------------------------
-// MACHINE STATE
-// ---------------------------------------------------------------------------------------
-class State {
-  private _programCounter: number;
-  private _lineCount: number;
-  private _currentLine: number;
-  private _currentExpression: Expression;
-  private _currentStatement: Statement;
-  private _callStack: Expression[]; 
-  private _steps: Command[];
-  private _variables: Map<String, number>;
-  private _evaluationStack: PythonValue[];
-  private _debugOutput: string[]; 
-
-  constructor(_programCounter: number, _lineCount: number, _currentExpression: Expression, _callStack: Expression[], _steps: Command[], _variables: Map<String, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
-    this._programCounter = _programCounter;
-    this._lineCount = _lineCount;
-    this._currentExpression = _currentExpression;
-    this._callStack = _callStack;
-    this._steps = _steps;
-    this._variables = _variables;
-    this._debugOutput = _debugOutput;
-    this._currentLine = _currentLine;
-    this._evaluationStack = _evaluationStack;
-  }
-  
-  public get programCounter() {
-    return this._programCounter;
-  }
-
-  public set programCounter(val: number) {
-    if (val < 1 || val > this._lineCount) {
-      throw new Error("Invalid PC");
-    }
-    this._programCounter = val;
-  }
-
-  public get lineCount() {
-    return this._lineCount;
-  }
-
-  public set lineCount(val: number) {
-    this._lineCount = val;
-  }
-
-  public get currentLine() {
-    return this._currentLine;
-  }
-
-  public set currentLine(val: number) {
-    this._currentLine = val;
-  }
-
-  public get currentExpression() {
-    return this._currentExpression;
-  }
-
-  public set currentExpression(expr: Expression) {
-    this._currentExpression = expr;
-  }
-
-  public get currentStatement() {
-    return this._currentStatement;
-  }
-
-  public set currentStatement(stmt: Statement) {
-    this._currentStatement = stmt;
-  }
-
-  public get evaluationStack() {
-    return this._evaluationStack;
-  }
-
-  public pushCallStack(func: Expression) {
-    this._callStack.push(func); // pushes element onto stack
-  }
-
-  public popCallStack() {
-    return this._callStack.pop(); // gets element from top of stack
-  }
-
-  public addStep(step: Command) {
-    this._steps.push(step);
-  }
-
-  public set steps(step: Command) {
-    this._steps.push(step);
-  }
-
-}
-
-// ---------------------------------------------------------------------------------------
-// INTERPRETER
-// - note to self: actually runs the commands in whatever buffer, probably some loop with extra fancy stuff I can worry about later.
-// ---------------------------------------------------------------------------------------
-
-class Interpreter {
-
 }
 
 // ---------------------------------------------------------------------------------------
@@ -575,10 +564,14 @@ class MoveLinePointerCommand extends Command {
   }
 }
 
+class HighlightStatementCommand extends Command {
+
+}
+
 // Highlights expression that is being evaluated.
 class HighlightExpressionCommand extends Command {
-  private _expression: Expression;
-  constructor(_expression: Expression) {
+  private _expression: ExpressionNode;
+  constructor(_expression: ExpressionNode) {
     super(); // call superclass constructor
     this._expression = _expression;
   }
@@ -587,21 +580,20 @@ class HighlightExpressionCommand extends Command {
     this._undoCommand = new HighlightExpressionCommand(_currentState.currentExpression);
     _currentState.currentExpression = this._expression;
   }
-  // where is expression
   // tell state what current expression is
   // do work
 }
 
-class ReplaceHighlightedExpression extends Command {
-  private _oldExpression: Expression;
-  private _newExpression: Expression;
-  constructor(_oldExpression: Expression, _newExpression: Expression) {
+class ReplaceHighlightedExpressionCommand extends Command {
+  private _oldExpression: ExpressionNode;
+  private _newExpression: ExpressionNode;
+  constructor(_oldExpression: ExpressionNode, _newExpression: ExpressionNode) {
     super();
     this._oldExpression = _oldExpression;
     this._newExpression = _newExpression;
   }
     do(_currentState: State) {
-    this._undoCommand = new ReplaceHighlightedExpression(this._newExpression, this._oldExpression);
+    this._undoCommand = new ReplaceHighlightedExpressionCommand(this._newExpression, this._oldExpression);
     _currentState.currentExpression = this._newExpression;
   }
   // decide: parse tree mutable or nah? If not mutable, we need to produce new parse tree branch whcih is identical to original to reflect changes
@@ -654,4 +646,5 @@ class ChangeVariableCommand extends Command {
     this.value = value;
   } 
 }
+
 

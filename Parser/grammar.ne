@@ -220,7 +220,7 @@ multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (
                 | unary {% id %}
 
 # + or - (unary)
-unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0].value, new ExpressionNode(d[1]))) %}
+unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0], new ExpressionNode(d[1]))) %}
        | power
 
 # ** (power)
@@ -252,19 +252,19 @@ list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %
             | primary %LSQBRACK %COLON %COLON:? %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, null, null) %} # nums[:] || nums[::]
 
 atom -> number {% id %}
-      | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0].value)) %}
-      | %STRING_DOUBLE {% d => (new StringLiteralExpressionNode(d[0].value)) %}
-      | %IDENTIFIER {% d => (new IdentifierExpressionNode(d[0].value)) %}
+      | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0])) %}
+      | %STRING_DOUBLE {% d => (new StringLiteralExpressionNode(d[0])) %}
+      | %IDENTIFIER {% d => (new IdentifierExpressionNode(d[0])) %}
       | list_literal {% id %}
       | %NONE {% d => null %}
-      | %TRUE {% d => (new BooleanLiteralExpressionNode(d[0].value)) %}
-      | %FALSE {% d => (new BooleanLiteralExpressionNode(d[0].value)) %}
+      | %TRUE {% d => (new BooleanLiteralExpressionNode(d[0])) %}
+      | %FALSE {% d => (new BooleanLiteralExpressionNode(d[0])) %}
       | group {% id %}
 
-number -> %HEX {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
-        | %BINARY {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
-        | %DECIMAL {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
-        | %FLOAT {% d => (new NumberLiteralExpressionNode(d[0].value)) %}
+number -> %HEX {% d => (new NumberLiteralExpressionNode(d[0])) %}
+        | %BINARY {% d => (new NumberLiteralExpressionNode(d[0])) %}
+        | %DECIMAL {% d => (new NumberLiteralExpressionNode(d[0])) %}
+        | %FLOAT {% d => (new NumberLiteralExpressionNode(d[0])) %}
 
 list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => (new ListLiteralExpressionNode(d[1])) %}
 
