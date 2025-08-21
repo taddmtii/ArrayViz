@@ -245,15 +245,15 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
  }
 
 export class IdentifierExpressionNode extends ExpressionNode {
-    private _name: moo.Token;
-    constructor(_name: moo.Token) {
-      super(_name);
-      this._name = _name;
+    public _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+      super(_tok);
+      this._tok = _tok;
     }
     evaluate(): Command[] {
       return [
         new HighlightExpressionCommand(this), // highlight, no need for replace.
-        new RetrieveValueCommand(this._name.text)
+        new RetrieveValueCommand(this._tok.text)
       ]
     }
 }
