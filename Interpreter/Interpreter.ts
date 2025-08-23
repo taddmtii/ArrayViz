@@ -165,19 +165,17 @@ export class HighlightExpressionCommand extends Command {
     _currentState.currentExpression = this._expression;
     console.log("Expression Highlighted!");
   }
-  // tell state what current expression is
-  // do work
 }
 
 // For variable lookup
 export class RetrieveValueCommand extends Command { 
-  private _name: String; // variable name whose value we want to retrieve
-  constructor(_name: String) {
+  private _varName: String; // variable name whose value we want to retrieve
+  constructor(_varName: String) {
     super();
-    this._name = _name;
+    this._varName = _varName;
   }
   do(_currentState: State) {
-
+    
   }
 }
 
