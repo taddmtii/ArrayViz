@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------
-import { PythonValue, StatementNode, ExpressionNode } from './Nodes';
+import { PythonValue, BinaryOp, ComparisonOp, UnaryOp, StatementNode, ExpressionNode } from './Nodes';
 
 // ---------------------------------------------------------------------------------------
 // INTERFACES AND CLASSES
@@ -58,13 +58,8 @@ export class State {
   public get variables() { return this._variables; }
   public get debugOutput() { return this._debugOutput; }
 
-  public setVariable(name: string, value: PythonValue) {
-    this._variables.set(name, value); // adds new key value into variables map.
-  }
-
-  public getVariable(name: string): PythonValue {
-    return this._variables.get(name) || null; // could be nullable upon lookup. null is important here.
-  }
+  public setVariable(name: string, value: PythonValue) { this._variables.set(name, value); } // adds new key value into variables map.
+  public getVariable(name: string): PythonValue { return this._variables.get(name) || null; } // could be nullable upon lookup. null is important here.
 
   public pushCallStack(func: ExpressionNode) { this._callStack.push(func); } // pushes element onto stack
   public popCallStack() { return this._callStack.pop(); } // gets element from top of stack
@@ -167,59 +162,178 @@ export class HighlightExpressionCommand extends Command {
   }
 }
 
-// For variable lookup
+// Should grab current value of variable.
 export class RetrieveValueCommand extends Command { 
-  private _varName: String; // variable name whose value we want to retrieve
-  constructor(_varName: String) {
+  private _varName: string; // variable name whose value we want to retrieve
+  constructor(_varName: string) {
     super();
     this._varName = _varName;
   }
   do(_currentState: State) {
-    
+    return _currentState.getVariable(this._varName);
   }
 }
 
-// class MoveLinePointerCommand extends Command {
-//   private _lineNum: number;
-//   constructor(_lineNum: number) {
-//     super(); // call superclass constructor
-//     this._lineNum = _lineNum;
-//   }
+export class MoveLinePointerCommand extends Command {
+  private _lineNum: number;
+  constructor(_lineNum: number) {
+    super(); 
+    this._lineNum = _lineNum;
+  }
 
-//   do(_currentState: State) {
-//     this._undoCommand = new MoveLinePointerCommand(_currentState.programCounter);
-//     _currentState.programCounter = this._lineNum;
-//   }
-// }
+  do(_currentState: State) {
+    this._undoCommand = new MoveLinePointerCommand(_currentState.programCounter);
+    _currentState.programCounter = this._lineNum;
+  }
+}
 
-// class HighlightStatementCommand extends Command {
-//   private _statement: StatementNode;
-//   constructor(_statement: StatementNode) {
-//     super();
-//     this._statement = _statement;
-//   }
-//   do(_currentState: State) {
-//     this._undoCommand
-//     // Tell UI somehow to highlight command we want it to.
-//   }
-// }
+export class HighlightStatementCommand extends Command {
+  private _statement: StatementNode;
+  constructor(_statement: StatementNode) {
+    super();
+    this._statement = _statement;
+  }
+  do(_currentState: State) {
+    // Create undocommand that 
+    this._undoCommand = new HighlightStatementCommand(_currentState.currentStatement);
+    _currentState.currentStatement = this._statement;
+    console.log("Statement Highlighted!");
+    // Tell UI somehow to highlight command we want it to.
+  }
+}
 
-// class ReplaceHighlightedExpressionCommand extends Command {
-//   private _oldExpression: ExpressionNode;
-//   private _newExpression: ExpressionNode;
-//   constructor(_oldExpression: ExpressionNode, _newExpression: ExpressionNode) {
-//     super();
-//     this._oldExpression = _oldExpression;
-//     this._newExpression = _newExpression;
-//   }
-//     do(_currentState: State) {
-//     this._undoCommand = new ReplaceHighlightedExpressionCommand(this._newExpression, this._oldExpression);
-//     _currentState.currentExpression = this._newExpression;
-//   }
-// }
+export class ReplaceHighlightedExpressionCommand extends Command {
+  private _oldExpression: ExpressionNode;
+  private _newExpression: ExpressionNode;
+  constructor(_oldExpression: ExpressionNode, _newExpression: ExpressionNode) {
+    super();
+    this._oldExpression = _oldExpression;
+    this._newExpression = _newExpression;
+  }
+    do(_currentState: State) {
+    this._undoCommand = new ReplaceHighlightedExpressionCommand(this._newExpression, this._oldExpression);
+    _currentState.currentExpression = this._newExpression;
+  }
+}
 
-// // For evaluating arithmetic operations
-// class BinaryOpCommand extends Command {
+// For evaluating arithmetic operations
+export class BinaryOpCommand extends Command {
+  private _left: ExpressionNode;
+  private _op: BinaryOp;
+  private _right: ExpressionNode;
+  constructor(_left: ExpressionNode, _op: BinaryOp, _right: ExpressionNode) {
+    super();
+    this._left = _left;
+    this._op = _op;
+    this._right = _right;
+  }
+  do(_currentState: State) {
+      const evaluatedLeft = _currentState.evaluationStack.pop()!;
+      const evaluatedRight = _currentState.evaluationStack.pop()!;
+      let res: PythonValue = null;
 
-// }
+      if (this._op === '+' && (typeof evaluatedLeft === 'string' && typeof evaluatedRight === 'string')) {
+        res = evaluatedLeft + evaluatedRight;
+      }
+
+      if (typeof evaluatedLeft === 'number' && typeof evaluatedRight === 'number') {
+        switch (this._op) {
+          case '+':
+            res = evaluatedLeft + evaluatedRight;
+            break;
+          case '-':
+            res = evaluatedLeft - evaluatedRight;
+            break;
+          case '%':
+            res = evaluatedLeft % evaluatedRight;
+            break;
+          case '*':
+            res = evaluatedLeft * evaluatedRight;
+            break;
+          case '//':
+            res = Math.floor(evaluatedLeft / evaluatedRight);
+            break;
+          case '/':
+            res = evaluatedLeft / evaluatedRight;
+            break;
+          case 'and':
+            res = evaluatedLeft && evaluatedRight;
+            break;
+          case 'or':
+            res = evaluatedRight || evaluatedRight;
+            break;
+      }
+    }
+    _currentState.evaluationStack.push(res);
+  }
+}
+
+export class ComparisonOpCommand extends Command {
+  private _left: ExpressionNode;
+  private _op: ComparisonOp;
+  private _right: ExpressionNode;
+  constructor(_left: ExpressionNode, _op: ComparisonOp, _right: ExpressionNode) {
+    super();
+    this._left = _left;
+    this._op = _op;
+    this._right = _right;
+  }
+  do(_currentState: State) {
+      const evaluatedLeft = _currentState.evaluationStack.pop()!;
+      const evaluatedRight = _currentState.evaluationStack.pop()!;
+      let res: PythonValue = null;
+
+      switch (this._op) {
+        case '<':
+          res = evaluatedLeft < evaluatedRight;
+          break;
+        case '>':
+          res = evaluatedLeft > evaluatedRight;
+          break;
+        case '<=':
+          res = evaluatedLeft <= evaluatedRight;
+          break;
+        case '>=':
+          res  = evaluatedLeft >= evaluatedRight;
+          break;
+        case '!=':
+          res = evaluatedLeft != evaluatedRight;
+          break;
+      }
+      _currentState.evaluationStack.push(res);
+  }
+}
+
+export class UnaryOpCommand extends Command {
+  private _operator: UnaryOp;
+  private _operand: ExpressionNode;
+  constructor(_operator: UnaryOp, _operand: ExpressionNode) {
+    super();
+    this._operator = _operator;
+    this._operand = _operand;
+  }
+  do(_currentState: State) {
+    const operand = _currentState.evaluationStack.pop()!;
+    let res: PythonValue = null;
+
+      switch (this._operator) {
+        case '-':
+          if (typeof operand === 'number') {
+            res = -(operand);
+          }
+          break;
+        case '+':
+          if (typeof operand === 'number') {
+            res = Math.abs(operand);
+          }
+          break;
+        case '!':
+          res = !operand;
+          break;
+        case 'not':
+          res = !operand;
+          break;
+      }
+    }
+  }
 

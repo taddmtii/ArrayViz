@@ -318,24 +318,27 @@ export class IdentifierExpressionNode extends ExpressionNode {
 //     }
 //  }
 
-// class BinaryExpressionNode extends ExpressionNode {
-//     private _left: ExpressionNode;
-//     private _operator: BinaryOp;
-//     private _right: ExpressionNode;
-//     constructor(_left: ExpressionNode, _operator: BinaryOp, _right: ExpressionNode) {
-//      this._left = _left;
-//      this._operator = _operator;
-//      this._right = _right;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class BinaryExpressionNode extends ExpressionNode {
+    private _left: ExpressionNode;
+    private _operator: BinaryOp;
+    private _right: ExpressionNode;
+    constructor(_left: ExpressionNode, _operator: BinaryOp, _right: ExpressionNode) {
+      super(_tok);
+      this._left = _left;
+      this._operator = _operator;
+      this._right = _right;
+   }
+    evaluate(): Command[] {
+
+      return [];
+    }
+ }
 
 // class UnaryExpressionNode extends ExpressionNode {
 //     private _operator: UnaryOp;
 //     private _operand: ExpressionNode;
 //     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
+//      super();
 //      this._operator = _operator;
 //      this._operand = _operand;
 //    }
