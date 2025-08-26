@@ -218,14 +218,10 @@ export class ReplaceHighlightedExpressionCommand extends Command {
 
 // For evaluating arithmetic operations
 export class BinaryOpCommand extends Command {
-  private _left: ExpressionNode;
   private _op: BinaryOp;
-  private _right: ExpressionNode;
-  constructor(_left: ExpressionNode, _op: BinaryOp, _right: ExpressionNode) {
+  constructor(_op: BinaryOp) {
     super();
-    this._left = _left;
     this._op = _op;
-    this._right = _right;
   }
   do(_currentState: State) {
       const evaluatedLeft = _currentState.evaluationStack.pop()!;
@@ -269,14 +265,10 @@ export class BinaryOpCommand extends Command {
 }
 
 export class ComparisonOpCommand extends Command {
-  private _left: ExpressionNode;
   private _op: ComparisonOp;
-  private _right: ExpressionNode;
-  constructor(_left: ExpressionNode, _op: ComparisonOp, _right: ExpressionNode) {
+  constructor(_op: ComparisonOp) {
     super();
-    this._left = _left;
     this._op = _op;
-    this._right = _right;
   }
   do(_currentState: State) {
       const evaluatedLeft = _currentState.evaluationStack.pop()!;
@@ -306,11 +298,9 @@ export class ComparisonOpCommand extends Command {
 
 export class UnaryOpCommand extends Command {
   private _operator: UnaryOp;
-  private _operand: ExpressionNode;
-  constructor(_operator: UnaryOp, _operand: ExpressionNode) {
+  constructor(_operator: UnaryOp) {
     super();
     this._operator = _operator;
-    this._operand = _operand;
   }
   do(_currentState: State) {
     const operand = _currentState.evaluationStack.pop()!;
@@ -334,6 +324,20 @@ export class UnaryOpCommand extends Command {
           res = !operand;
           break;
       }
+      _currentState.evaluationStack.push(res);
     }
   }
 
+// ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+// JumpCommand -> jumps to a line number
+
+// EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
+// ExitScopeCommand -> exit scope and restore previous variable state.
+
+// PrintCommand -> prints something to the console.
+// LenCommand -> gets length of string, integer, list, etc...
+// TypeCommand -> returns type of expression
+// InputCommand -> cin for user input
+
+// IndexAccessCommand -> arr[5]
+// CreateListCommand -> 
