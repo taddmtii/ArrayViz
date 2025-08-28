@@ -329,15 +329,88 @@ export class UnaryOpCommand extends Command {
   }
 
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+export class ConditionalJumpCommand extends Command {
+  private _lineNum: number;
+  do(_currentState: State) {
+
+  }
+}
 // JumpCommand -> jumps to a line number
+export class JumpCommand extends Command {
+  private _lineNum: number;
+  constructor(_lineNum: number) {
+    super();
+    this._lineNum = _lineNum;
+  }
+  do(_currentState: State) {
+    this._undoCommand = new JumpCommand(_currentState.programCounter);
+    _currentState.programCounter = this._lineNum;
+  }
+}
 
 // EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
+export class EnterScopeCommand extends Command {
+  private _localVariables: Map<string, PythonValue>;
+  do(_currentState: State) {
+    
+  }
+}
+
 // ExitScopeCommand -> exit scope and restore previous variable state.
+export class ExitScopeCommand extends Command {
+  private _previousVariables: Map<string, PythonValue>;
+  do(_currentState: State) {
+    
+  }
+}
+
 
 // PrintCommand -> prints something to the console.
+export class PrintCommand extends Command {
+  private _value: PythonValue;
+  do(_currentState: State) {
+    console.log(this._value);
+  }
+}
+
 // LenCommand -> gets length of string, integer, list, etc...
-// TypeCommand -> returns type of expression
+export class LenCommand extends Command {
+  private _value: PythonValue;
+  do(_currentState: State) {
+    // if typeof _value == string {
+    
+    // }
+    
+  }
+}
+
+// TypeCommand -> returns type of value
+export class TypeCommand extends Command {
+  private _value: PythonValue;
+  do(_currentState: State) {
+    return (typeof this._value);
+  }
+}
+
 // InputCommand -> cin for user input
+export class InputCommand extends Command {
+  do(_currentState: State) {
+    
+  }
+}
+
 
 // IndexAccessCommand -> arr[5]
+export class IndexAccessCommand extends Command {
+  do(_currentState: State) {
+    
+  }
+}
+
+
 // CreateListCommand -> 
+export class CreateListCommand extends Command {
+  do(_currentState: State) {
+    
+  }
+}
