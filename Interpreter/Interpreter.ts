@@ -1,6 +1,6 @@
 // ------------------------------------------------------------------
 import { PythonValue, BinaryOp, ComparisonOp, UnaryOp, StatementNode, ExpressionNode } from './Nodes';
-
+import * as readline from 'readline';
 // ---------------------------------------------------------------------------------------
 // INTERFACES AND CLASSES
 // ---------------------------------------------------------------------------------------
@@ -23,11 +23,11 @@ export class State {
   private _currentStatement: StatementNode; // what statement are we on
   private _callStack: ExpressionNode[];  // function call stack
   private _history: Command[]; // history of all commands
-  private _variables: Map<String, PythonValue> = new Map(); // storage for variables and thier values
+  private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
   private _debugOutput: string[];  // debug messages
 
-  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<String, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
+  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<string, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
     this._currentExpression = _currentExpression;
@@ -58,8 +58,8 @@ export class State {
   public get variables() { return this._variables; }
   public get debugOutput() { return this._debugOutput; }
 
-  public setVariable(name: string, value: PythonValue) { this._variables.set(name, value); } // adds new key value into variables map.
-  public getVariable(name: string): PythonValue { return this._variables.get(name) || null; } // could be nullable upon lookup. null is important here.
+  public setVariable(name: string, value: (PythonValue | PythonValue[])) { this._variables.set(name, value); } // adds new key value into variables map.
+  public getVariable(name: string): PythonValue | PythonValue[] { return this._variables.get(name) || null; } // could be nullable upon lookup. null is important here.
 
   public pushCallStack(func: ExpressionNode) { this._callStack.push(func); } // pushes element onto stack
   public popCallStack() { return this._callStack.pop(); } // gets element from top of stack
@@ -83,10 +83,10 @@ export class AssignVariableCommand extends Command {
   }
   
   do(_currentState: State) {
-  const newValue = _currentState.evaluationStack.pop()!; // get value from evaluation stack
-  this._oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
-  this._undoCommand = new ChangeVariableCommand(this._name, this._oldValue); // undo command: Change variable BACK to old value.
-  _currentState.setVariable(this._name, newValue);
+    const newValue = _currentState.evaluationStack.pop()!; // get value from evaluation stack
+    this._oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
+    this._undoCommand = new ChangeVariableCommand(this._name, this._oldValue); // undo command: Change variable BACK to old value.
+    _currentState.setVariable(this._name, newValue);
   }
 }
 
@@ -256,7 +256,7 @@ export class BinaryOpCommand extends Command {
             res = evaluatedLeft && evaluatedRight;
             break;
           case 'or':
-            res = evaluatedRight || evaluatedRight;
+            res = evaluatedRight | evaluatedRight;
             break;
       }
     }
@@ -329,10 +329,17 @@ export class UnaryOpCommand extends Command {
   }
 
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+// TODO: Refer to Prof. O on this one.
 export class ConditionalJumpCommand extends Command {
   private _lineNum: number;
+  private _jumpBool: boolean; // true if condition is true, false is condition is false
+  constructor(_lineNum: number, _jumpBool: boolean) {
+    super();
+    this._lineNum = _lineNum;
+    this._jumpBool = true; // default to true
+  }
   do(_currentState: State) {
-
+    
   }
 }
 // JumpCommand -> jumps to a line number
@@ -350,17 +357,32 @@ export class JumpCommand extends Command {
 
 // EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
 export class EnterScopeCommand extends Command {
-  private _localVariables: Map<string, PythonValue>;
+  private _savedVariables: Map<string, PythonValue>; // place to store current state of variables before we enter function scope.
+  constructor(_savedVariables: Map<string, PythonValue>) {
+    super();
+    this._savedVariables = _savedVariables;
+  }
   do(_currentState: State) {
-    
+    this._savedVariables = new Map(_currentState.variables); // create new map for local variables only.
+    this._undoCommand = new ExitScopeCommand(this._savedVariables); // restore previous variables.
   }
 }
 
 // ExitScopeCommand -> exit scope and restore previous variable state.
 export class ExitScopeCommand extends Command {
   private _previousVariables: Map<string, PythonValue>;
+  constructor(_previousVariables: Map<string, PythonValue>) {
+    super();
+    this._previousVariables = _previousVariables;
+  }
   do(_currentState: State) {
+    const currentVariables = new Map(_currentState.variables); // create copy of current variables set in scope. (local)
+    this._undoCommand = new ExitScopeCommand(currentVariables); // undo is going back in scope, so restore variabels to local ones.
     
+    _currentState.variables.clear(); // clear all local variables.
+    this._previousVariables.forEach((value, key) => { // iterate over all previous variables
+      _currentState.setVariable(key, value); // set each one by one to restore state.
+    });
   }
 }
 
@@ -368,25 +390,39 @@ export class ExitScopeCommand extends Command {
 // PrintCommand -> prints something to the console.
 export class PrintCommand extends Command {
   private _value: PythonValue;
+  constructor(_value: PythonValue) {
+    super();
+    this._value = _value;
+  }
   do(_currentState: State) {
     console.log(this._value);
   }
 }
 
-// LenCommand -> gets length of string, integer, list, etc...
+// LenCommand -> gets length of strings and lists, etc...
 export class LenCommand extends Command {
   private _value: PythonValue;
+  constructor(_value: PythonValue) {
+    super();
+    this._value = _value;
+  }
   do(_currentState: State) {
-    // if typeof _value == string {
-    
-    // }
-    
+    if (typeof this._value === 'string') {
+      _currentState.evaluationStack.push(this._value.length);
+    }
+    else if (Array.isArray(this._value)) {
+      _currentState.evaluationStack.push(this._value.length);
+    }
   }
 }
 
 // TypeCommand -> returns type of value
 export class TypeCommand extends Command {
   private _value: PythonValue;
+  constructor(_value: PythonValue) {
+    super();
+    this._value = _value;
+  }
   do(_currentState: State) {
     return (typeof this._value);
   }
@@ -394,8 +430,23 @@ export class TypeCommand extends Command {
 
 // InputCommand -> cin for user input
 export class InputCommand extends Command {
+  private _prompt: string;
+  private _ans: string;
+  constructor(_prompt: string, _ans: string) {
+    super();
+    this._prompt = _prompt;
+    this._ans = _ans;
+  }
   do(_currentState: State) {
-    
+    var rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    })
+    rl.question(this._prompt, function(answer) {
+      this._ans = answer;
+      rl.close();
+    });
+    return this._ans;
   }
 }
 
@@ -408,9 +459,20 @@ export class IndexAccessCommand extends Command {
 }
 
 
-// CreateListCommand -> 
+// CreateListCommand -> Creates a list of values
 export class CreateListCommand extends Command {
+  private _name: string;
+  private _values: PythonValue[];
+  constructor(_name: string, _values: PythonValue[]) {
+    super();
+    this._name = _name;
+    this._values = _values;
+  }
   do(_currentState: State) {
-    
+    this._undoCommand = new CreateListCommand(this._name, this._values);
+    _currentState.setVariable(this._name, this._values);
+  }
+  override undo(_currentState: State) {
+    _currentState.variables.delete(this._name);
   }
 }
