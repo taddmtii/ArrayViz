@@ -319,11 +319,13 @@ export class IdentifierExpressionNode extends ExpressionNode {
 //  }
 
 class BinaryExpressionNode extends ExpressionNode {
+    public _tok: moo.Token;
     private _left: ExpressionNode;
     private _operator: BinaryOp;
     private _right: ExpressionNode;
-    constructor(_left: ExpressionNode, _operator: BinaryOp, _right: ExpressionNode) {
+    constructor(_left: ExpressionNode, _operator: BinaryOp, _right: ExpressionNode, _tok: moo.Token) {
       super(_tok);
+      this._tok = _tok;
       this._left = _left;
       this._operator = _operator;
       this._right = _right;
