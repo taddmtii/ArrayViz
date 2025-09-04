@@ -16,6 +16,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateListCommand = exports.IndexAccessCommand = exports.InputCommand = exports.TypeCommand = exports.LenCommand = exports.PrintCommand = exports.ExitScopeCommand = exports.EnterScopeCommand = exports.JumpCommand = exports.ConditionalJumpCommand = exports.UnaryOpCommand = exports.ComparisonOpCommand = exports.BinaryOpCommand = exports.ReplaceHighlightedExpressionCommand = exports.HighlightStatementCommand = exports.MoveLinePointerCommand = exports.RetrieveValueCommand = exports.HighlightExpressionCommand = exports.PopValueCommand = exports.PushValueCommand = exports.IncrementProgramCounterCommand = exports.ChangeVariableCommand = exports.AssignVariableCommand = exports.State = exports.Command = void 0;
+var readline = require("readline");
 // ---------------------------------------------------------------------------------------
 // INTERFACES AND CLASSES
 // ---------------------------------------------------------------------------------------
@@ -298,7 +299,7 @@ var BinaryOpCommand = /** @class */ (function (_super) {
                     res = evaluatedLeft && evaluatedRight;
                     break;
                 case 'or':
-                    res = evaluatedRight || evaluatedRight;
+                    res = evaluatedRight | evaluatedRight;
                     break;
             }
         }
@@ -374,10 +375,14 @@ var UnaryOpCommand = /** @class */ (function (_super) {
 }(Command));
 exports.UnaryOpCommand = UnaryOpCommand;
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+// TODO: Refer to Prof. O on this one.
 var ConditionalJumpCommand = /** @class */ (function (_super) {
     __extends(ConditionalJumpCommand, _super);
-    function ConditionalJumpCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function ConditionalJumpCommand(_lineNum, _jumpBool) {
+        var _this = _super.call(this) || this;
+        _this._lineNum = _lineNum;
+        _this._jumpBool = true; // default to true
+        return _this;
     }
     ConditionalJumpCommand.prototype.do = function (_currentState) {
     };
@@ -402,10 +407,14 @@ exports.JumpCommand = JumpCommand;
 // EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
 var EnterScopeCommand = /** @class */ (function (_super) {
     __extends(EnterScopeCommand, _super);
-    function EnterScopeCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function EnterScopeCommand(_savedVariables) {
+        var _this = _super.call(this) || this;
+        _this._savedVariables = _savedVariables;
+        return _this;
     }
     EnterScopeCommand.prototype.do = function (_currentState) {
+        this._savedVariables = new Map(_currentState.variables); // create new map for local variables only.
+        this._undoCommand = new ExitScopeCommand(this._savedVariables); // restore previous variables.
     };
     return EnterScopeCommand;
 }(Command));
@@ -413,10 +422,18 @@ exports.EnterScopeCommand = EnterScopeCommand;
 // ExitScopeCommand -> exit scope and restore previous variable state.
 var ExitScopeCommand = /** @class */ (function (_super) {
     __extends(ExitScopeCommand, _super);
-    function ExitScopeCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function ExitScopeCommand(_previousVariables) {
+        var _this = _super.call(this) || this;
+        _this._previousVariables = _previousVariables;
+        return _this;
     }
     ExitScopeCommand.prototype.do = function (_currentState) {
+        var currentVariables = new Map(_currentState.variables); // create copy of current variables set in scope. (local)
+        this._undoCommand = new ExitScopeCommand(currentVariables); // undo is going back in scope, so restore variabels to local ones.
+        _currentState.variables.clear(); // clear all local variables.
+        this._previousVariables.forEach(function (value, key) {
+            _currentState.setVariable(key, value); // set each one by one to restore state.
+        });
     };
     return ExitScopeCommand;
 }(Command));
@@ -424,8 +441,10 @@ exports.ExitScopeCommand = ExitScopeCommand;
 // PrintCommand -> prints something to the console.
 var PrintCommand = /** @class */ (function (_super) {
     __extends(PrintCommand, _super);
-    function PrintCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function PrintCommand(_value) {
+        var _this = _super.call(this) || this;
+        _this._value = _value;
+        return _this;
     }
     PrintCommand.prototype.do = function (_currentState) {
         console.log(this._value);
@@ -433,15 +452,21 @@ var PrintCommand = /** @class */ (function (_super) {
     return PrintCommand;
 }(Command));
 exports.PrintCommand = PrintCommand;
-// LenCommand -> gets length of string, integer, list, etc...
+// LenCommand -> gets length of strings and lists, etc...
 var LenCommand = /** @class */ (function (_super) {
     __extends(LenCommand, _super);
-    function LenCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function LenCommand(_value) {
+        var _this = _super.call(this) || this;
+        _this._value = _value;
+        return _this;
     }
     LenCommand.prototype.do = function (_currentState) {
-        // if typeof _value == string {
-        // }
+        if (typeof this._value === 'string') {
+            _currentState.evaluationStack.push(this._value.length);
+        }
+        else if (Array.isArray(this._value)) {
+            _currentState.evaluationStack.push(this._value.length);
+        }
     };
     return LenCommand;
 }(Command));
@@ -449,8 +474,10 @@ exports.LenCommand = LenCommand;
 // TypeCommand -> returns type of value
 var TypeCommand = /** @class */ (function (_super) {
     __extends(TypeCommand, _super);
-    function TypeCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function TypeCommand(_value) {
+        var _this = _super.call(this) || this;
+        _this._value = _value;
+        return _this;
     }
     TypeCommand.prototype.do = function (_currentState) {
         return (typeof this._value);
@@ -461,10 +488,22 @@ exports.TypeCommand = TypeCommand;
 // InputCommand -> cin for user input
 var InputCommand = /** @class */ (function (_super) {
     __extends(InputCommand, _super);
-    function InputCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function InputCommand(_prompt, _ans) {
+        var _this = _super.call(this) || this;
+        _this._prompt = _prompt;
+        _this._ans = _ans;
+        return _this;
     }
     InputCommand.prototype.do = function (_currentState) {
+        var rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        rl.question(this._prompt, function (answer) {
+            this._ans = answer;
+            rl.close();
+        });
+        return this._ans;
     };
     return InputCommand;
 }(Command));
@@ -480,13 +519,21 @@ var IndexAccessCommand = /** @class */ (function (_super) {
     return IndexAccessCommand;
 }(Command));
 exports.IndexAccessCommand = IndexAccessCommand;
-// CreateListCommand -> 
+// CreateListCommand -> Creates a list of values
 var CreateListCommand = /** @class */ (function (_super) {
     __extends(CreateListCommand, _super);
-    function CreateListCommand() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function CreateListCommand(_name, _values) {
+        var _this = _super.call(this) || this;
+        _this._name = _name;
+        _this._values = _values;
+        return _this;
     }
     CreateListCommand.prototype.do = function (_currentState) {
+        this._undoCommand = new CreateListCommand(this._name, this._values);
+        _currentState.setVariable(this._name, this._values);
+    };
+    CreateListCommand.prototype.undo = function (_currentState) {
+        _currentState.variables.delete(this._name);
     };
     return CreateListCommand;
 }(Command));
