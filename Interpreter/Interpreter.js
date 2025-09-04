@@ -122,7 +122,7 @@ var AssignVariableCommand = /** @class */ (function (_super) {
     return AssignVariableCommand;
 }(Command));
 exports.AssignVariableCommand = AssignVariableCommand;
-// For assignments to a variable
+// For assignments to a variable. If variable name is not already assigned, it will be assigned.
 var ChangeVariableCommand = /** @class */ (function (_super) {
     __extends(ChangeVariableCommand, _super);
     function ChangeVariableCommand(_name, _value) {

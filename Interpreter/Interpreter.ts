@@ -90,7 +90,7 @@ export class AssignVariableCommand extends Command {
   }
 }
 
-// For assignments to a variable
+// For assignments to a variable. If variable name is not already assigned, it will be assigned.
 export class ChangeVariableCommand extends Command {
   private _name: string; // variable name
   private _value: PythonValue; // value to be connected to variable

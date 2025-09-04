@@ -1,8 +1,8 @@
 
-import { State, PushValueCommand, AssignVariableCommand } from './Interpreter';
+import { State, PushValueCommand, AssignVariableCommand, ChangeVariableCommand, IncrementProgramCounterCommand } from './Interpreter';
 
 function createState() {
-    return new State(0, 0, null as any, [], [], new Map(), [], 1, []);
+    return new State(1, 0, null as any, [], [], new Map(), [], 1, []);
 }
 
 function simpleTest() {
@@ -21,6 +21,15 @@ function simpleTest() {
   console.log("Variable y =", state.getVariable("y"));
   console.log("Variables map: ", state.variables);
   console.log("Stack after assignment:", state.evaluationStack); 
+  console.log("changing x's value to 12...");
+  const changevarcmd = new ChangeVariableCommand("x", 12);
+  changevarcmd.do(state);
+  console.log("Variable x =", state.getVariable("x"));
+  console.log("Variables map: ", state.variables);
+  console.log("increment program counter, current: ", state.programCounter);
+  const incrementpccmd = new IncrementProgramCounterCommand();
+  incrementpccmd.do(state);
+  console.log("PC now: ", state.programCounter);
 
 }
 
