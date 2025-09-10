@@ -1,12 +1,18 @@
 
-import { State, PushValueCommand, AssignVariableCommand, ChangeVariableCommand, IncrementProgramCounterCommand } from './Interpreter';
+import { State, PushValueCommand, AssignVariableCommand, ChangeVariableCommand, IncrementProgramCounterCommand, PrintCommand, CreateListCommand, LenCommand, InputCommand, ComparisonOpCommand } from './Interpreter';
+import { AssignmentStatementNode, ExpressionNode, IdentifierExpressionNode } from './Nodes'
 
 function createState() {
     return new State(1, 0, null as any, [], [], new Map(), [], 1, []);
 }
 
+function createMockToken() {
+    return
+}
+
 function simpleTest() {
-  const state = createState();
+  let state = createState();
+  let token = createMockToken();
 
   const pushCmd1 = new PushValueCommand(42);
   pushCmd1.do(state);
@@ -30,6 +36,26 @@ function simpleTest() {
   const incrementpccmd = new IncrementProgramCounterCommand();
   incrementpccmd.do(state);
   console.log("PC now: ", state.programCounter);
+  const printcmd = new PrintCommand("printable value");
+  printcmd.do(state);
+  const createlistcmd = new CreateListCommand("data", [1, 2, 3, 4, 5]);
+  createlistcmd.do(state);
+  console.log("Variables: ", state.variables);
+  const lencommand = new LenCommand("hello there");
+  lencommand.do(state);
+  console.log("Length of the string should be 11: ", state.evaluationStack.pop());
+  // const inputcommand = new InputCommand("Enter a number: ");
+  // let ans = inputcommand.do(state);
+  // console.log(ans);
+  let left = state.evaluationStack.push(3);
+  let right = state.evaluationStack.push(4);
+  console.log("evaluation stack: ", state.evaluationStack);
+  console.log("Left: ", state.evaluationStack.pop())
+  console.log("Right: ", state.evaluationStack.pop());
+  const compopcmd = new ComparisonOpCommand("!=");
+  compopcmd.do(state);
+  console.log("Comparison operand result between left and right is: ", state.evaluationStack.pop());
+  let assignment_statement_node = new AssignmentStatementNode("Hello there!", new IdentifierExpressionNode(token));
 
 }
 

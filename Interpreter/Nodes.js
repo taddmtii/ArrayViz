@@ -40,31 +40,33 @@ var StatementNode = /** @class */ (function () {
     return StatementNode;
 }());
 exports.StatementNode = StatementNode;
-// class AssignmentStatementNode extends StatementNode {
-//     private _left: Assignable | string; // variable name
-//     private _right: ExpressionNode; // value
-//     constructor(_left: Assignable | string, _right: ExpressionNode) {
-//         super();
-//         this._left = _left;
-//         this._right = _right;
-//     }
-//     execute(): Command[] {
-//       // 1. Highlight Statement
-//       // 2. Evaluate right hand expression
-//       // 3. Bind result from eval stack to variable
-//       // 4. Move to next line
-//         const commands: Command[] = [];
-//         commands.push(new HighlightStatementCommand(this)); // Highlight
-//         commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
-//         commands.push(new AssignVariableCommand(this._left)); // Bind variable.
-//         commands.push(new IncrementProgramCounterCommand());
-//         return commands;
-//       // return [
-//       //   new HighlightStatementCommand(this),
-//       //   new ...this._right.evaluate(),
-//       // ]
-//     }
-// }
+var AssignmentStatementNode = /** @class */ (function (_super) {
+    __extends(AssignmentStatementNode, _super);
+    function AssignmentStatementNode(_left, _right) {
+        var _this = _super.call(this) || this;
+        _this._left = _left;
+        _this._right = _right;
+        return _this;
+    }
+    AssignmentStatementNode.prototype.execute = function () {
+        // 1. Highlight Statement
+        // 2. Evaluate right hand expression
+        // 3. Bind result from eval stack to variable
+        // 4. Move to next line
+        var commands = [];
+        commands.push(new Interpreter_1.HighlightStatementCommand(this)); // Highlight
+        commands.push.apply(// Highlight
+        commands, (this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
+        commands.push(new Interpreter_1.AssignVariableCommand(this._left.toString())); // Bind variable.
+        commands.push(new Interpreter_1.IncrementProgramCounterCommand());
+        return commands;
+        // return [
+        //   new HighlightStatementCommand(this),
+        //   new ...this._right.evaluate(),
+        // ]
+    };
+    return AssignmentStatementNode;
+}(StatementNode));
 // class ReturnStatementNode extends StatementNode {
 //     private _value: ExpressionNode; // value by default should be null.
 //     constructor(_value: ExpressionNode) {

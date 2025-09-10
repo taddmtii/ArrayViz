@@ -1,9 +1,3 @@
-Potential Tech Stack:
-
-React (frontend)
-Node.js + Express.js (backend)
-PostgreSQL (Database)
-
 // prediction aspect of learning (what changes if what executes)
 What will happen if I increment this index?
 If I swap these two elements, what’s next?
@@ -43,7 +37,7 @@ Does not teach syntax explicitly other than index variables.
 English only (duh)
 Limited browser compatibility, with potential for explicit mobile support.  
 
-Justification:  The need for an educational tool is clearly imperative, one that allows students to step through array algorithms in a guided manner that emphasizes the crucial role of index variables and array operations. ArrayViz aims to bridge the present gap between theory and implementation.
+Justification: The need for an educational tool is clearly imperative, one that allows students to step through array algorithms in a guided manner that emphasizes the crucial role of index variables and array operations. ArrayViz aims to bridge the present gap between theory and implementation. Current tools like PythonTutor, which also visualize Python code, is broad ....
 
 Objectives:
 Supports custom index variables
@@ -55,38 +49,3 @@ Eclass integration with mini quizzes (potential)
 Time complexity analysis (counting steps)
 Leaderboards
 Potential achievement system (Gameification) (for instance, sort an array in *** amount of steps or complete all search algorithms).
-
-Questions to answer:
-
-What the code we are executing should look like? (pseudocode, python, block based (blockly - block code library))
-
-    Block based makes the most amount of sense.
-
-What data types should we deal with?
-
-    Integers and chars.
-
-Actors:
-[Student<<actor>>]
-[Instructor<<actor>>]
-[Administrator<<actor>>]
-
-User Stories:
-Register -> Student
-Login -> Student 
-Save instance -> Student
-Load instance -> Student
-Integrate with eClass -> Student
-Take periodic quizzes -> Student
-Set custom indexing variabels -> Student
-Step through selected algorithm process -> Student
-Access documentation for each process -> Student
-View and create leaderboard entries -> Student
-Count steps for time complexity -> Student
-Earn achievements -> Student
-
-Create quizzes -> Instructor
-Manage student progress -> Instructor
-View/manage leaderboards -> Instructor
-
-Manage -> Administrator

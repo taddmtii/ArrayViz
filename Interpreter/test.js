@@ -28,5 +28,24 @@ function simpleTest() {
     var incrementpccmd = new Interpreter_1.IncrementProgramCounterCommand();
     incrementpccmd.do(state);
     console.log("PC now: ", state.programCounter);
+    var printcmd = new Interpreter_1.PrintCommand("printable value");
+    printcmd.do(state);
+    var createlistcmd = new Interpreter_1.CreateListCommand("data", [1, 2, 3, 4, 5]);
+    createlistcmd.do(state);
+    console.log("Variables: ", state.variables);
+    var lencommand = new Interpreter_1.LenCommand("hello there");
+    lencommand.do(state);
+    console.log("Length of the string should be 11: ", state.evaluationStack.pop());
+    // const inputcommand = new InputCommand("Enter a number: ");
+    // let ans = inputcommand.do(state);
+    // console.log(ans);
+    var left = state.evaluationStack.push(3);
+    var right = state.evaluationStack.push(4);
+    console.log("evaluation stack: ", state.evaluationStack);
+    console.log("Left: ", state.evaluationStack.pop());
+    console.log("Right: ", state.evaluationStack.pop());
+    var compopcmd = new Interpreter_1.ComparisonOpCommand("!=");
+    compopcmd.do(state);
+    console.log("Comparison operand result between left and right is: ", state.evaluationStack.pop());
 }
 simpleTest();

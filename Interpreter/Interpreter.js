@@ -488,22 +488,22 @@ exports.TypeCommand = TypeCommand;
 // InputCommand -> cin for user input
 var InputCommand = /** @class */ (function (_super) {
     __extends(InputCommand, _super);
-    function InputCommand(_prompt, _ans) {
+    function InputCommand(_prompt) {
         var _this = _super.call(this) || this;
         _this._prompt = _prompt;
-        _this._ans = _ans;
         return _this;
     }
     InputCommand.prototype.do = function (_currentState) {
+        var ans = "";
         var rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout
         });
         rl.question(this._prompt, function (answer) {
-            this._ans = answer;
+            ans = answer;
             rl.close();
         });
-        return this._ans;
+        return ans;
     };
     return InputCommand;
 }(Command));

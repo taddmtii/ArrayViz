@@ -25,7 +25,7 @@ import { Command,
          CreateListCommand
         } from './Interpreter'
 
-// type Assignable = AssignmentStatementNode; // change later, placeholder.
+type Assignable = AssignmentStatementNode; // change later, placeholder.
 export type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
 export type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
@@ -55,35 +55,35 @@ export abstract class StatementNode {
     abstract execute(): Command[];
 }
 
-// class AssignmentStatementNode extends StatementNode {
-//     private _left: Assignable | string; // variable name
-//     private _right: ExpressionNode; // value
-//     constructor(_left: Assignable | string, _right: ExpressionNode) {
-//         super();
-//         this._left = _left;
-//         this._right = _right;
-//     }
+export class AssignmentStatementNode extends StatementNode {
+    private _left: string; // variable name
+    private _right: ExpressionNode; // value
+    constructor(_left: string, _right: ExpressionNode) {
+        super();
+        this._left = _left;
+        this._right = _right;
+    }
 
-//     execute(): Command[] {
-//       // 1. Highlight Statement
-//       // 2. Evaluate right hand expression
-//       // 3. Bind result from eval stack to variable
-//       // 4. Move to next line
-//         const commands: Command[] = [];
+    execute(): Command[] {
+      // 1. Highlight Statement
+      // 2. Evaluate right hand expression
+      // 3. Bind result from eval stack to variable
+      // 4. Move to next line
+        const commands: Command[] = [];
       
-//         commands.push(new HighlightStatementCommand(this)); // Highlight
-//         commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
-//         commands.push(new AssignVariableCommand(this._left)); // Bind variable.
-//         commands.push(new IncrementProgramCounterCommand());
+        commands.push(new HighlightStatementCommand(this)); // Highlight
+        commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
+        commands.push(new AssignVariableCommand(this._left)); // Bind variable.
+        commands.push(new IncrementProgramCounterCommand());
         
-//         return commands;
-//       // return [
-//       //   new HighlightStatementCommand(this),
-//       //   new ...this._right.evaluate(),
+        return commands;
+      // return [
+      //   new HighlightStatementCommand(this),
+      //   new ...this._right.evaluate(),
 
-//       // ]
-//     }
-// }
+      // ]
+    }
+}
 
 // class ReturnStatementNode extends StatementNode {
 //     private _value: ExpressionNode; // value by default should be null.

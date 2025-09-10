@@ -342,6 +342,7 @@ export class ConditionalJumpCommand extends Command {
     
   }
 }
+
 // JumpCommand -> jumps to a line number
 export class JumpCommand extends Command {
   private _lineNum: number;
@@ -431,30 +432,37 @@ export class TypeCommand extends Command {
 // InputCommand -> cin for user input
 export class InputCommand extends Command {
   private _prompt: string;
-  private _ans: string;
-  constructor(_prompt: string, _ans: string) {
+  constructor(_prompt: string) {
     super();
     this._prompt = _prompt;
-    this._ans = _ans;
   }
   do(_currentState: State) {
+    let ans: string = "";
     var rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     })
     rl.question(this._prompt, function(answer) {
-      this._ans = answer;
+      ans = answer;
       rl.close();
     });
-    return this._ans;
+    return ans;
   }
 }
 
 
 // IndexAccessCommand -> arr[5]
 export class IndexAccessCommand extends Command {
+  private _list: string;
+  private _index: number;
+  constructor(_list: string, _index: number) {
+    super();
+    this._list = _list;
+    this._index = _index;
+  }
   do(_currentState: State) {
-    
+    let arr: PythonValue[] | PythonValue = _currentState.getVariable(this._list)!;
+    _currentState.evaluationStack.push(arr[this._index]);
   }
 }
 
