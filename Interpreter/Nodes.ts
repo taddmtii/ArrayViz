@@ -25,7 +25,7 @@ import { Command,
          CreateListCommand
         } from './Interpreter'
 
-type Assignable = AssignmentStatementNode; // change later, placeholder.
+export type Assignable = AssignmentStatementNode;
 export type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
 export type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
@@ -85,143 +85,155 @@ export class AssignmentStatementNode extends StatementNode {
     }
 }
 
-// class ReturnStatementNode extends StatementNode {
-//     private _value: ExpressionNode; // value by default should be null.
-//     constructor(_value: ExpressionNode) {
-//         this._value = _value;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ReturnStatementNode extends StatementNode {
+    private _value: ExpressionNode; // value by default should be null.
+    constructor(_value: ExpressionNode) {
+        super();
+        this._value = _value;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class BreakStatementNode extends StatementNode {
-//     private _tok: moo.Token;
-//     constructor(_tok: moo.Token) {
-//         this._tok = _tok;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class BreakStatementNode extends StatementNode {
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        super();
+        this._tok = _tok;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class ContinueStatementNode extends StatementNode {
-//     private _tok: moo.Token;
-//     constructor(_tok: moo.Token) {
-//         this._tok = _tok;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ContinueStatementNode extends StatementNode {
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        super();
+        this._tok = _tok;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class PassStatementNode extends StatementNode {
-//     private _tok: moo.Token;
-//     constructor(_tok: moo.Token) {
-//         this._tok = _tok;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class PassStatementNode extends StatementNode {
+    private _tok: moo.Token;
+    constructor(_tok: moo.Token) {
+        super();
+        this._tok = _tok;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class IfStatementNode extends StatementNode {
-//     private _condition: ExpressionNode;
-//     private _thenBranch: BlockStatementNode;
-//     private _elseBranch: ElseBlockStatementNode;
-//     constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
-//         this._condition = _condition;
-//         this._thenBranch = _thenBranch;
-//         this._elseBranch = _elseBranch;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class IfStatementNode extends StatementNode {
+    private _condition: ExpressionNode;
+    private _thenBranch: BlockStatementNode;
+    private _elseBranch: ElseBlockStatementNode;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
+        super();
+        this._condition = _condition;
+        this._thenBranch = _thenBranch;
+        this._elseBranch = _elseBranch;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class ForStatementNode extends StatementNode {
-//     private _loopVar: IdentifierExpressionNode;
-//     private _iterable: ExpressionNode;
-//     private _block: BlockStatementNode;
-//     constructor(_loopVar: IdentifierExpressionNode, _iterable: ExpressionNode, _block: BlockStatementNode) {
-//      this._loopVar = _loopVar;
-//      this._iterable = _iterable;
-//      this._block = _block;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ForStatementNode extends StatementNode {
+    private _loopVar: IdentifierExpressionNode;
+    private _iterable: ExpressionNode;
+    private _block: BlockStatementNode;
+    constructor(_loopVar: IdentifierExpressionNode, _iterable: ExpressionNode, _block: BlockStatementNode) {
+        super();
+        this._loopVar = _loopVar;
+        this._iterable = _iterable;
+        this._block = _block;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class WhileStatementNode extends StatementNode {
-//     private _expression: ExpressionNode;
-//     private _block: BlockStatementNode;
-//     constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
-//       this._expression = _expression;
-//       this._block = _block;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class WhileStatementNode extends StatementNode {
+    private _expression: ExpressionNode;
+    private _block: BlockStatementNode;
+    constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
+      super();
+      this._expression = _expression;
+      this._block = _block;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class FuncDefStatementNode extends StatementNode {
-//     private _name: IdentifierExpressionNode;
-//     private _formalParamList: FormalParamsListExpressionNode;
-//     private _block: BlockStatementNode;
-//     constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode) {
-//       this._name = _name;
-//       this._formalParamList = _formalParamList;
-//       this._block = _block;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class FuncDefStatementNode extends StatementNode {
+    private _name: IdentifierExpressionNode;
+    private _formalParamList: FormalParamsListExpressionNode;
+    private _block: BlockStatementNode;
+    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode) {
+      super();
+      this._name = _name;
+      this._formalParamList = _formalParamList;
+      this._block = _block;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class ElifStatementNode extends StatementNode {
-//     private _condition: ExpressionNode;
-//     private _thenBranch: BlockStatementNode;
-//     private _elseBranch: ElseBlockStatementNode;
-//     constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
-//         this._condition = _condition;
-//         this._thenBranch = _thenBranch;
-//         this._elseBranch = _elseBranch;
-//     }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ElifStatementNode extends StatementNode {
+    private _condition: ExpressionNode;
+    private _thenBranch: BlockStatementNode;
+    private _elseBranch: ElseBlockStatementNode;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
+        super();
+        this._condition = _condition;
+        this._thenBranch = _thenBranch;
+        this._elseBranch = _elseBranch;
+    }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class ElseBlockStatementNode extends StatementNode {
-//     private _block : BlockStatementNode;
-//     constructor(_block: BlockStatementNode) {
-//      this._block = _block;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ElseBlockStatementNode extends StatementNode {
+    private _block : BlockStatementNode;
+    constructor(_block: BlockStatementNode) {
+      super();
+      this._block = _block;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class ExpresssionStatementNode extends StatementNode {
-//     private _expression: ExpressionNode;
-//     constructor(_expression: ExpressionNode) {
-//      this._expression = _expression;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class ExpresssionStatementNode extends StatementNode {
+    private _expression: ExpressionNode;
+    constructor(_expression: ExpressionNode) {
+      super(); 
+      this._expression = _expression;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
-// class BlockStatementNode extends StatementNode {
-//     private _statementList: StatementNode[];
-//     constructor(_statementList: StatementNode[]) {
-//      this._statementList = _statementList;
-//    }
-//     execute(): Command[] {
-//       return [];
-//     }
-// }
+class BlockStatementNode extends StatementNode {
+    private _statementList: StatementNode[];
+    constructor(_statementList: StatementNode[]) {
+      super();
+      this._statementList = _statementList;
+   }
+    execute(): Command[] {
+      return [];
+    }
+}
 
 
 // ------------------------------------------------------------------
@@ -282,65 +294,66 @@ export class IdentifierExpressionNode extends ExpressionNode {
     }
 }
 
-// class FormalParamsListExpressionNode extends ExpressionNode {
-//    private _paramsList: IdentifierExpressionNode[];
-//    constructor(_paramsList: IdentifierExpressionNode[]) {
-//      super(_paramsList[0]._tok);
-//      this._paramsList = _paramsList;
-//   }
-//    evaluate(): Command[] {
-//     return [];
-//    }
-//    override public get endLine() {
-//     return this._paramsList[this._paramsList.length - 1]._tok.line
-//   }
-//    override public get endCol() {
-//     let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
-//     return _lastTok.col + (_lastTok.text.length - 1);
-//   }
-// }
+class FormalParamsListExpressionNode extends ExpressionNode {
+   private _paramsList: IdentifierExpressionNode[];
+   constructor(_paramsList: IdentifierExpressionNode[]) {
+     super(_paramsList[0]._tok);
+     this._paramsList = _paramsList;
+  }
+   evaluate(): Command[] {
+    return [];
+   }
+   override public get endLine() {
+    return this._paramsList[this._paramsList.length - 1]._tok.line
+  }
+   override public get endCol() {
+    let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
+    return _lastTok.col + (_lastTok.text.length - 1);
+  }
+}
 
-// class ConditionalExpressionNode extends ExpressionNode {
-//     private _left: ExpressionNode;
-//     private _condition: ExpressionNode;
-//     private _right: ExpressionNode;
-//     constructor(_left: ExpressionNode, _condition: ExpressionNode, _right: ExpressionNode) {
-//       this._left = _left;
-//       this._condition = _condition;
-//       this._right = _right;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class ConditionalExpressionNode extends ExpressionNode {
+    private _left: ExpressionNode;
+    private _condition: ExpressionNode;
+    private _right: ExpressionNode;
+    constructor(_left: ExpressionNode, _condition: ExpressionNode, _right: ExpressionNode) {
+      super();
+      this._left = _left;
+      this._condition = _condition;
+      this._right = _right;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class ArgListExpressionNode extends ExpressionNode {
-//     private _argsList: ExpressionNode[];
-//     constructor(_argsList: ExpressionNode[]) {
-//      this._argsList = _argsList;
-//    }
-//    this._args_list.ForEach(function (arg) {
-//     new HighlightExpressionCommand(arg);
-//     new ReplaceHighlightedExpressionCommand(arg, new EvaluatedExpressionNode()); // what to pass in here?
-//    })
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class ArgListExpressionNode extends ExpressionNode {
+    private _argsList: ExpressionNode[];
+    constructor(_argsList: ExpressionNode[]) {
+     this._argsList = _argsList;
+   }
+   this._args_list.ForEach(function (arg) {
+    new HighlightExpressionCommand(arg);
+    new ReplaceHighlightedExpressionCommand(arg, new EvaluatedExpressionNode()); // what to pass in here?
+   })
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class ComparisonExpressionNode extends ExpressionNode {
-//     private _left: ExpressionNode;
-//     private _operator: ComparisonOp;
-//     private _right: ExpressionNode;
-//     constructor(_left: ExpressionNode, _operator: ComparisonOp, _right: ExpressionNode) {
-//       this._left = _left;
-//       this._operator = _operator;
-//       this._right = _right;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class ComparisonExpressionNode extends ExpressionNode {
+    private _left: ExpressionNode;
+    private _operator: ComparisonOp;
+    private _right: ExpressionNode;
+    constructor(_left: ExpressionNode, _operator: ComparisonOp, _right: ExpressionNode) {
+      this._left = _left;
+      this._operator = _operator;
+      this._right = _right;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
 class BinaryExpressionNode extends ExpressionNode {
     public _tok: moo.Token;
@@ -360,129 +373,129 @@ class BinaryExpressionNode extends ExpressionNode {
     }
  }
 
-// class UnaryExpressionNode extends ExpressionNode {
-//     private _operator: UnaryOp;
-//     private _operand: ExpressionNode;
-//     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
-//      super();
-//      this._operator = _operator;
-//      this._operand = _operand;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class UnaryExpressionNode extends ExpressionNode {
+    private _operator: UnaryOp;
+    private _operand: ExpressionNode;
+    constructor(_operator: UnaryOp, _operand: ExpressionNode) {
+     super();
+     this._operator = _operator;
+     this._operand = _operand;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class FuncCallExpresssionNode extends ExpressionNode {
-//     private _func_name: ExpressionNode;
-//     private _args_list: ArgListExpressionNode;
-//     constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
-//      this._func_name = _func_name;
-//      this._args_list = _args_list;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class FuncCallExpresssionNode extends ExpressionNode {
+    private _func_name: ExpressionNode;
+    private _args_list: ArgListExpressionNode;
+    constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
+     this._func_name = _func_name;
+     this._args_list = _args_list;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class ListAccessExpresssionNode extends ExpressionNode  {
-//     private _list: ExpressionNode;
-//     private _index: ExpressionNode;
-//     constructor(_list: ExpressionNode, _index: ExpressionNode) {
-//      this._list = _list;
-//      this._index = _index;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class ListAccessExpresssionNode extends ExpressionNode  {
+    private _list: ExpressionNode;
+    private _index: ExpressionNode;
+    constructor(_list: ExpressionNode, _index: ExpressionNode) {
+     this._list = _list;
+     this._index = _index;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class MethodCallExpressionNode extends ExpressionNode {
-//     private _list: ExpressionNode;
-//     private _methodName: IdentifierExpressionNode;
-//     private _argsList: ArgListExpressionNode;
-//     constructor(_list: ExpressionNode, _methodName: IdentifierExpressionNode, _argsList: ArgListExpressionNode) {
-//      this._list = _list;
-//      this._methodName = _methodName;
-//      this._argsList = _argsList;
-//    }
-//     evaluate(): Command[] {
-//       return [];
-//     }
-//  }
+class MethodCallExpressionNode extends ExpressionNode {
+    private _list: ExpressionNode;
+    private _methodName: IdentifierExpressionNode;
+    private _argsList: ArgListExpressionNode;
+    constructor(_list: ExpressionNode, _methodName: IdentifierExpressionNode, _argsList: ArgListExpressionNode) {
+     this._list = _list;
+     this._methodName = _methodName;
+     this._argsList = _argsList;
+   }
+    evaluate(): Command[] {
+      return [];
+    }
+ }
 
-// class ListSliceExpressionNode extends ExpressionNode {
-//     private _list: ExpressionNode;
-//     private _start: ExpressionNode;
-//     private _stop: ExpressionNode;
-//     private _step: ExpressionNode;
-//     constructor(_list: ExpressionNode, _start: ExpressionNode, _stop: ExpressionNode, _step: ExpressionNode) {
-//       super();
-//       this._list = _list;
-//       this._start = _start;
-//       this._stop = _stop;
-//       this._step = _step;
-//   }
-//     evaluate(): Command[] {
-//       let operations: ExpressionNode[] = [this._start, this._stop, this._step];
-//       operations.forEach(function (val) { // for each element here, highlight and evaluate
-//         new HighlightExpressionCommand(val);
-//         new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(val));
-//       })
-//       return [
-//         new HighlightExpressionCommand(this), // the idea is to then highlight the entire thing.
-//         new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode())
-//       ];
-//     }
-//  }
+class ListSliceExpressionNode extends ExpressionNode {
+    private _list: ExpressionNode;
+    private _start: ExpressionNode;
+    private _stop: ExpressionNode;
+    private _step: ExpressionNode;
+    constructor(_list: ExpressionNode, _start: ExpressionNode, _stop: ExpressionNode, _step: ExpressionNode) {
+      super();
+      this._list = _list;
+      this._start = _start;
+      this._stop = _stop;
+      this._step = _step;
+  }
+    evaluate(): Command[] {
+      let operations: ExpressionNode[] = [this._start, this._stop, this._step];
+      operations.forEach(function (val) { // for each element here, highlight and evaluate
+        new HighlightExpressionCommand(val);
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(val));
+      })
+      return [
+        new HighlightExpressionCommand(this), // the idea is to then highlight the entire thing.
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode())
+      ];
+    }
+ }
 
-// class ListLiteralExpressionNode extends ExpressionNode {
-//     private _values: PythonValue[];
-//     constructor(_values: PythonValue[]) {
-//       this._values = _values;
-//     }
-//   evaluate(): Command[] {
-//     return [
-//       new HighlightExpressionCommand(this),
-//       new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._values))
-//     ];
-//   }
-//  }
+class ListLiteralExpressionNode extends ExpressionNode {
+    private _values: PythonValue[];
+    constructor(_values: PythonValue[]) {
+      this._values = _values;
+    }
+  evaluate(): Command[] {
+    return [
+      new HighlightExpressionCommand(this),
+      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._values))
+    ];
+  }
+ }
 
-// class BooleanLiteralExpressionNode extends ExpressionNode {
-//     private _value: Boolean;
-//     constructor(_value: Boolean) {
-//       this._value = _value;
-//   }
-//   evaluate(): Command[] {
-//     return [
-//       new HighlightExpressionCommand(this), // highlight
-//       new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-//     ]
-//   }
-//  }
+class BooleanLiteralExpressionNode extends ExpressionNode {
+    private _value: Boolean;
+    constructor(_value: Boolean) {
+      this._value = _value;
+  }
+  evaluate(): Command[] {
+    return [
+      new HighlightExpressionCommand(this), // highlight
+      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+    ]
+  }
+ }
 
-// class StringLiteralExpressionNode extends ExpressionNode {
-//     private _value: moo.Token;
-//     constructor(_value: moo.Token) {
-//       super(_value);
-//       this._value = _value;
-//   }
-//     evaluate(): Command[] {
-//       return [
-//         new HighlightExpressionCommand(this), // highlight
-//         new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-//     ]
-//     }
-//  }
+class StringLiteralExpressionNode extends ExpressionNode {
+    private _value: moo.Token;
+    constructor(_value: moo.Token) {
+      super(_value);
+      this._value = _value;
+  }
+    evaluate(): Command[] {
+      return [
+        new HighlightExpressionCommand(this), // highlight
+        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+    ]
+    }
+ }
 
-// class EvaluatedExpressionNode extends ExpressionNode {
-//     private _value: PythonValue | PythonValue[] | ExpressionNode;
-//     constructor(_value: PythonValue | PythonValue[] | ExpressionNode) {
-//         super();
-//         this._value = _value;
-//     }
-//     evaluate(): Command[] {
-//         return [];
-//     }
-// }
+class EvaluatedExpressionNode extends ExpressionNode {
+    private _value: PythonValue | PythonValue[] | ExpressionNode;
+    constructor(_value: PythonValue | PythonValue[] | ExpressionNode) {
+        super();
+        this._value = _value;
+    }
+    evaluate(): Command[] {
+        return [];
+    }
+}

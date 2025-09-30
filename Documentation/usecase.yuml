@@ -30,8 +30,9 @@
 (Run algorithm) > (Evaluate expression)
 (Evaluate expression) < (Access element)
 (Evaluate expression) < (Create var)
-(Run algorithm) > (Toggle predict)
-(Run algorithm) < (Predict)
+(Run algorithm) > (Toggle mode)
+(Run algorithm) < (Predict mode) 
+(Run algorithm) < (View mode)
 
 (Predict) > (Variable change)
 (Variable change) < (Element Change)

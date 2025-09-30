@@ -55,7 +55,7 @@ function simpleTest() {
   const compopcmd = new ComparisonOpCommand("!=");
   compopcmd.do(state);
   console.log("Comparison operand result between left and right is: ", state.evaluationStack.pop());
-  let assignment_statement_node = new AssignmentStatementNode("Hello there!", new IdentifierExpressionNode(token));
+  // let assignment_statement_node = new AssignmentStatementNode("Hello there!", new IdentifierExpressionNode(token));
 
 }
 

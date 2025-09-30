@@ -25,16 +25,15 @@ export class State {
   private _history: Command[]; // history of all commands
   private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
-  private _debugOutput: string[];  // debug messages
 
-  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<string, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
+  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _currentStatement: StatementNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<string, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
     this._currentExpression = _currentExpression;
+    this._currentStatement = _currentStatement;
     this._callStack = _callStack;
     this._history = _history;
     this._variables = _variables;
-    this._debugOutput = _debugOutput;
     this._currentLine = _currentLine;
     this._evaluationStack = _evaluationStack;
   }
@@ -56,7 +55,6 @@ export class State {
 
   public get evaluationStack() { return this._evaluationStack; }
   public get variables() { return this._variables; }
-  public get debugOutput() { return this._debugOutput; }
 
   public setVariable(name: string, value: (PythonValue | PythonValue[])) { this._variables.set(name, value); } // adds new key value into variables map.
   public getVariable(name: string): PythonValue | PythonValue[] { return this._variables.get(name) || null; } // could be nullable upon lookup. null is important here.
@@ -77,9 +75,10 @@ export class State {
 export class AssignVariableCommand extends Command {
   private _name: string;
   private _oldValue: PythonValue; // need existing value for undo command.
-  constructor(_name: string) {
+  constructor(_name: string, _oldValue: PythonValue) {
     super();
     this._name = _name;
+    this._oldValue = _oldValue;
   }
   
   do(_currentState: State) {
@@ -113,6 +112,7 @@ export class IncrementProgramCounterCommand extends Command {
     this._undoCommand = new IncrementProgramCounterCommand();
     _currentState.programCounter += 1;
   }
+  //account for blank lines special cases
 
   override undo(_currentState: State) { // need to override since we need to decrement upon undoing.
     _currentState.programCounter -= 1;
@@ -135,15 +135,11 @@ export class PushValueCommand extends Command {
 
 // Pops value off Evaluation Stack during Expression processing.
 export class PopValueCommand extends Command { 
-  private _value: PythonValue; // Store popped value.
-  constructor() {
-    super();
-  }
-
   do(_currentState: State) {
-    this._value = _currentState.evaluationStack.pop()!; // pop value and store in member
-    this._undoCommand = new PushValueCommand(this._value); 
-    return this._value;
+    let value: PythonValue;
+    value = _currentState.evaluationStack.pop()!; // pop value and store in member
+    this._undoCommand = new PushValueCommand(value); 
+    return value;
   }
 }
 
@@ -462,7 +458,7 @@ export class IndexAccessCommand extends Command {
   }
   do(_currentState: State) {
     let arr: PythonValue[] | PythonValue = _currentState.getVariable(this._list)!;
-    _currentState.evaluationStack.push(arr[this._index]);
+    _currentState.evaluationStack.push();
   }
 }
 

@@ -1,5 +1,4 @@
-\documentclass{article}
-\usepackage{graphicx} % Required for inserting images
+\documentclass{IEEEtran}
 
 \title{ArrayViz: An interactive array simulation for array traversal and manipulation of fundamental algorithms.}
 \author{Tadd Trumbull II}
@@ -10,33 +9,71 @@
 \maketitle
 
 \begin{abstract}
-Placeholder for my abstract..
+Within computer science academia, the first data structure students are normally introduced to is the array. Students consistently struggle to visualize simple search and sorting algorithms through current teaching methods, which leads students to fall behind. ArrayViz aims to address these concerns, as the need for an educational tool like ArrayViz is clearly imperative. ArrayViz allows students to walk through array algorithms in a guided manner that emphasizes the crucial role of index variables and array operations. Through the use of this tool, we aim to enhance student's fundamental understanding of array algorithms, and will result in a better understanding of the subject matter across students. Current tools like PythonTutor, which also visualize Python code, are broad in purpose and intent. ArrayViz serves a distinct purpose and uses its own subset of Python for the applications specific use case.
 \end{abstract}
 
 \section{Introduction}
-Array searching and sorting algorithms are foundational in computer science academia. Unfortunately, students often struggle to internalize on a deeper level these concepts when taught solely through pseudocode or static diagrams. ArrayViz allows for that gap to be diminished, providing an interactive, step by step simulation environment where students can manipulate array elements using custom parameters and index variables. Students will be able to observe the effect of comparisons and index swaps, and track the number of operations to intuitively grasp time complexity, a fundamental concept in understanding the time and space efficiency of an algorithm. By simulating algorithms at this low level, the project bridges the gap between theoretical abstraction and practical insight, making it easier for students to master fundamental algorithmic thinking. 
-\section{Problem Statement}
-Students often struggle to visualize these simple algorithms when the concept is first introduced, and traditional teaching methods typically present algorithms as abstract pseudocode, static diagrams or graphs. A prevalent challenge students face is a disconnect between abstract psuedocode and actual logic and execution. A student may know what swapping arr[i] with arr[j] means in psuedocode, but fail to picture the data shift itself programatically. In addition, instructors cannot show dynamic behavior through static lecture slides. These examples show the need to provide students with an interactive understanding of how these algorithms operate at a lower level through a visualization tool.
-\section{Hypothesis}
+Array searching and sorting algorithms are foundational in computer science academia. An array, by definition, is a collection of elements stored contiguously in the computers memory. Unfortunately, students often struggle to internalize on a deeper level these concepts when taught solely through pseudocode or static diagrams. 
+
+ArrayViz allows for that gap to be diminished, providing an interactive, step-by-step simulation environment where students can manipulate array elements using custom parameters and index variables. Students will be able to observe the effect of comparisons and index swaps, and track the number of operations to intuitively grasp time complexity, a fundamental concept in understanding the time and space efficiency of an algorithm. By simulating algorithms at this low level, the project bridges the gap between theoretical abstraction and practical insight, making it easier for students to master fundamental algorithmic thinking.
+
+The dual-mode approach of ArrayViz serves two distinct purposes: Predict Mode encourages learning by requiring students to guess algorithmic behavior before executing it for themselves, while View Mode provides immediate visual feedback to reinforce understanding through stepping through.
+\subsection{Problem Statement}
+Students often struggle to visualize these simple algorithms when the concept is first introduced, and traditional teaching methods typically present algorithms as abstract pseudocode, static diagrams or graphs. A prevalent challenge students face is a disconnect between abstract pseudocode and actual logic and execution. A student may know what swapping arr[i] with arr[j] means in pseudocode, but fail to picture the data shift itself programatically. 
+
+In addition, instructors cannot show dynamic behavior through static lecture slides. These examples show the need to provide students with an interactive understanding of how these algorithms operate at a lower level through a visualization tool like ArrayViz. ArrayViz closes the abstraction gap students face, and offers a dynamic visualization and index management that is not prevalent on the whiteboard.
+\subsection{Hypothesis}
 ArrayViz aims to enhance students' fundamental understanding of array searching and sorting algorithms, and will result in a better understanding of the subject matter among students. If students use ArrayViz as a supplement to lectures and labs, their comprehension of algorithm steps, operational costs, trade-offs, etc... will improve compared to students who do not utilize the resource.
-\section{Limitations}
-Like any other educational tool, ArrayViz faces a few constraints that may impact its scalability. There is a lack of direct application of current research on how students with diverse learning styles engage with algorithm visualizations. This tool is catered to those with a visual learning style, and there is no apparent universal design to a visualization tool. Another limitation lies in technical performance. ArrayViz is intended and designed to be lightweight, and utilizes a custom, restrictive subset of the Python programming language in order to avoid the possibility of complexity. As a result, ArrayViz may struggle when rendering large arrays or handling algorithms with high computational complexity in real time. \\
+\subsection{Limitations}
+Like any other educational tool, ArrayViz faces a few constraints that may impact its scalability and implementation.
+
+ArrayViz' effectiveness is limited to introductory algorithmic concepts, and the tool is not meant to address more advanced concepts such as graph algorithms or dynamic programming problems. The simplified Python subset ArrayViz uses, while it is educationally beneficial for beginners, may not fully prepare students for real-world programming environments. 
+
+ArrayViz is a web application, and as such imposes fundamental limitations for computational capacity. Real time visualization becomes cumbersome when introducing large arrays with hundreds of elements. This constraint limits the tools utility for demonstrating behavior of an algorithm on realistically sized data sets.
 \\
 Browser compatibility also poses a limitation, as not all features may perform across different platforms and devices. ArrayViz is not considered to be mobile-safe, and does not provide additional explicit accessibility accommodations than what is considered web-standard.
-\section{Delimitations}
-ArrayViz restricts itself exclusively to array-based algorithms, as arrays are foundational data structures. Students using more advanced structures such as linked lists, stacks, and trees require knowledge of arrays preliminarily. This choice ensures depth of understanding over breadth of coverage. Algorithms included are core searching and sorting algorithms, such as linear search, binary search, bubble sort, selection sort, insertion sort, merge sort, and quicksort. These are standardized algorithms for searching and sorting an array, and give students insight into both algorithm design and analysis.
-\section{Justification}
+\subsection{Delimitations}
+ArrayViz restricts itself exclusively to array-based algorithms, as arrays are foundational data structures. Students using more advanced structures such as linked lists, stacks, and trees require preliminarily knowledge of arrays. This choice ensures depth of understanding over breadth of coverage. Specific delimitations include:
+
+\begin{itemize}
+    \item ArrayViz focuses on array-based algorithms only, excluding more advanced data structures.
+    \item Coverage restricted to introductory algorithms such as: 
+    \begin{itemize}
+        \item Linear Search
+        \item Binary Search
+        \item Bubble Sort
+        \item Selection Sort
+        \item Insertion Sort
+        \item Merge Sort
+        \item Quicksort
+    \end{itemize}
+    \item Use of simplified subset of Python programming language for algorithm specification. Features such as generators, classes, globally scoped variables are not supported.
+    \item Array size is limited for performance and to avoid overload on the application.
+    \item ArrayViz is exclusively a web-based tool, designed for desktop users.
+\end{itemize}
+    
+\subsection{Justification}
 The need for an educational tool is clearly imperative, one that allows students to step through array algorithms in a guided manner that emphasizes the crucial role of index variables and array operations. ArrayViz aims to bridge the present gap between theory and implementation. Current tools like PythonTutor, which also visualize Python code, are broad in purpose and intent. ArrayViz serves a distinct purpose, and uses its own subset of Python for the applications specific use case. PythonTutor also does not have a gamification aspect, which incentivizes students. 
-\section{Objectives}
+\subsection{Objectives}
 The main objective of ArrayViz is to enhance student's understanding of array based algorithms, providing them with an interactive simulation platform. To achieve this, the project pursues the following objectives:
-
 \begin{enumerate}
-    \item \textbf{Support for Custom Index Variables}
-    \item \textbf{Step-byStep Algorithm Execution}
-    \item \textbf{Comprehensive Documentation of the Visualization Language}
-    \item \textbf{Potential Database Integration for Student Progress}
-    \item \textbf{Time Complexity Analysis}
-    \item \textbf{Gamification and Engagement Elements}
+    \item {Support for Custom Index Variables}
+    \item {Step forward and back Algorithm Execution}
+    \item {Comprehensive Documentation of the Visualization Language}
+    \item Expression based evaluation
+    \item {Potential Database Integration for Student Progress}
+    \item {Time Complexity Analysis}
+    \item {Gamification and Engagement Elements}
 \end{enumerate}
+\section{Background}
+\subsection{State of the Art}
+Currently, there are several visualization tools that bridge this prevalent gap between simple algorithm design and execution. The most widely regarded is PythonTutor, as it provides line-by-line execution and visualizes variables states as you step through a program. While it is useful, PythonTutor is generalized in its purpose, and as such is not specifically designed to focus on arrays or their associated algorithms.
 
+Debuggers integrated into modern IDEs like Thonny also integrate step-by-step execution, but has a more complicated interface that encourages professional development instead of structural learning. In contrast, ArrayViz is designed with intentional limitations: 
+\begin{itemize}
+    \item Focus exclusively on arrays
+    \item Emphasizes indexing variables
+    \item Integrates learning modes
+\end{itemize}
+With its borders set, ArrayViz serves as a targeted learning environment as opposed to a generalized visualization platform.
 \end{document}
