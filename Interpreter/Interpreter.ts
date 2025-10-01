@@ -5,10 +5,10 @@ import * as readline from 'readline';
 // INTERFACES AND CLASSES
 // ---------------------------------------------------------------------------------------
 export abstract class Command {
-  protected _undoCommand: Command;
+  protected _undoCommand: Command | null = null;
   abstract do(_currentState: State): void;
   undo(_currentState: State) {
-    this._undoCommand.do(_currentState);
+    this._undoCommand?.do(_currentState);
   }
 }
 
@@ -25,17 +25,28 @@ export class State {
   private _history: Command[]; // history of all commands
   private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
+  private _returnStack: PythonValue[]; // stack for return values
 
-  constructor(_programCounter: number, _lineCount: number, _currentExpression: ExpressionNode, _currentStatement: StatementNode, _callStack: ExpressionNode[], _history: Command[], _variables: Map<string, number>, _debugOutput: string[], _currentLine: number, _evaluationStack: PythonValue[]) {
-    this._programCounter = _programCounter;
-    this._lineCount = _lineCount;
-    this._currentExpression = _currentExpression;
-    this._currentStatement = _currentStatement;
-    this._callStack = _callStack;
-    this._history = _history;
-    this._variables = _variables;
-    this._currentLine = _currentLine;
-    this._evaluationStack = _evaluationStack;
+  constructor(_programCounter: number,
+              _lineCount: number, 
+              _currentExpression: ExpressionNode, 
+              _currentStatement: StatementNode, 
+              _callStack: ExpressionNode[], 
+              _history: Command[], 
+              _variables: Map<string, number>, 
+              _currentLine: number, 
+              _evaluationStack: PythonValue[],
+              _returnStack: PythonValue[]) {
+              this._programCounter = _programCounter;
+              this._lineCount = _lineCount;
+              this._currentExpression = _currentExpression;
+              this._currentStatement = _currentStatement;
+              this._callStack = _callStack;
+              this._history = _history;
+              this._variables = _variables;
+              this._currentLine = _currentLine;
+              this._evaluationStack = _evaluationStack;
+              this._returnStack = _returnStack;
   }
   
   public get programCounter() { return this._programCounter; }
@@ -65,6 +76,8 @@ export class State {
   public addHistoryCommand(step: Command) { this._history.push(step); }
   public getMostRecentHistoryCommand() { return this._history.pop(); } 
 
+  public pushReturnStack(value: PythonValue) { this._returnStack.push(value); }
+  public popReturnStack() { return this._returnStack.pop(); }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -74,17 +87,15 @@ export class State {
 // Take value from top of evaluation stack and store it in a variable.
 export class AssignVariableCommand extends Command {
   private _name: string;
-  private _oldValue: PythonValue; // need existing value for undo command.
-  constructor(_name: string, _oldValue: PythonValue) {
+  constructor(_name: string) {
     super();
     this._name = _name;
-    this._oldValue = _oldValue;
   }
   
   do(_currentState: State) {
     const newValue = _currentState.evaluationStack.pop()!; // get value from evaluation stack
-    this._oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
-    this._undoCommand = new ChangeVariableCommand(this._name, this._oldValue); // undo command: Change variable BACK to old value.
+    const oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
+    this._undoCommand = new ChangeVariableCommand(this._name, oldValue); // undo command: Change variable BACK to old value.
     _currentState.setVariable(this._name, newValue);
   }
 }
@@ -103,19 +114,6 @@ export class ChangeVariableCommand extends Command {
     const oldValue = _currentState.getVariable(this._name); // get current variables value
     this._undoCommand = new ChangeVariableCommand(this._name, oldValue); // undo command: Change variable to old value.
     _currentState.setVariable(this._name, this._value); // set variable to new value passed in
-  }
-}
-
-// Increments program counter in state to move to next line of execution.
-export class IncrementProgramCounterCommand extends Command {
-  do(_currentState: State) {
-    this._undoCommand = new IncrementProgramCounterCommand();
-    _currentState.programCounter += 1;
-  }
-  //account for blank lines special cases
-
-  override undo(_currentState: State) { // need to override since we need to decrement upon undoing.
-    _currentState.programCounter -= 1;
   }
 }
 
@@ -478,5 +476,16 @@ export class CreateListCommand extends Command {
   }
   override undo(_currentState: State) {
     _currentState.variables.delete(this._name);
+  }
+}
+
+export class ReturnCommand extends Command {
+  private _value: PythonValue;
+  constructor(_value: PythonValue) {
+    super();
+    this._value = _value;
+  }
+  do(_currentState: State) {
+    _currentState.pushReturnStack(this._value);
   }
 }

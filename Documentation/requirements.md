@@ -59,3 +59,17 @@ Course: CPTR-486 Senior Seminar
         - what platforms
         - what performance
         - limitations
+
+% Milestone 2:
+    - Parser genreate AST
+    - Full expression support and assignments to variables.
+    - Establish Architecture diagram (Parser, Evaluator, GUI components).
+% Milestone 3:
+    - Full statement support
+    - CLI test suite established
+    - Frontend foundation set.
+% Milestone 4:
+    - Complete frontend
+
+
+- 

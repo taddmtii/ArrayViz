@@ -2,7 +2,6 @@ import * as moo from 'moo';
 import { Command, 
          AssignVariableCommand, 
          ChangeVariableCommand, 
-         IncrementProgramCounterCommand, 
          PushValueCommand, 
          PopValueCommand, 
          HighlightExpressionCommand, 
@@ -22,7 +21,8 @@ import { Command,
          TypeCommand,
          InputCommand,
          IndexAccessCommand,
-         CreateListCommand
+         CreateListCommand,
+         ReturnCommand
         } from './Interpreter'
 
 export type Assignable = AssignmentStatementNode;
@@ -53,15 +53,28 @@ export class ProgramNode {
 // Statement Node is the base class for all statement type nodes.
 export abstract class StatementNode {
     abstract execute(): Command[];
+    public _startTok: moo.Token; 
+    public _endTok: moo.Token;
+    constructor(_tok: moo.Token) {
+      this._startTok = _tok;
+   }
+    abstract evaluate(): Command[];
+    public get lineNum() {return this._tok.line};
+    public get startLine() {return this._tok.line};
+    public get endLine() {return this._tok.line };
+    public get startCol() {return this._tok.col};
+    public get endCol() {return this._tok.col + (this._tok.text.length - 1)};
 }
 
 export class AssignmentStatementNode extends StatementNode {
     private _left: string; // variable name
     private _right: ExpressionNode; // value
-    constructor(_left: string, _right: ExpressionNode) {
+    private _tok: moo.Token;
+    constructor(_left: string, _right: ExpressionNode, _tok: moo.Token) {
         super();
         this._left = _left;
         this._right = _right;
+        this._tok = _tok;
     }
 
     execute(): Command[] {
@@ -74,25 +87,29 @@ export class AssignmentStatementNode extends StatementNode {
         commands.push(new HighlightStatementCommand(this)); // Highlight
         commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
         commands.push(new AssignVariableCommand(this._left)); // Bind variable.
-        commands.push(new IncrementProgramCounterCommand());
+        commands.push(new MoveLinePointerCommand(this._tok.line));
         
         return commands;
-      // return [
-      //   new HighlightStatementCommand(this),
-      //   new ...this._right.evaluate(),
-
-      // ]
     }
 }
 
-class ReturnStatementNode extends StatementNode {
+export class ReturnStatementNode extends StatementNode {
     private _value: ExpressionNode; // value by default should be null.
-    constructor(_value: ExpressionNode) {
+    private _previousVariables : Map<string, PythonValue>;
+    constructor(_value: ExpressionNode, _previousVariables : Map<string, PythonValue>) {
         super();
+        this._previousVariables = _previousVariables;
         this._value = _value;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      commands.push(new HighlightStatementCommand(this)); // highlight entire statement
+      commands.push(...(this._value.evaluate())); // evaluate value to be returned.
+      const returnValue = new PopValueCommand();
+      commands.push(new ExitScopeCommand(this._previousVariables));
+      commands.push(new ReturnCommand(returnValue));
+      return commands;
     }
 }
 
@@ -103,7 +120,11 @@ class BreakStatementNode extends StatementNode {
         this._tok = _tok;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -114,7 +135,11 @@ class ContinueStatementNode extends StatementNode {
         this._tok = _tok;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -125,7 +150,11 @@ class PassStatementNode extends StatementNode {
         this._tok = _tok;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -140,7 +169,11 @@ class IfStatementNode extends StatementNode {
         this._elseBranch = _elseBranch;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -155,7 +188,11 @@ class ForStatementNode extends StatementNode {
         this._block = _block;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -168,7 +205,11 @@ class WhileStatementNode extends StatementNode {
       this._block = _block;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -183,7 +224,11 @@ class FuncDefStatementNode extends StatementNode {
       this._block = _block;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -198,7 +243,11 @@ class ElifStatementNode extends StatementNode {
         this._elseBranch = _elseBranch;
     }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -209,7 +258,11 @@ class ElseBlockStatementNode extends StatementNode {
       this._block = _block;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -220,7 +273,11 @@ class ExpresssionStatementNode extends StatementNode {
       this._expression = _expression;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -231,7 +288,11 @@ class BlockStatementNode extends StatementNode {
       this._statementList = _statementList;
    }
     execute(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
 
@@ -248,7 +309,7 @@ export abstract class ExpressionNode {
   abstract evaluate(): Command[];
   public get lineNum() {return this._tok.line};
   public get startLine() {return this._tok.line};
-  public get endLine() {return this._tok.line};
+  public get endLine() {return this._tok.line };
   public get startCol() {return this._tok.col};
   public get endCol() {return this._tok.col + (this._tok.text.length - 1)};
 }
@@ -301,7 +362,11 @@ class FormalParamsListExpressionNode extends ExpressionNode {
      this._paramsList = _paramsList;
   }
    evaluate(): Command[] {
-    return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
    }
    override public get endLine() {
     return this._paramsList[this._paramsList.length - 1]._tok.line
@@ -323,7 +388,11 @@ class ConditionalExpressionNode extends ExpressionNode {
       this._right = _right;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -337,7 +406,11 @@ class ArgListExpressionNode extends ExpressionNode {
     new ReplaceHighlightedExpressionCommand(arg, new EvaluatedExpressionNode()); // what to pass in here?
    })
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -351,7 +424,11 @@ class ComparisonExpressionNode extends ExpressionNode {
       this._right = _right;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -369,7 +446,11 @@ class BinaryExpressionNode extends ExpressionNode {
    }
     evaluate(): Command[] {
 
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -382,7 +463,11 @@ class UnaryExpressionNode extends ExpressionNode {
      this._operand = _operand;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -394,7 +479,11 @@ class FuncCallExpresssionNode extends ExpressionNode {
      this._args_list = _args_list;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -406,7 +495,11 @@ class ListAccessExpresssionNode extends ExpressionNode  {
      this._index = _index;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -420,7 +513,11 @@ class MethodCallExpressionNode extends ExpressionNode {
      this._argsList = _argsList;
    }
     evaluate(): Command[] {
-      return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
  }
 
@@ -490,12 +587,18 @@ class StringLiteralExpressionNode extends ExpressionNode {
  }
 
 class EvaluatedExpressionNode extends ExpressionNode {
+    public _tok: moo.Token;
     private _value: PythonValue | PythonValue[] | ExpressionNode;
-    constructor(_value: PythonValue | PythonValue[] | ExpressionNode) {
-        super();
+    constructor(_value: PythonValue | PythonValue[] | ExpressionNode, _tok: moo.Token) {
+        super(_tok);
+        this._tok = _tok;
         this._value = _value;
     }
     evaluate(): Command[] {
-        return [];
+      const commands: Command[] = [];
+
+      
+      
+      return commands;
     }
 }
