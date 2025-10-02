@@ -462,8 +462,8 @@ export class BinaryExpressionNode extends ExpressionNode {
 export class UnaryExpressionNode extends ExpressionNode {
     private _operator: UnaryOp;
     private _operand: ExpressionNode;
-    constructor(_operator: UnaryOp, _operand: ExpressionNode) {
-     super(_operand._tok);
+    constructor(_operator: UnaryOp, _operand: ExpressionNode, _tok: moo.Token) {
+     super(_tok);
      this._operator = _operator;
      this._operand = _operand;
    }

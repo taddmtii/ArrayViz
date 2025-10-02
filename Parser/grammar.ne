@@ -152,51 +152,51 @@ compound_statement -> if_statement {% id %}
                     | while_loop {% id %}
                     | func_def  {% id %}
 
-assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], new ExpressionNode(d[2]))) %}
+assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0])) %}
 
-if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]), new ElseBlockStatementNode(d[4]))) %}
+if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 
-elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]), new ElseBlockStatementNode(d[4]))) %}
+elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 
-else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(new BlockStatementNode(d[2]))) %}
+else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(d[2], d[0])) %}
 
-# may later need to deal with multiple assignment/unpacking (for x, y in enumerate()) may affect assignment statement
-for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(new IdentifierExpressionNode(d[1]), new ExpressionNode(d[3]), new BlockStatementNode(d[5]))) %}
+for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[5], d[0])) %}
 
-while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(new ExpressionNode(d[1]), new BlockStatementNode(d[3]))) %}
+while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(d[1], d[3], d[0])) %}
 
-func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), d[3], new BlockStatementNode(d[7]))) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[7], d[0])) %}
 
 # come back, multiple params and args not working
 formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), ...(d[1].map(x => new IdentifierExpressionNode(x[1])))) %} 
 
 arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode(new ExpressionNode(d[0]), ...(d[1] ? d[1].map(x => new ExpressionNode(x[1])) : [])) %}
 
-block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2])) %}
-       | simple_statement %NL {% d => (new BlockStatementNode(d[0])) %}
+block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2], d[1])) %}
+       | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0])) %} # come back, not sure what token to pass in here.
 
-return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1])) %} 
+return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1], new Map(), d[0])) %} 
 
 expression -> conditional_expression {% id %}
+
 # TODO: figure out how many new nodes to create based on input.
 #-----------------------------------------------------------------------------------------
 # CONDITIONAL EXPRESSIONS (LOWEST PRECEDENCE)
 #-----------------------------------------------------------------------------------------
 
-conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => (new ConditionalExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4])) ) %}
+conditional_expression -> or_expression %IF or_expression %ELSE conditional_expression {% d => (new ConditionalExpressionNode(d[0], d[2], d[4])) %}
                         | or_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
 # LOGIC EXPRESSIONS 
 #-----------------------------------------------------------------------------------------
 
-or_expression -> or_expression %OR and_expression {% d => (new BinaryExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+or_expression -> or_expression %OR and_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %} 
                | and_expression {% id %}
 
-and_expression -> and_expression %AND not_expression {% d => (new BinaryExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+and_expression -> and_expression %AND not_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %} 
                 | not_expression {% id %} 
 
-not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0], new ExpressionNode(d[1]))) %}
+not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0].value, d[1], d[0])) %}
                 | comparison_expression {% id %}
 
 #-----------------------------------------------------------------------------------------
