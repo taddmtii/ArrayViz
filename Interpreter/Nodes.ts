@@ -111,7 +111,7 @@ export class ReturnStatementNode extends StatementNode {
     }
 }
 
-class BreakStatementNode extends StatementNode {
+export class BreakStatementNode extends StatementNode {
     public _tok: moo.Token;
     constructor(_tok: moo.Token) {
         super(_tok);
@@ -125,7 +125,7 @@ class BreakStatementNode extends StatementNode {
     }
 }
 
-class ContinueStatementNode extends StatementNode {
+export class ContinueStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         super(_tok);
@@ -139,7 +139,7 @@ class ContinueStatementNode extends StatementNode {
     }
 }
 
-class PassStatementNode extends StatementNode {
+export class PassStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
         super(_tok);
@@ -153,7 +153,7 @@ class PassStatementNode extends StatementNode {
     }
 }
 
-class IfStatementNode extends StatementNode {
+export class IfStatementNode extends StatementNode {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode | null;
     private _elseBranch: ElseBlockStatementNode | null;
@@ -181,7 +181,7 @@ class IfStatementNode extends StatementNode {
     }
 }
 
-class ForStatementNode extends StatementNode {
+export class ForStatementNode extends StatementNode {
     private _loopVar: IdentifierExpressionNode; // not sure how to deal with this yet.
     private _iterable: ExpressionNode;
     private _block: BlockStatementNode;
@@ -201,7 +201,7 @@ class ForStatementNode extends StatementNode {
     }
 }
 
-class WhileStatementNode extends StatementNode {
+export class WhileStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     private _block: BlockStatementNode;
     constructor(_expression: ExpressionNode, _block: BlockStatementNode, _tok: moo.Token) {
@@ -219,7 +219,7 @@ class WhileStatementNode extends StatementNode {
     }
 }
 
-class FuncDefStatementNode extends StatementNode {
+export class FuncDefStatementNode extends StatementNode {
     private _name: IdentifierExpressionNode;
     private _formalParamList: FormalParamsListExpressionNode;
     private _block: BlockStatementNode;
@@ -237,7 +237,7 @@ class FuncDefStatementNode extends StatementNode {
     }
 }
 
-class ElifStatementNode extends StatementNode {
+export class ElifStatementNode extends StatementNode {
     private _condition: ExpressionNode;
     private _thenBranch: BlockStatementNode | null;
     private _elseBranch: ElseBlockStatementNode | null;
@@ -262,7 +262,7 @@ class ElifStatementNode extends StatementNode {
     }
 }
 
-class ElseBlockStatementNode extends StatementNode {
+export class ElseBlockStatementNode extends StatementNode {
     private _block : BlockStatementNode;
     constructor(_block: BlockStatementNode, _tok: moo.Token) {
       super(_tok);
@@ -275,7 +275,7 @@ class ElseBlockStatementNode extends StatementNode {
     }
 }
 
-class ExpressionStatementNode extends StatementNode {
+export class ExpressionStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     constructor(_expression: ExpressionNode, _tok: moo.Token) {
       super(_tok); 
@@ -290,7 +290,7 @@ class ExpressionStatementNode extends StatementNode {
     }
 }
 
-class BlockStatementNode extends StatementNode {
+export class BlockStatementNode extends StatementNode {
     private _statementList: StatementNode[];
     constructor(_statementList: StatementNode[], _tok: moo.Token) {
       super(_tok);
@@ -364,7 +364,7 @@ export class IdentifierExpressionNode extends ExpressionNode {
     }
 }
 
-class FormalParamsListExpressionNode extends ExpressionNode {
+export class FormalParamsListExpressionNode extends ExpressionNode {
    private _paramsList: IdentifierExpressionNode[];
    constructor(_paramsList: IdentifierExpressionNode[]) {
      super(_paramsList[0]._tok);
@@ -386,7 +386,7 @@ class FormalParamsListExpressionNode extends ExpressionNode {
   // }
 }
 
-class ConditionalExpressionNode extends ExpressionNode {
+export class ConditionalExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _condition: ExpressionNode;
     private _right: ExpressionNode;
@@ -421,7 +421,7 @@ export class ArgListExpressionNode extends ExpressionNode {
     }
 }
 
-class ComparisonExpressionNode extends ExpressionNode {
+export class ComparisonExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _operator: ComparisonOp;
     private _right: ExpressionNode;
@@ -438,7 +438,7 @@ class ComparisonExpressionNode extends ExpressionNode {
     }
  }
 
-class BinaryExpressionNode extends ExpressionNode {
+export class BinaryExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _operator: BinaryOp;
     private _right: ExpressionNode;
@@ -459,7 +459,7 @@ class BinaryExpressionNode extends ExpressionNode {
     }
  }
 
-class UnaryExpressionNode extends ExpressionNode {
+export class UnaryExpressionNode extends ExpressionNode {
     private _operator: UnaryOp;
     private _operand: ExpressionNode;
     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
@@ -476,7 +476,7 @@ class UnaryExpressionNode extends ExpressionNode {
     }
  }
 
-class FuncCallExpressionNode extends ExpressionNode {
+export class FuncCallExpressionNode extends ExpressionNode {
     private _func_name: ExpressionNode;
     private _args_list: ArgListExpressionNode;
     constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
@@ -491,7 +491,7 @@ class FuncCallExpressionNode extends ExpressionNode {
     }
  }
 
-class ListAccessExpressionNode extends ExpressionNode  {
+export class ListAccessExpressionNode extends ExpressionNode  {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
     constructor(_list: ExpressionNode, _index: ExpressionNode) {
@@ -509,7 +509,7 @@ class ListAccessExpressionNode extends ExpressionNode  {
     }
  }
 
-class MethodCallExpressionNode extends ExpressionNode {
+export class MethodCallExpressionNode extends ExpressionNode {
     private _list: ExpressionNode;
     private _methodName: IdentifierExpressionNode;
     private _argsList: ArgListExpressionNode;
@@ -526,7 +526,7 @@ class MethodCallExpressionNode extends ExpressionNode {
     }
  }
 
-class ListSliceExpressionNode extends ExpressionNode {
+export class ListSliceExpressionNode extends ExpressionNode {
     private _list: ExpressionNode;
     private _start: ExpressionNode;
     private _stop: ExpressionNode;
@@ -568,7 +568,7 @@ class ListSliceExpressionNode extends ExpressionNode {
     }
  }
 
-class ListLiteralExpressionNode extends ExpressionNode {
+export class ListLiteralExpressionNode extends ExpressionNode {
     private _values: ArgListExpressionNode;
     constructor(_values: ArgListExpressionNode, _tok: moo.Token) {
       super(_tok);
@@ -582,7 +582,7 @@ class ListLiteralExpressionNode extends ExpressionNode {
   }
  }
 
-class BooleanLiteralExpressionNode extends ExpressionNode {
+export class BooleanLiteralExpressionNode extends ExpressionNode {
     private _value: Boolean;
     constructor(_value: Boolean, _tok: moo.Token) {
       super(_tok);
@@ -597,7 +597,7 @@ class BooleanLiteralExpressionNode extends ExpressionNode {
   }
  }
 
-class StringLiteralExpressionNode extends ExpressionNode {
+export class StringLiteralExpressionNode extends ExpressionNode {
     private _value: moo.Token;
     constructor(_value: moo.Token) {
       super(_value);
@@ -612,7 +612,7 @@ class StringLiteralExpressionNode extends ExpressionNode {
     }
  }
 
-class EvaluatedExpressionNode extends ExpressionNode {
+export class EvaluatedExpressionNode extends ExpressionNode {
     private _value: PythonValue | PythonValue[] | ExpressionNode;
     constructor(_value: PythonValue | PythonValue[] | ExpressionNode, _tok: moo.Token) {
         super(_tok);

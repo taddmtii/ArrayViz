@@ -15,6 +15,7 @@ export abstract class Command {
 // ---------------------------------------------------------------------------------------
 // MACHINE STATE
 // ---------------------------------------------------------------------------------------
+
 export class State {
   private _programCounter: number = 0; // which line of execution are we on.
   private _lineCount: number = 0; // all lines in program.
@@ -33,7 +34,7 @@ export class State {
               _currentStatement: StatementNode, 
               _callStack: ExpressionNode[], 
               _history: Command[], 
-              _variables: Map<string, number>, 
+              _variables: Map<string, PythonValue>, 
               _currentLine: number, 
               _evaluationStack: PythonValue[],
               _returnStack: PythonValue[]) {
@@ -164,7 +165,9 @@ export class RetrieveValueCommand extends Command {
     this._varName = _varName;
   }
   do(_currentState: State) {
-    return _currentState.getVariable(this._varName);
+    const value = _currentState.getVariable(this._varName);
+    this._undoCommand = new PopValueCommand();
+    _currentState.evaluationStack.push(value);
   }
 }
 
@@ -250,7 +253,7 @@ export class BinaryOpCommand extends Command {
             res = evaluatedLeft && evaluatedRight;
             break;
           case 'or':
-            res = evaluatedRight | evaluatedRight;
+            res = evaluatedRight || evaluatedRight;
             break;
       }
     }
@@ -419,7 +422,8 @@ export class TypeCommand extends Command {
     this._value = _value;
   }
   do(_currentState: State) {
-    return (typeof this._value);
+    this._undoCommand = new PopValueCommand();
+    _currentState.evaluationStack.push(typeof this._value);
   }
 }
 
@@ -440,23 +444,22 @@ export class InputCommand extends Command {
       ans = answer;
       rl.close();
     });
-    return ans;
+    _currentState.evaluationStack.push(ans);
   }
 }
 
 
 // IndexAccessCommand -> arr[5]
 export class IndexAccessCommand extends Command {
-  private _list: string;
-  private _index: number;
-  constructor(_list: string, _index: number) {
-    super();
-    this._list = _list;
-    this._index = _index;
-  }
   do(_currentState: State) {
-    let arr: PythonValue[] | PythonValue = _currentState.getVariable(this._list)!;
-    _currentState.evaluationStack.push();
+    const index = _currentState.evaluationStack.pop();
+    const list = _currentState.evaluationStack.pop();
+    
+    // at the end of the day, we need to verify these types if there was some problem in the popped stack values.
+    if (Array.isArray(list) && typeof index === 'number') {
+      this._undoCommand = new PopValueCommand();
+      _currentState.evaluationStack.push(list[index]);
+    }
   }
 }
 
