@@ -32,7 +32,10 @@ export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
 export type UnaryOp = "-" | "+" | "!" | "not"
 
 // ------------------------------------------------------------------
-// Program
+// ProgramNode
+//
+// Establishes list of statements that make up the program, encapsulates the 
+// entire program. All commands collectively get added here to returned array here.
 // ------------------------------------------------------------------
 
 export class ProgramNode {
@@ -40,15 +43,19 @@ export class ProgramNode {
     constructor(_statementList: StatementNode[]) {
         this._statementList = _statementList;
     }
+
+    execute(): Command[] {
+      const commands: Command[] = [];
+      for (const statement of this._statementList) {
+        commands.push(...statement.execute());
+      }
+      return commands;
+    }
 }
 
 // ------------------------------------------------------------------
 // Statement Nodes
 // ------------------------------------------------------------------
-
-// Implements = interface
-// extends = class
-// Abstract = class that cannot be instantiated on its own, serves as a blueprint for derived classes.
 
 // Statement Node is the base class for all statement type nodes.
 export abstract class StatementNode {
@@ -57,38 +64,30 @@ export abstract class StatementNode {
     public _endTok: moo.Token;
     constructor(_tok: moo.Token) {
       this._startTok = _tok;
+      this._endTok = _tok;
    }
-    abstract evaluate(): Command[];
-    public get lineNum() {return this._tok.line};
-    public get startLine() {return this._tok.line};
-    public get endLine() {return this._tok.line };
-    public get startCol() {return this._tok.col};
-    public get endCol() {return this._tok.col + (this._tok.text.length - 1)};
+    public get lineNum() {return this._startTok.line};
+    public get startLine() {return this._startTok.line};
+    public get endLine() {return (this._endTok.line || this._startTok.line)};
 }
 
 export class AssignmentStatementNode extends StatementNode {
     private _left: string; // variable name
     private _right: ExpressionNode; // value
-    private _tok: moo.Token;
+    public _tok: moo.Token;
     constructor(_left: string, _right: ExpressionNode, _tok: moo.Token) {
-        super();
+        super(_tok);
         this._left = _left;
         this._right = _right;
         this._tok = _tok;
     }
 
     execute(): Command[] {
-      // 1. Highlight Statement
-      // 2. Evaluate right hand expression
-      // 3. Bind result from eval stack to variable
-      // 4. Move to next line
         const commands: Command[] = [];
-      
         commands.push(new HighlightStatementCommand(this)); // Highlight
         commands.push(...(this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
         commands.push(new AssignVariableCommand(this._left)); // Bind variable.
         commands.push(new MoveLinePointerCommand(this._tok.line));
-        
         return commands;
     }
 }
@@ -96,8 +95,8 @@ export class AssignmentStatementNode extends StatementNode {
 export class ReturnStatementNode extends StatementNode {
     private _value: ExpressionNode; // value by default should be null.
     private _previousVariables : Map<string, PythonValue>;
-    constructor(_value: ExpressionNode, _previousVariables : Map<string, PythonValue>) {
-        super();
+    constructor(_value: ExpressionNode, _previousVariables : Map<string, PythonValue>, _tok: moo.Token) {
+        super(_tok);
         this._previousVariables = _previousVariables;
         this._value = _value;
     }
@@ -106,24 +105,22 @@ export class ReturnStatementNode extends StatementNode {
 
       commands.push(new HighlightStatementCommand(this)); // highlight entire statement
       commands.push(...(this._value.evaluate())); // evaluate value to be returned.
-      const returnValue = new PopValueCommand();
       commands.push(new ExitScopeCommand(this._previousVariables));
-      commands.push(new ReturnCommand(returnValue));
+      // commands.push(new ReturnCommand());
       return commands;
     }
 }
 
 class BreakStatementNode extends StatementNode {
-    private _tok: moo.Token;
+    public _tok: moo.Token;
     constructor(_tok: moo.Token) {
-        super();
+        super(_tok);
         this._tok = _tok;
     }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      // TODO: do break logic
       return commands;
     }
 }
@@ -131,14 +128,13 @@ class BreakStatementNode extends StatementNode {
 class ContinueStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
-        super();
+        super(_tok);
         this._tok = _tok;
     }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      // TODO: do continue logic
       return commands;
     }
 }
@@ -146,52 +142,61 @@ class ContinueStatementNode extends StatementNode {
 class PassStatementNode extends StatementNode {
     private _tok: moo.Token;
     constructor(_tok: moo.Token) {
-        super();
+        super(_tok);
         this._tok = _tok;
     }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(new MoveLinePointerCommand(this._tok.line)); // Move line pointer to token itself (the statement)
       return commands;
     }
 }
 
 class IfStatementNode extends StatementNode {
     private _condition: ExpressionNode;
-    private _thenBranch: BlockStatementNode;
-    private _elseBranch: ElseBlockStatementNode;
-    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
-        super();
+    private _thenBranch: BlockStatementNode | null;
+    private _elseBranch: ElseBlockStatementNode | null;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode | null, _elseBranch: ElseBlockStatementNode | null, _tok: moo.Token) {
+        super(_tok);
         this._condition = _condition;
         this._thenBranch = _thenBranch;
         this._elseBranch = _elseBranch;
     }
     execute(): Command[] {
       const commands: Command[] = [];
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(...this._condition.evaluate());
+      // TODO: do conditional jump logic here
 
-      
-      
+      // if then branch exists
+      if (this._thenBranch) {
+        commands.push(...this._thenBranch.execute());
+      }
+      // if else branch exists...
+      if (this._elseBranch) { // if else branch exists...
+          commands.push(...this._elseBranch.execute());
+      }
       return commands;
     }
 }
 
 class ForStatementNode extends StatementNode {
-    private _loopVar: IdentifierExpressionNode;
+    private _loopVar: IdentifierExpressionNode; // not sure how to deal with this yet.
     private _iterable: ExpressionNode;
     private _block: BlockStatementNode;
-    constructor(_loopVar: IdentifierExpressionNode, _iterable: ExpressionNode, _block: BlockStatementNode) {
-        super();
+    constructor(_loopVar: IdentifierExpressionNode, _iterable: ExpressionNode, _block: BlockStatementNode, _tok: moo.Token) {
+        super(_tok);
         this._loopVar = _loopVar;
         this._iterable = _iterable;
         this._block = _block;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(...this._iterable.evaluate());
+      // TODO: do for loop logic
+      commands.push(...this._block.execute());
       return commands;
     }
 }
@@ -199,16 +204,17 @@ class ForStatementNode extends StatementNode {
 class WhileStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     private _block: BlockStatementNode;
-    constructor(_expression: ExpressionNode, _block: BlockStatementNode) {
-      super();
+    constructor(_expression: ExpressionNode, _block: BlockStatementNode, _tok: moo.Token) {
+      super(_tok);
       this._expression = _expression;
       this._block = _block;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(...this._expression.evaluate());
+      // TODO: do while loop logic
+      commands.push(...this._block.execute());
       return commands;
     }
 }
@@ -217,81 +223,84 @@ class FuncDefStatementNode extends StatementNode {
     private _name: IdentifierExpressionNode;
     private _formalParamList: FormalParamsListExpressionNode;
     private _block: BlockStatementNode;
-    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode) {
-      super();
+    constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode, _tok: moo.Token) {
+      super(_tok);
       this._name = _name;
       this._formalParamList = _formalParamList;
       this._block = _block;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      // TODO: do function definition logic
       return commands;
     }
 }
 
 class ElifStatementNode extends StatementNode {
     private _condition: ExpressionNode;
-    private _thenBranch: BlockStatementNode;
-    private _elseBranch: ElseBlockStatementNode;
-    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode) {
-        super();
+    private _thenBranch: BlockStatementNode | null;
+    private _elseBranch: ElseBlockStatementNode | null;
+    constructor(_condition: ExpressionNode, _thenBranch: BlockStatementNode, _elseBranch: ElseBlockStatementNode, _tok: moo.Token) {
+        super(_tok);
         this._condition = _condition;
         this._thenBranch = _thenBranch;
         this._elseBranch = _elseBranch;
     }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(...this._condition.evaluate());
+      // TODO: do elif logic
+      if (this._thenBranch) {
+        commands.push(...this._thenBranch.execute());
+      }
+      if (this._elseBranch) {
+          commands.push(...this._elseBranch.execute());
+      }
       return commands;
     }
 }
 
 class ElseBlockStatementNode extends StatementNode {
     private _block : BlockStatementNode;
-    constructor(_block: BlockStatementNode) {
-      super();
+    constructor(_block: BlockStatementNode, _tok: moo.Token) {
+      super(_tok);
       this._block = _block;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      this._block.execute();
       return commands;
     }
 }
 
-class ExpresssionStatementNode extends StatementNode {
+class ExpressionStatementNode extends StatementNode {
     private _expression: ExpressionNode;
-    constructor(_expression: ExpressionNode) {
-      super(); 
+    constructor(_expression: ExpressionNode, _tok: moo.Token) {
+      super(_tok); 
       this._expression = _expression;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightStatementCommand(this));
+      commands.push(...this._expression.evaluate());
+      // commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
       return commands;
     }
 }
 
 class BlockStatementNode extends StatementNode {
     private _statementList: StatementNode[];
-    constructor(_statementList: StatementNode[]) {
-      super();
+    constructor(_statementList: StatementNode[], _tok: moo.Token) {
+      super(_tok);
       this._statementList = _statementList;
    }
     execute(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      for (const statement of this._statementList) {
+        commands.push(...statement.execute());
+      }
       return commands;
     }
 }
@@ -336,7 +345,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     // Create list of commands and return as result to add to overall steps.
     return [
       new HighlightExpressionCommand(this), // visually indicate what expression to highlight.
-      new PushValueCommand(numValue)
+      new PushValueCommand(numValue) // push onto stack
     ];
   }
  }
@@ -364,17 +373,17 @@ class FormalParamsListExpressionNode extends ExpressionNode {
    evaluate(): Command[] {
       const commands: Command[] = [];
 
-      
+      // TODO: do parameter list logic (???) not really sure where to start here yet.
       
       return commands;
    }
-   override public get endLine() {
-    return this._paramsList[this._paramsList.length - 1]._tok.line
-  }
-   override public get endCol() {
-    let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
-    return _lastTok.col + (_lastTok.text.length - 1);
-  }
+  //  override public get endLine() {
+  //   return this._paramsList[this._paramsList.length - 1]._tok.line
+  // }
+  //  override public get endCol() {
+  //   let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
+  //   return _lastTok.col + (_lastTok.text.length - 1);
+  // }
 }
 
 class ConditionalExpressionNode extends ExpressionNode {
@@ -382,74 +391,70 @@ class ConditionalExpressionNode extends ExpressionNode {
     private _condition: ExpressionNode;
     private _right: ExpressionNode;
     constructor(_left: ExpressionNode, _condition: ExpressionNode, _right: ExpressionNode) {
-      super();
+      super(_condition._tok); // pass conditions token.
       this._left = _left;
       this._condition = _condition;
       this._right = _right;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(...this._condition.evaluate());
+      commands.push(...this._left.evaluate());
+      commands.push(...this._right.evaluate());
       return commands;
     }
  }
 
-class ArgListExpressionNode extends ExpressionNode {
+export class ArgListExpressionNode extends ExpressionNode {
     private _argsList: ExpressionNode[];
     constructor(_argsList: ExpressionNode[]) {
-     this._argsList = _argsList;
-   }
-   this._args_list.ForEach(function (arg) {
-    new HighlightExpressionCommand(arg);
-    new ReplaceHighlightedExpressionCommand(arg, new EvaluatedExpressionNode()); // what to pass in here?
-   })
-    evaluate(): Command[] {
-      const commands: Command[] = [];
-
-      
-      
-      return commands;
+        super(_argsList[0]._tok);
+        this._argsList = _argsList;
     }
- }
+    
+    evaluate(): Command[] {
+        const commands: Command[] = [];
+        for (const arg of this._argsList) {
+            commands.push(...arg.evaluate());
+        }
+        return commands;
+    }
+}
 
 class ComparisonExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
     private _operator: ComparisonOp;
     private _right: ExpressionNode;
+
     constructor(_left: ExpressionNode, _operator: ComparisonOp, _right: ExpressionNode) {
+      super(_left._tok); // not sure what token exactly to pass here ?
       this._left = _left;
       this._operator = _operator;
       this._right = _right;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
       return commands;
     }
  }
 
 class BinaryExpressionNode extends ExpressionNode {
-    public _tok: moo.Token;
     private _left: ExpressionNode;
     private _operator: BinaryOp;
     private _right: ExpressionNode;
+
     constructor(_left: ExpressionNode, _operator: BinaryOp, _right: ExpressionNode, _tok: moo.Token) {
       super(_tok);
-      this._tok = _tok;
       this._left = _left;
       this._operator = _operator;
       this._right = _right;
    }
     evaluate(): Command[] {
-
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightExpressionCommand(this));
+      commands.push(...this._left.evaluate());
+      commands.push(...this._right.evaluate());
+      commands.push(new BinaryOpCommand(this._operator));
       return commands;
     }
  }
@@ -458,47 +463,48 @@ class UnaryExpressionNode extends ExpressionNode {
     private _operator: UnaryOp;
     private _operand: ExpressionNode;
     constructor(_operator: UnaryOp, _operand: ExpressionNode) {
-     super();
+     super(_operand._tok);
      this._operator = _operator;
      this._operand = _operand;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightExpressionCommand(this));
+      commands.push(...this._operand.evaluate());
+      commands.push(new UnaryOpCommand(this._operator));
       return commands;
     }
  }
 
-class FuncCallExpresssionNode extends ExpressionNode {
+class FuncCallExpressionNode extends ExpressionNode {
     private _func_name: ExpressionNode;
     private _args_list: ArgListExpressionNode;
     constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
+     super(_func_name._tok)
      this._func_name = _func_name;
      this._args_list = _args_list;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      // TODO: do func call logic
       return commands;
     }
  }
 
-class ListAccessExpresssionNode extends ExpressionNode  {
+class ListAccessExpressionNode extends ExpressionNode  {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
     constructor(_list: ExpressionNode, _index: ExpressionNode) {
+     super(_list._tok);
      this._list = _list;
      this._index = _index;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      commands.push(new HighlightExpressionCommand(this));
+      commands.push(...this._list.evaluate());
+      commands.push(...this._index.evaluate());
+      // commands.push(new IndexAccessCommand());
       return commands;
     }
  }
@@ -508,15 +514,14 @@ class MethodCallExpressionNode extends ExpressionNode {
     private _methodName: IdentifierExpressionNode;
     private _argsList: ArgListExpressionNode;
     constructor(_list: ExpressionNode, _methodName: IdentifierExpressionNode, _argsList: ArgListExpressionNode) {
+     super(_list._tok)
      this._list = _list;
      this._methodName = _methodName;
      this._argsList = _argsList;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-
-      
-      
+      // TODO: do method call logic
       return commands;
     }
  }
@@ -527,47 +532,67 @@ class ListSliceExpressionNode extends ExpressionNode {
     private _stop: ExpressionNode;
     private _step: ExpressionNode;
     constructor(_list: ExpressionNode, _start: ExpressionNode, _stop: ExpressionNode, _step: ExpressionNode) {
-      super();
+      super(_list._tok);
       this._list = _list;
       this._start = _start;
       this._stop = _stop;
       this._step = _step;
   }
     evaluate(): Command[] {
-      let operations: ExpressionNode[] = [this._start, this._stop, this._step];
-      operations.forEach(function (val) { // for each element here, highlight and evaluate
-        new HighlightExpressionCommand(val);
-        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(val));
-      })
-      return [
-        new HighlightExpressionCommand(this), // the idea is to then highlight the entire thing.
-        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode())
-      ];
+        const commands: Command[] = [];
+        commands.push(new HighlightExpressionCommand(this));
+        commands.push(...this._list.evaluate());
+        
+        // if start exists, if stop exists, if step exists, otherwise push a null value and handle accordingly.
+        if (this._start) {
+            commands.push(...this._start.evaluate());
+        } 
+        else {
+            commands.push(new PushValueCommand(null));
+        }
+        
+        if (this._stop) {
+            commands.push(...this._stop.evaluate());
+        } 
+        else {
+            commands.push(new PushValueCommand(null));
+        }
+        
+        if (this._step) {
+            commands.push(...this._step.evaluate());
+        } 
+        else {
+            commands.push(new PushValueCommand(null));
+        }
+        return commands;
     }
  }
 
 class ListLiteralExpressionNode extends ExpressionNode {
-    private _values: PythonValue[];
-    constructor(_values: PythonValue[]) {
+    private _values: ArgListExpressionNode;
+    constructor(_values: ArgListExpressionNode, _tok: moo.Token) {
+      super(_tok);
       this._values = _values;
     }
   evaluate(): Command[] {
     return [
       new HighlightExpressionCommand(this),
-      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._values))
+      // TODO: fix implementation and do list literal logic
     ];
   }
  }
 
 class BooleanLiteralExpressionNode extends ExpressionNode {
     private _value: Boolean;
-    constructor(_value: Boolean) {
+    constructor(_value: Boolean, _tok: moo.Token) {
+      super(_tok);
       this._value = _value;
   }
   evaluate(): Command[] {
     return [
       new HighlightExpressionCommand(this), // highlight
-      new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+      new PushValueCommand(this._value)
+      // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
     ]
   }
  }
@@ -581,24 +606,22 @@ class StringLiteralExpressionNode extends ExpressionNode {
     evaluate(): Command[] {
       return [
         new HighlightExpressionCommand(this), // highlight
-        new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+        new PushValueCommand(this._value.text)
+        // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
     ]
     }
  }
 
 class EvaluatedExpressionNode extends ExpressionNode {
-    public _tok: moo.Token;
     private _value: PythonValue | PythonValue[] | ExpressionNode;
     constructor(_value: PythonValue | PythonValue[] | ExpressionNode, _tok: moo.Token) {
         super(_tok);
-        this._tok = _tok;
         this._value = _value;
     }
     evaluate(): Command[] {
-      const commands: Command[] = [];
-
-      
-      
-      return commands;
+        const commands: Command[] = [];
+        // commands.push(new PushValueCommand(this._value));
+        // TODO: figure out what to do with this node.
+        return commands;
     }
 }

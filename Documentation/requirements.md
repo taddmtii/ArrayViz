@@ -71,5 +71,3 @@ Course: CPTR-486 Senior Seminar
 % Milestone 4:
     - Complete frontend
 
-
-- 

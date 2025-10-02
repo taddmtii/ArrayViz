@@ -35,7 +35,7 @@ const { ProgramNode,
         BooleanLiteralExpressionNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
-        } = require('../Interpreter/Interpreter.js');
+        } = require('../Interpreter/Nodes.js');
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
