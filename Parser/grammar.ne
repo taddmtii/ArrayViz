@@ -238,18 +238,18 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2], d[1])) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2])) %}
 
-list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]))) %}
+list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(d[0], d[2])) %}
 
-method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(new ExpressionNode(d[0]), new IdentifierExpressionNode(d[2]), new ArgListExpressionNode(d[4]))) %}  # nums.remove(5) || nums.remove(num)
+method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], d[2], d[4])) %}  # nums.remove(5) || nums.remove(num)
 
-list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4]), new ExpressionNode(d[6])) %} # nums[1:2:1]
-            | primary %LSQBRACK expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), new ExpressionNode(d[4]), null) %} # nums[2:5]
-            | primary %LSQBRACK %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, new ExpressionNode(d[3]), new ExpressionNode(d[5])) %} # nums[:1:2]
-            | primary %LSQBRACK %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, new ExpressionNode(d[3]), null) %} # nums[:2]
-            | primary %LSQBRACK expression %COLON %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]), null, null) %} # nums[2:]
-            | primary %LSQBRACK %COLON %COLON:? %RSQBRACK {% d => new ListSliceExpressionNode(new ExpressionNode(d[0]), null, null, null) %} # nums[:] || nums[::]
+list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], d[6]) %} # nums[1:2:1]
+            | primary %LSQBRACK expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], null) %} # nums[2:5]
+            | primary %LSQBRACK %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, d[3], d[5]) %} # nums[:1:2]
+            | primary %LSQBRACK %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, d[3], null) %} # nums[:2]
+            | primary %LSQBRACK expression %COLON %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], null, null) %} # nums[2:]
+            | primary %LSQBRACK %COLON %COLON:? %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, null, null) %} # nums[:] || nums[::]
 
 atom -> number {% id %}
       | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0])) %}
