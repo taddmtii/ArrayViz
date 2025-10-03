@@ -203,7 +203,7 @@ not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0].valu
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => (new ComparisonExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => (new ComparisonExpressionNode(d[0], d[1], d[2], d[1])) %}
             | additive {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -212,20 +212,20 @@ comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | 
 
 # + or - (binary)
 # LOWEST PRECEDENCE
-additive -> additive (%PLUS | %MINUS) multiplicative {% d => (new BinaryExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+additive -> additive (%PLUS | %MINUS) multiplicative {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
           | multiplicative {% id %}
 
 # *, /, //, %
-multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (new BinaryExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
                 | unary {% id %}
 
 # + or - (unary)
-unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0], new ExpressionNode(d[1]))) %}
+unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0], d[1], d[0])) %}
        | power
 
 # ** (power)
 # HIGHEST PRECEDENCE
-power -> primary %POWER unary {% d => (new BinaryExpressionNode(new ExpressionNode(d[0]), d[1], new ExpressionNode(d[2]))) %}
+power -> primary %POWER unary {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
        | primary {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -238,7 +238,7 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(new ExpressionNode(d[0]), new ArgListExpressionNode(d[2]))) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2], d[1])) %}
 
 list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(new ExpressionNode(d[0]), new ExpressionNode(d[2]))) %}
 
