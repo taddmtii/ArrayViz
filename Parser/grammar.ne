@@ -17,7 +17,7 @@ const { ProgramNode,
         FuncDefStatementNode,
         ElifStatementNode,
         ElseBlockStatementNode,
-        ExpresssionStatementNode,
+        ExpressionStatementNode,
         BlockStatementNode,
         ExpressionNode,
         FormalParamsListExpressionNode,
@@ -26,7 +26,7 @@ const { ProgramNode,
         ComparisonExpressionNode,
         BinaryExpressionNode,
         UnaryExpressionNode,
-        FuncCallExpresssionNode,
+        FuncCallExpressionNode,
         ListAccessExpressionNode,
         MethodCallExpressionNode,
         ListSliceExpressionNode,
@@ -144,7 +144,7 @@ simple_statement -> assignment_statement {% id %}
                   | %BREAK  {% d => (new BreakStatementNode(d[0])) %}
                   | %CONTINUE {% d => (new ContinueStatementNode(d[0])) %}
                   | %PASS {% d => (new PassStatementNode(d[0])) %}
-                  | expression {% d => (new ExpressionNode(d[0])) %}
+                  | expression {% d => d[0] %}
 
 # A compound statement is a statement is a statement explitly followed by a block (or a list of statements).
 compound_statement -> if_statement {% id %}
@@ -153,7 +153,7 @@ compound_statement -> if_statement {% id %}
                     | func_def  {% id %}
 
 assignment_statement -> %IDENTIFIER %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0])) %}
-                    #   | list_access %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0])) %}
+                      | list_access %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0])) %}
 
 if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 
@@ -168,11 +168,11 @@ while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(d[1
 func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[7], d[0])) %}
 
 # come back, multiple params and args not working
-formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), ...(d[1].map(x => new IdentifierExpressionNode(x[1])))) %} 
+formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):*  {% d => new FormalParamsListExpressionNode([new IdentifierExpressionNode(d[0]), ...d[1].map(x => new IdentifierExpressionNode(x[1]))]) %}
 
-arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode(d[0], ...(d[1] ? d[1].map(x => x[1]) : [])) %}
+arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode([d[0], ...d[1].map(x => x[1])]) %}
 
-block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2], d[1])) %}
+block -> %NL %INDENT statement:+ %DEDENT {% d => (new BlockStatementNode(d[2], d[1])) %}
        | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0]._startTok)) %} 
 
 return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1], new Map(), d[0])) %} 
@@ -213,20 +213,20 @@ comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | 
 
 # + or - (binary)
 # LOWEST PRECEDENCE
-additive -> additive (%PLUS | %MINUS) multiplicative {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
+additive -> additive (%PLUS | %MINUS) multiplicative {% d => (new BinaryExpressionNode(d[0], d[1][0].value, d[2], d[1])) %}
           | multiplicative {% id %}
 
 # *, /, //, %
-multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
+multiplicative -> multiplicative (%MULT | %INTDIV | %DIV | %MOD) unary {% d => (new BinaryExpressionNode(d[0], d[1][0].value, d[2], d[1])) %}
                 | unary {% id %}
 
 # + or - (unary)
-unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0], d[1], d[0])) %}
+unary -> (%PLUS | %MINUS) unary {% d => (new UnaryExpressionNode(d[0], d[1][0].value, d[0])) %}
        | power
 
 # ** (power)
 # HIGHEST PRECEDENCE
-power -> primary %POWER unary {% d => (new BinaryExpressionNode(d[0], d[1], d[2], d[1])) %}
+power -> primary %POWER unary {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %}
        | primary {% id %}
 
 #-----------------------------------------------------------------------------------------
@@ -239,9 +239,9 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2] || null)) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpressionNode(d[0], d[2] || null)) %}
 
-list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(d[0], d[2])) %}
+list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpressionNode(d[0], d[2])) %}
 
 method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], new IdentifierExpressionNode(d[2]), d[4] || null)) %}  # nums.remove(5) || nums.remove(num)
 

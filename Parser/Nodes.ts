@@ -24,12 +24,18 @@ import { Command,
          CreateListCommand,
          ReturnCommand
         } from './Interpreter'
+import { text } from 'stream/consumers';
 
 export type Assignable = AssignmentStatementNode;
 export type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
 export type BinaryOp =  "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or"
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!="
 export type UnaryOp = "-" | "+" | "!" | "not"
+
+// -----------------------------------------------------------------------------------------------------------
+// COMMON ERRORS:
+// "Cannot read properties of undefined (reading _tok)" -> accessing an undefined or null's token.
+// -----------------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------
 // ProgramNode
@@ -93,7 +99,7 @@ export class AssignmentStatementNode extends StatementNode {
 }
 
 export class ReturnStatementNode extends StatementNode {
-    private _value: ExpressionNode; // value by default should be null.
+    private _value: ExpressionNode | null; // value by default should be null.
     private _previousVariables : Map<string, PythonValue>;
     constructor(_value: ExpressionNode, _previousVariables : Map<string, PythonValue>, _tok: moo.Token) {
         super(_tok);
@@ -104,7 +110,11 @@ export class ReturnStatementNode extends StatementNode {
       const commands: Command[] = [];
 
       commands.push(new HighlightStatementCommand(this)); // highlight entire statement
-      commands.push(...(this._value.evaluate())); // evaluate value to be returned.
+      if (this._value) { // value not null
+        commands.push(...(this._value.evaluate()));
+      } else {
+        commands.push(new PushValueCommand(null));
+      }
       commands.push(new ExitScopeCommand(this._previousVariables));
       // commands.push(new ReturnCommand());
       return commands;
@@ -221,7 +231,7 @@ export class WhileStatementNode extends StatementNode {
 
 export class FuncDefStatementNode extends StatementNode {
     private _name: IdentifierExpressionNode;
-    private _formalParamList: FormalParamsListExpressionNode;
+    private _formalParamList: FormalParamsListExpressionNode | null;
     private _block: BlockStatementNode;
     constructor(_name: IdentifierExpressionNode, _formalParamList: FormalParamsListExpressionNode, _block: BlockStatementNode, _tok: moo.Token) {
       super(_tok);
@@ -367,8 +377,16 @@ export class IdentifierExpressionNode extends ExpressionNode {
 export class FormalParamsListExpressionNode extends ExpressionNode {
    private _paramsList: IdentifierExpressionNode[];
    constructor(_paramsList: IdentifierExpressionNode[]) {
-     super(_paramsList[0]._tok);
-     this._paramsList = _paramsList;
+    // need to check if array is empty, probably need to do this for arg list too.
+    if (_paramsList === null || _paramsList === undefined || _paramsList.length === 0) {
+      const dummy = {line: 0, col: 0, text: '', type: '', value: ''} as moo.Token;
+      super(dummy); // pass empty token in here.
+      this._paramsList = []; // nothing there.
+    }
+    else {
+      super(_paramsList[0]._tok);
+      this._paramsList = _paramsList;
+    }
   }
    evaluate(): Command[] {
       const commands: Command[] = [];
@@ -408,8 +426,15 @@ export class ConditionalExpressionNode extends ExpressionNode {
 export class ArgListExpressionNode extends ExpressionNode {
     private _argsList: ExpressionNode[];
     constructor(_argsList: ExpressionNode[]) {
+      if (_argsList === null || _argsList === undefined || _argsList.length === 0) {
+      const dummy = {line: 0, col: 0, text: '', type: '', value: ''} as moo.Token;
+      super(dummy); // pass empty token in here.
+      this._argsList = []; // nothing there.
+    }
+    else {
         super(_argsList[0]._tok);
         this._argsList = _argsList;
+    }
     }
     
     evaluate(): Command[] {

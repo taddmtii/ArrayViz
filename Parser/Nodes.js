@@ -17,6 +17,10 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EvaluatedExpressionNode = exports.StringLiteralExpressionNode = exports.BooleanLiteralExpressionNode = exports.ListLiteralExpressionNode = exports.ListSliceExpressionNode = exports.MethodCallExpressionNode = exports.ListAccessExpressionNode = exports.FuncCallExpressionNode = exports.UnaryExpressionNode = exports.BinaryExpressionNode = exports.ComparisonExpressionNode = exports.ArgListExpressionNode = exports.ConditionalExpressionNode = exports.FormalParamsListExpressionNode = exports.IdentifierExpressionNode = exports.NumberLiteralExpressionNode = exports.ExpressionNode = exports.BlockStatementNode = exports.ExpressionStatementNode = exports.ElseBlockStatementNode = exports.ElifStatementNode = exports.FuncDefStatementNode = exports.WhileStatementNode = exports.ForStatementNode = exports.IfStatementNode = exports.PassStatementNode = exports.ContinueStatementNode = exports.BreakStatementNode = exports.ReturnStatementNode = exports.AssignmentStatementNode = exports.StatementNode = exports.ProgramNode = void 0;
 var Interpreter_1 = require("./Interpreter");
+// -----------------------------------------------------------------------------------------------------------
+// COMMON ERRORS:
+// "Cannot read properties of undefined (reading _tok)" -> accessing an undefined or null's token.
+// -----------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------
 // ProgramNode
 //
@@ -100,8 +104,13 @@ var ReturnStatementNode = /** @class */ (function (_super) {
     ReturnStatementNode.prototype.execute = function () {
         var commands = [];
         commands.push(new Interpreter_1.HighlightStatementCommand(this)); // highlight entire statement
-        commands.push.apply(// highlight entire statement
-        commands, (this._value.evaluate())); // evaluate value to be returned.
+        if (this._value) { // value not null
+            commands.push.apply(// value not null
+            commands, (this._value.evaluate()));
+        }
+        else {
+            commands.push(new Interpreter_1.PushValueCommand(null));
+        }
         commands.push(new Interpreter_1.ExitScopeCommand(this._previousVariables));
         // commands.push(new ReturnCommand());
         return commands;
@@ -406,8 +415,17 @@ exports.IdentifierExpressionNode = IdentifierExpressionNode;
 var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     __extends(FormalParamsListExpressionNode, _super);
     function FormalParamsListExpressionNode(_paramsList) {
-        var _this = _super.call(this, _paramsList[0]._tok) || this;
-        _this._paramsList = _paramsList;
+        var _this = this;
+        // need to check if array is empty, probably need to do this for arg list too.
+        if (_paramsList === null || _paramsList === undefined || _paramsList.length === 0) {
+            var dummy = { line: 0, col: 0, text: '', type: '', value: '' };
+            _this = _super.call(this, dummy) || this; // pass empty token in here.
+            _this._paramsList = []; // nothing there.
+        }
+        else {
+            _this = _super.call(this, _paramsList[0]._tok) || this;
+            _this._paramsList = _paramsList;
+        }
         return _this;
     }
     FormalParamsListExpressionNode.prototype.evaluate = function () {
@@ -440,8 +458,16 @@ exports.ConditionalExpressionNode = ConditionalExpressionNode;
 var ArgListExpressionNode = /** @class */ (function (_super) {
     __extends(ArgListExpressionNode, _super);
     function ArgListExpressionNode(_argsList) {
-        var _this = _super.call(this, _argsList[0]._tok) || this;
-        _this._argsList = _argsList;
+        var _this = this;
+        if (_argsList === null || _argsList === undefined || _argsList.length === 0) {
+            var dummy = { line: 0, col: 0, text: '', type: '', value: '' };
+            _this = _super.call(this, dummy) || this; // pass empty token in here.
+            _this._argsList = []; // nothing there.
+        }
+        else {
+            _this = _super.call(this, _argsList[0]._tok) || this;
+            _this._argsList = _argsList;
+        }
         return _this;
     }
     ArgListExpressionNode.prototype.evaluate = function () {
