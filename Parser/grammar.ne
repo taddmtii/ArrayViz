@@ -152,7 +152,8 @@ compound_statement -> if_statement {% id %}
                     | while_loop {% id %}
                     | func_def  {% id %}
 
-assignment_statement -> (%IDENTIFIER | list_access) %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0])) %}
+assignment_statement -> %IDENTIFIER %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0])) %}
+                    #   | list_access %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0])) %}
 
 if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 

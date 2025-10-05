@@ -15,7 +15,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ArgListExpressionNode = exports.IdentifierExpressionNode = exports.NumberLiteralExpressionNode = exports.ExpressionNode = exports.ReturnStatementNode = exports.AssignmentStatementNode = exports.StatementNode = exports.ProgramNode = void 0;
+exports.EvaluatedExpressionNode = exports.StringLiteralExpressionNode = exports.BooleanLiteralExpressionNode = exports.ListLiteralExpressionNode = exports.ListSliceExpressionNode = exports.MethodCallExpressionNode = exports.ListAccessExpressionNode = exports.FuncCallExpressionNode = exports.UnaryExpressionNode = exports.BinaryExpressionNode = exports.ComparisonExpressionNode = exports.ArgListExpressionNode = exports.ConditionalExpressionNode = exports.FormalParamsListExpressionNode = exports.IdentifierExpressionNode = exports.NumberLiteralExpressionNode = exports.ExpressionNode = exports.BlockStatementNode = exports.ExpressionStatementNode = exports.ElseBlockStatementNode = exports.ElifStatementNode = exports.FuncDefStatementNode = exports.WhileStatementNode = exports.ForStatementNode = exports.IfStatementNode = exports.PassStatementNode = exports.ContinueStatementNode = exports.BreakStatementNode = exports.ReturnStatementNode = exports.AssignmentStatementNode = exports.StatementNode = exports.ProgramNode = void 0;
 var Interpreter_1 = require("./Interpreter");
 // ------------------------------------------------------------------
 // ProgramNode
@@ -124,6 +124,7 @@ var BreakStatementNode = /** @class */ (function (_super) {
     };
     return BreakStatementNode;
 }(StatementNode));
+exports.BreakStatementNode = BreakStatementNode;
 var ContinueStatementNode = /** @class */ (function (_super) {
     __extends(ContinueStatementNode, _super);
     function ContinueStatementNode(_tok) {
@@ -139,6 +140,7 @@ var ContinueStatementNode = /** @class */ (function (_super) {
     };
     return ContinueStatementNode;
 }(StatementNode));
+exports.ContinueStatementNode = ContinueStatementNode;
 var PassStatementNode = /** @class */ (function (_super) {
     __extends(PassStatementNode, _super);
     function PassStatementNode(_tok) {
@@ -154,6 +156,7 @@ var PassStatementNode = /** @class */ (function (_super) {
     };
     return PassStatementNode;
 }(StatementNode));
+exports.PassStatementNode = PassStatementNode;
 var IfStatementNode = /** @class */ (function (_super) {
     __extends(IfStatementNode, _super);
     function IfStatementNode(_condition, _thenBranch, _elseBranch, _tok) {
@@ -181,6 +184,7 @@ var IfStatementNode = /** @class */ (function (_super) {
     };
     return IfStatementNode;
 }(StatementNode));
+exports.IfStatementNode = IfStatementNode;
 var ForStatementNode = /** @class */ (function (_super) {
     __extends(ForStatementNode, _super);
     function ForStatementNode(_loopVar, _iterable, _block, _tok) {
@@ -200,6 +204,7 @@ var ForStatementNode = /** @class */ (function (_super) {
     };
     return ForStatementNode;
 }(StatementNode));
+exports.ForStatementNode = ForStatementNode;
 var WhileStatementNode = /** @class */ (function (_super) {
     __extends(WhileStatementNode, _super);
     function WhileStatementNode(_expression, _block, _tok) {
@@ -218,6 +223,7 @@ var WhileStatementNode = /** @class */ (function (_super) {
     };
     return WhileStatementNode;
 }(StatementNode));
+exports.WhileStatementNode = WhileStatementNode;
 var FuncDefStatementNode = /** @class */ (function (_super) {
     __extends(FuncDefStatementNode, _super);
     function FuncDefStatementNode(_name, _formalParamList, _block, _tok) {
@@ -235,6 +241,7 @@ var FuncDefStatementNode = /** @class */ (function (_super) {
     };
     return FuncDefStatementNode;
 }(StatementNode));
+exports.FuncDefStatementNode = FuncDefStatementNode;
 var ElifStatementNode = /** @class */ (function (_super) {
     __extends(ElifStatementNode, _super);
     function ElifStatementNode(_condition, _thenBranch, _elseBranch, _tok) {
@@ -259,6 +266,7 @@ var ElifStatementNode = /** @class */ (function (_super) {
     };
     return ElifStatementNode;
 }(StatementNode));
+exports.ElifStatementNode = ElifStatementNode;
 var ElseBlockStatementNode = /** @class */ (function (_super) {
     __extends(ElseBlockStatementNode, _super);
     function ElseBlockStatementNode(_block, _tok) {
@@ -273,6 +281,7 @@ var ElseBlockStatementNode = /** @class */ (function (_super) {
     };
     return ElseBlockStatementNode;
 }(StatementNode));
+exports.ElseBlockStatementNode = ElseBlockStatementNode;
 var ExpressionStatementNode = /** @class */ (function (_super) {
     __extends(ExpressionStatementNode, _super);
     function ExpressionStatementNode(_expression, _tok) {
@@ -289,6 +298,7 @@ var ExpressionStatementNode = /** @class */ (function (_super) {
     };
     return ExpressionStatementNode;
 }(StatementNode));
+exports.ExpressionStatementNode = ExpressionStatementNode;
 var BlockStatementNode = /** @class */ (function (_super) {
     __extends(BlockStatementNode, _super);
     function BlockStatementNode(_statementList, _tok) {
@@ -306,6 +316,7 @@ var BlockStatementNode = /** @class */ (function (_super) {
     };
     return BlockStatementNode;
 }(StatementNode));
+exports.BlockStatementNode = BlockStatementNode;
 // ------------------------------------------------------------------
 // Expression Nodes
 // ------------------------------------------------------------------
@@ -407,6 +418,7 @@ var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     };
     return FormalParamsListExpressionNode;
 }(ExpressionNode));
+exports.FormalParamsListExpressionNode = FormalParamsListExpressionNode;
 var ConditionalExpressionNode = /** @class */ (function (_super) {
     __extends(ConditionalExpressionNode, _super);
     function ConditionalExpressionNode(_left, _condition, _right) {
@@ -425,6 +437,7 @@ var ConditionalExpressionNode = /** @class */ (function (_super) {
     };
     return ConditionalExpressionNode;
 }(ExpressionNode));
+exports.ConditionalExpressionNode = ConditionalExpressionNode;
 var ArgListExpressionNode = /** @class */ (function (_super) {
     __extends(ArgListExpressionNode, _super);
     function ArgListExpressionNode(_argsList) {
@@ -458,6 +471,7 @@ var ComparisonExpressionNode = /** @class */ (function (_super) {
     };
     return ComparisonExpressionNode;
 }(ExpressionNode));
+exports.ComparisonExpressionNode = ComparisonExpressionNode;
 var BinaryExpressionNode = /** @class */ (function (_super) {
     __extends(BinaryExpressionNode, _super);
     function BinaryExpressionNode(_left, _operator, _right, _tok) {
@@ -477,10 +491,11 @@ var BinaryExpressionNode = /** @class */ (function (_super) {
     };
     return BinaryExpressionNode;
 }(ExpressionNode));
+exports.BinaryExpressionNode = BinaryExpressionNode;
 var UnaryExpressionNode = /** @class */ (function (_super) {
     __extends(UnaryExpressionNode, _super);
-    function UnaryExpressionNode(_operator, _operand) {
-        var _this = _super.call(this, _operand._tok) || this;
+    function UnaryExpressionNode(_operator, _operand, _tok) {
+        var _this = _super.call(this, _tok) || this;
         _this._operator = _operator;
         _this._operand = _operand;
         return _this;
@@ -494,6 +509,7 @@ var UnaryExpressionNode = /** @class */ (function (_super) {
     };
     return UnaryExpressionNode;
 }(ExpressionNode));
+exports.UnaryExpressionNode = UnaryExpressionNode;
 var FuncCallExpressionNode = /** @class */ (function (_super) {
     __extends(FuncCallExpressionNode, _super);
     function FuncCallExpressionNode(_func_name, _args_list) {
@@ -509,6 +525,7 @@ var FuncCallExpressionNode = /** @class */ (function (_super) {
     };
     return FuncCallExpressionNode;
 }(ExpressionNode));
+exports.FuncCallExpressionNode = FuncCallExpressionNode;
 var ListAccessExpressionNode = /** @class */ (function (_super) {
     __extends(ListAccessExpressionNode, _super);
     function ListAccessExpressionNode(_list, _index) {
@@ -527,6 +544,7 @@ var ListAccessExpressionNode = /** @class */ (function (_super) {
     };
     return ListAccessExpressionNode;
 }(ExpressionNode));
+exports.ListAccessExpressionNode = ListAccessExpressionNode;
 var MethodCallExpressionNode = /** @class */ (function (_super) {
     __extends(MethodCallExpressionNode, _super);
     function MethodCallExpressionNode(_list, _methodName, _argsList) {
@@ -543,6 +561,7 @@ var MethodCallExpressionNode = /** @class */ (function (_super) {
     };
     return MethodCallExpressionNode;
 }(ExpressionNode));
+exports.MethodCallExpressionNode = MethodCallExpressionNode;
 var ListSliceExpressionNode = /** @class */ (function (_super) {
     __extends(ListSliceExpressionNode, _super);
     function ListSliceExpressionNode(_list, _start, _stop, _step) {
@@ -580,6 +599,7 @@ var ListSliceExpressionNode = /** @class */ (function (_super) {
     };
     return ListSliceExpressionNode;
 }(ExpressionNode));
+exports.ListSliceExpressionNode = ListSliceExpressionNode;
 var ListLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(ListLiteralExpressionNode, _super);
     function ListLiteralExpressionNode(_values, _tok) {
@@ -595,6 +615,7 @@ var ListLiteralExpressionNode = /** @class */ (function (_super) {
     };
     return ListLiteralExpressionNode;
 }(ExpressionNode));
+exports.ListLiteralExpressionNode = ListLiteralExpressionNode;
 var BooleanLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(BooleanLiteralExpressionNode, _super);
     function BooleanLiteralExpressionNode(_value, _tok) {
@@ -611,6 +632,7 @@ var BooleanLiteralExpressionNode = /** @class */ (function (_super) {
     };
     return BooleanLiteralExpressionNode;
 }(ExpressionNode));
+exports.BooleanLiteralExpressionNode = BooleanLiteralExpressionNode;
 var StringLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(StringLiteralExpressionNode, _super);
     function StringLiteralExpressionNode(_value) {
@@ -627,6 +649,7 @@ var StringLiteralExpressionNode = /** @class */ (function (_super) {
     };
     return StringLiteralExpressionNode;
 }(ExpressionNode));
+exports.StringLiteralExpressionNode = StringLiteralExpressionNode;
 var EvaluatedExpressionNode = /** @class */ (function (_super) {
     __extends(EvaluatedExpressionNode, _super);
     function EvaluatedExpressionNode(_value, _tok) {
@@ -642,3 +665,4 @@ var EvaluatedExpressionNode = /** @class */ (function (_super) {
     };
     return EvaluatedExpressionNode;
 }(ExpressionNode));
+exports.EvaluatedExpressionNode = EvaluatedExpressionNode;

@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------
-import { PythonValue, BinaryOp, ComparisonOp, UnaryOp, StatementNode, ExpressionNode } from './Nodes';
+import { PythonValue, BinaryOp, ComparisonOp, UnaryOp, StatementNode, ExpressionNode, ListAccessExpressionNode } from './Nodes';
 import * as readline from 'readline';
 // ---------------------------------------------------------------------------------------
 // INTERFACES AND CLASSES
