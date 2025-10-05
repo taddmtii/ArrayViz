@@ -35,7 +35,7 @@ const { ProgramNode,
         BooleanLiteralExpressionNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
-        } = require('../Interpreter/Nodes.js');
+        } = require('./Nodes.js');
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
@@ -132,10 +132,10 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 program -> statement_list {% id %}
 
-statement_list -> statement:+ {% d => (new ProgramNode(new StatementNode(d[0]))) %}
+statement_list -> statement:+ {% d => new ProgramNode(d[0].filter(statement => statement !== null)) %} # statements cannot be null.
 
-statement -> simple_statement %NL {% d => [d[0]] %} 
-           | compound_statement {% id %} # compound statement already eats newline. 
+statement -> simple_statement %NL {% d => d[0] %} 
+           | compound_statement {% d => d[0] %} # compound statement already eats newline. 
            | %NL {% d => null %}
 
 # A simple statement is a standalone statement.
@@ -170,10 +170,10 @@ func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expr
 # come back, multiple params and args not working
 formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):* {% d => new FormalParamsListExpressionNode(new IdentifierExpressionNode(d[0]), ...(d[1].map(x => new IdentifierExpressionNode(x[1])))) %} 
 
-arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode(new ExpressionNode(d[0]), ...(d[1] ? d[1].map(x => new ExpressionNode(x[1])) : [])) %}
+arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode(d[0], ...(d[1] ? d[1].map(x => x[1]) : [])) %}
 
 block -> %NL %INDENT statement_list %DEDENT {% d => (new BlockStatementNode(d[2], d[1])) %}
-       | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0])) %} # come back, not sure what token to pass in here.
+       | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0]._startTok)) %} 
 
 return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1], new Map(), d[0])) %} 
 
@@ -239,11 +239,11 @@ primary -> function_call {% id %}
          | list_slice {% id %}
          | atom {% id %}
 
-function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2])) %}
+function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpresssionNode(d[0], d[2] || null)) %}
 
 list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpresssionNode(d[0], d[2])) %}
 
-method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], d[2], d[4])) %}  # nums.remove(5) || nums.remove(num)
+method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], new IdentifierExpressionNode(d[2]), d[4] || null)) %}  # nums.remove(5) || nums.remove(num)
 
 list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], d[6]) %} # nums[1:2:1]
             | primary %LSQBRACK expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], null) %} # nums[2:5]
@@ -267,6 +267,6 @@ number -> %HEX {% d => (new NumberLiteralExpressionNode(d[0])) %}
         | %DECIMAL {% d => (new NumberLiteralExpressionNode(d[0])) %}
         | %FLOAT {% d => (new NumberLiteralExpressionNode(d[0])) %}
 
-list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => (new ListLiteralExpressionNode(d[1])) %}
+list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => (new ListLiteralExpressionNode(d[1] || null, d[0])) %}
 
 group -> %LPAREN expression %RPAREN {% d => d[1] %} 

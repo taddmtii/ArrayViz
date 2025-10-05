@@ -38,7 +38,7 @@ const { ProgramNode,
         BooleanLiteralExpressionNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
-        } = require('../Interpreter/Nodes.js');
+        } = require('./Nodes.js');
 const lexer = new IndentationLexer({ 
     indentationType: 'WS', 
     newlineType: 'NL',
@@ -135,9 +135,9 @@ var grammar = {
     {"name": "program", "symbols": ["statement_list"], "postprocess": id},
     {"name": "statement_list$ebnf$1", "symbols": ["statement"]},
     {"name": "statement_list$ebnf$1", "symbols": ["statement_list$ebnf$1", "statement"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "statement_list", "symbols": ["statement_list$ebnf$1"], "postprocess": d => (new ProgramNode(new StatementNode(d[0])))},
-    {"name": "statement", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => [d[0]]},
-    {"name": "statement", "symbols": ["compound_statement"], "postprocess": id},
+    {"name": "statement_list", "symbols": ["statement_list$ebnf$1"], "postprocess": d => new ProgramNode(d[0].filter(statement => statement !== null))},
+    {"name": "statement", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => d[0]},
+    {"name": "statement", "symbols": ["compound_statement"], "postprocess": d => d[0]},
     {"name": "statement", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => null},
     {"name": "simple_statement", "symbols": ["assignment_statement"], "postprocess": id},
     {"name": "simple_statement", "symbols": ["return_statement"], "postprocess": id},
@@ -177,9 +177,9 @@ var grammar = {
     {"name": "arg_list$ebnf$1", "symbols": []},
     {"name": "arg_list$ebnf$1$subexpression$1", "symbols": [(lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "expression"]},
     {"name": "arg_list$ebnf$1", "symbols": ["arg_list$ebnf$1", "arg_list$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "arg_list", "symbols": ["expression", "arg_list$ebnf$1"], "postprocess": d => new ArgListExpressionNode(new ExpressionNode(d[0]), ...(d[1] ? d[1].map(x => new ExpressionNode(x[1])) : []))},
+    {"name": "arg_list", "symbols": ["expression", "arg_list$ebnf$1"], "postprocess": d => new ArgListExpressionNode(d[0], ...(d[1] ? d[1].map(x => x[1]) : []))},
     {"name": "block", "symbols": [(lexer.has("NL") ? {type: "NL"} : NL), (lexer.has("INDENT") ? {type: "INDENT"} : INDENT), "statement_list", (lexer.has("DEDENT") ? {type: "DEDENT"} : DEDENT)], "postprocess": d => (new BlockStatementNode(d[2], d[1]))},
-    {"name": "block", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => (new BlockStatementNode([d[0]], d[0]))},
+    {"name": "block", "symbols": ["simple_statement", (lexer.has("NL") ? {type: "NL"} : NL)], "postprocess": d => (new BlockStatementNode([d[0]], d[0]._startTok))},
     {"name": "return_statement$ebnf$1", "symbols": ["expression"], "postprocess": id},
     {"name": "return_statement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "return_statement", "symbols": [(lexer.has("RETURN") ? {type: "RETURN"} : RETURN), "return_statement$ebnf$1"], "postprocess": d => (new ReturnStatementNode(d[1], new Map(), d[0]))},
@@ -226,11 +226,11 @@ var grammar = {
     {"name": "primary", "symbols": ["atom"], "postprocess": id},
     {"name": "function_call$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
     {"name": "function_call$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "function_call", "symbols": ["primary", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "function_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => (new FuncCallExpresssionNode(d[0], d[2]))},
+    {"name": "function_call", "symbols": ["primary", (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "function_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => (new FuncCallExpresssionNode(d[0], d[2] || null))},
     {"name": "list_access", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => (new ListAccessExpresssionNode(d[0], d[2]))},
     {"name": "method_call$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
     {"name": "method_call$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "method_call", "symbols": ["primary", (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "method_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => (new MethodCallExpressionNode(d[0], d[2], d[4]))},
+    {"name": "method_call", "symbols": ["primary", (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "method_call$ebnf$1", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => (new MethodCallExpressionNode(d[0], new IdentifierExpressionNode(d[2]), d[4] || null))},
     {"name": "list_slice", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => new ListSliceExpressionNode(d[0], d[2], d[4], d[6])},
     {"name": "list_slice", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => new ListSliceExpressionNode(d[0], d[2], d[4], null)},
     {"name": "list_slice", "symbols": ["primary", (lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "expression", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => new ListSliceExpressionNode(d[0], null, d[3], d[5])},
@@ -254,7 +254,7 @@ var grammar = {
     {"name": "number", "symbols": [(lexer.has("FLOAT") ? {type: "FLOAT"} : FLOAT)], "postprocess": d => (new NumberLiteralExpressionNode(d[0]))},
     {"name": "list_literal$ebnf$1", "symbols": ["arg_list"], "postprocess": id},
     {"name": "list_literal$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "list_literal", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "list_literal$ebnf$1", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => (new ListLiteralExpressionNode(d[1]))},
+    {"name": "list_literal", "symbols": [(lexer.has("LSQBRACK") ? {type: "LSQBRACK"} : LSQBRACK), "list_literal$ebnf$1", (lexer.has("RSQBRACK") ? {type: "RSQBRACK"} : RSQBRACK)], "postprocess": d => (new ListLiteralExpressionNode(d[1] || null, d[0]))},
     {"name": "group", "symbols": [(lexer.has("LPAREN") ? {type: "LPAREN"} : LPAREN), "expression", (lexer.has("RPAREN") ? {type: "RPAREN"} : RPAREN)], "postprocess": d => d[1]}
 ]
   , ParserStart: "program"

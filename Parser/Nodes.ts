@@ -325,21 +325,21 @@ export abstract class ExpressionNode {
 
 export class NumberLiteralExpressionNode extends ExpressionNode {
   private _value: string;
-  constructor(private value: string, tok: moo.Token) {
+  constructor(value: string, tok: moo.Token) {
     super(tok);
     this._value = value;
   }
 
   evaluate(): Command[] {
     let numValue: Number | BigInt;
-    if (this.value.startsWith('0x')) { // hexadecimal
-      numValue = parseInt(this.value, 16);
-    } else if (this.value.startsWith('0b')) { // binary
-      numValue = parseInt(this.value, 2);
-    } else if (this.value.includes('.')) { // float
-      numValue = parseFloat(this.value);
+    if (this._value.startsWith('0x')) { // hexadecimal
+      numValue = parseInt(this._value, 16);
+    } else if (this._value.startsWith('0b')) { // binary
+      numValue = parseInt(this._value, 2);
+    } else if (this._value.includes('.')) { // float
+      numValue = parseFloat(this._value);
     } else {
-      numValue = BigInt(this.value); // regular integer, base 10.
+      numValue = BigInt(this._value); // regular integer, base 10.
     }
     
     // Create list of commands and return as result to add to overall steps.
@@ -427,13 +427,14 @@ export class ComparisonExpressionNode extends ExpressionNode {
     private _right: ExpressionNode;
 
     constructor(_left: ExpressionNode, _operator: ComparisonOp, _right: ExpressionNode) {
-      super(_left._tok); // not sure what token exactly to pass here ?
+      super(_left._tok); 
       this._left = _left;
       this._operator = _operator;
       this._right = _right;
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
+      // TODO: comparison logic
       return commands;
     }
  }

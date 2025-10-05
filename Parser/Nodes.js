@@ -361,23 +361,22 @@ var NumberLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(NumberLiteralExpressionNode, _super);
     function NumberLiteralExpressionNode(value, tok) {
         var _this = _super.call(this, tok) || this;
-        _this.value = value;
         _this._value = value;
         return _this;
     }
     NumberLiteralExpressionNode.prototype.evaluate = function () {
         var numValue;
-        if (this.value.startsWith('0x')) { // hexadecimal
-            numValue = parseInt(this.value, 16);
+        if (this._value.startsWith('0x')) { // hexadecimal
+            numValue = parseInt(this._value, 16);
         }
-        else if (this.value.startsWith('0b')) { // binary
-            numValue = parseInt(this.value, 2);
+        else if (this._value.startsWith('0b')) { // binary
+            numValue = parseInt(this._value, 2);
         }
-        else if (this.value.includes('.')) { // float
-            numValue = parseFloat(this.value);
+        else if (this._value.includes('.')) { // float
+            numValue = parseFloat(this._value);
         }
         else {
-            numValue = BigInt(this.value); // regular integer, base 10.
+            numValue = BigInt(this._value); // regular integer, base 10.
         }
         // Create list of commands and return as result to add to overall steps.
         return [
@@ -459,7 +458,7 @@ exports.ArgListExpressionNode = ArgListExpressionNode;
 var ComparisonExpressionNode = /** @class */ (function (_super) {
     __extends(ComparisonExpressionNode, _super);
     function ComparisonExpressionNode(_left, _operator, _right) {
-        var _this = _super.call(this, _left._tok) || this; // not sure what token exactly to pass here ?
+        var _this = _super.call(this, _left._tok) || this;
         _this._left = _left;
         _this._operator = _operator;
         _this._right = _right;
@@ -467,6 +466,7 @@ var ComparisonExpressionNode = /** @class */ (function (_super) {
     }
     ComparisonExpressionNode.prototype.evaluate = function () {
         var commands = [];
+        // TODO: comparison logic
         return commands;
     };
     return ComparisonExpressionNode;

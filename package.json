@@ -2,5 +2,8 @@
   "devDependencies": {
     "@types/moo": "^0.5.10",
     "@types/node": "^24.3.0"
-  }
+  },
+  "scripts": {
+  "all": "nearleyc grammar.ne -o grammar.js; tsc Nodes.ts; node run_test.js"
+}
 }
