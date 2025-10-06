@@ -61,7 +61,7 @@ Course: CPTR-486 Senior Seminar
         - limitations
 
 % Milestone 2:
-    - Parser genreate AST
+    - Parser generate AST
     - Full expression support and assignments to variables.
     - Establish Architecture diagram (Parser, Evaluator, GUI components).
 % Milestone 3:
