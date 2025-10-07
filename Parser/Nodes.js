@@ -430,6 +430,8 @@ var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     }
     FormalParamsListExpressionNode.prototype.evaluate = function () {
         var commands = [];
+        // for each parameter...
+        // 
         // TODO: do parameter list logic (???) not really sure where to start here yet.
         return commands;
     };

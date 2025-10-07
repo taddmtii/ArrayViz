@@ -24,7 +24,6 @@ import { Command,
          CreateListCommand,
          ReturnCommand
         } from './Interpreter'
-import { text } from 'stream/consumers';
 
 export type Assignable = AssignmentStatementNode;
 export type PythonValue = Number | String | PythonValue[] | Function | Boolean | BigInt | null
@@ -390,7 +389,8 @@ export class FormalParamsListExpressionNode extends ExpressionNode {
   }
    evaluate(): Command[] {
       const commands: Command[] = [];
-
+      // for each parameter...
+      // 
       // TODO: do parameter list logic (???) not really sure where to start here yet.
       
       return commands;

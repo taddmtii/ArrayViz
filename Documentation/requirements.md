@@ -63,6 +63,9 @@ Course: CPTR-486 Senior Seminar
 % Milestone 2:
     - Parser generate AST
     - Full expression support and assignments to variables.
+        1. Address TODOs for expression evaluator logic.
+        2. Test to verify expressions work
+        3. Test to verify do() methods work on each command.
     - Establish Architecture diagram (Parser, Evaluator, GUI components).
 % Milestone 3:
     - Full statement support
