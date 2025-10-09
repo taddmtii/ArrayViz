@@ -22,7 +22,8 @@ import { Command,
          InputCommand,
          IndexAccessCommand,
          CreateListCommand,
-         ReturnCommand
+         ReturnCommand,
+         ListSliceCommand
         } from './Interpreter'
 
 export type Assignable = AssignmentStatementNode;
@@ -436,6 +437,15 @@ export class ArgListExpressionNode extends ExpressionNode {
         this._argsList = _argsList;
     }
     }
+
+    get length(): number {
+      return this._argsList.length;
+    }
+
+    get args(): ExpressionNode[] {
+      return this._argsList;
+    }
+
     
     evaluate(): Command[] {
         const commands: Command[] = [];
@@ -445,6 +455,14 @@ export class ArgListExpressionNode extends ExpressionNode {
         return commands;
     }
 }
+
+/* 
+COMPARISON EXPRESSION NODE
+
+Handles:
+  - 5 < 10, x > y, x >= 1, x != 0, and so on.
+
+*/
 
 export class ComparisonExpressionNode extends ExpressionNode {
     private _left: ExpressionNode;
@@ -459,7 +477,10 @@ export class ComparisonExpressionNode extends ExpressionNode {
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-      // TODO: comparison logic
+      commands.push(new HighlightExpressionCommand(this));
+      commands.push(...this._left.evaluate())
+      commands.push(...this._right.evaluate())
+      commands.push(new ComparisonOpCommand(this._operator));
       return commands;
     }
  }
@@ -512,11 +533,39 @@ export class FuncCallExpressionNode extends ExpressionNode {
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
-      // TODO: do func call logic
+      commands.push(new HighlightExpressionCommand(this));
+      if (this._args_list) {
+        commands.push(...this._args_list.evaluate());
+      }
+      
+      // Grab function name and then deal with whatever we get. Built in functions first, then user defined after.
+
+      // if function name is an identifier.
+      if (this._func_name instanceof IdentifierExpressionNode) {
+        const funcName = this._func_name._tok.text;
+        commands.push(new PushValueCommand(this._args_list[0]))
+        if (funcName === 'print') {
+          commands.push(new PrintCommand());
+        } else if (funcName === 'len') {
+          commands.push(new LenCommand());
+        } else if (funcName === 'type') {
+          commands.push(new TypeCommand());
+        } else if (funcName === 'input') {
+          commands.push(new InputCommand());
+        } else {
+          console.log("User defined function")
+        }
+
       return commands;
     }
  }
 
+/*
+LIST ACCESS EXPRESSION NODE
+
+Handles:
+  - arr[2], nums[i], etc...
+*/ 
 export class ListAccessExpressionNode extends ExpressionNode  {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
@@ -530,7 +579,7 @@ export class ListAccessExpressionNode extends ExpressionNode  {
       commands.push(new HighlightExpressionCommand(this));
       commands.push(...this._list.evaluate());
       commands.push(...this._index.evaluate());
-      // commands.push(new IndexAccessCommand());
+      commands.push(new IndexAccessCommand());
       return commands;
     }
  }
@@ -590,9 +639,18 @@ export class ListSliceExpressionNode extends ExpressionNode {
         else {
             commands.push(new PushValueCommand(null));
         }
+
+        commands.push(new ListSliceCommand())
         return commands;
     }
  }
+
+/* 
+LIST LITERAL EXPRESSION NODE
+
+Handles:
+  - [1, 2, 3], [1, x, y, 5, 2], [], etc...
+*/
 
 export class ListLiteralExpressionNode extends ExpressionNode {
     private _values: ArgListExpressionNode;
@@ -601,10 +659,17 @@ export class ListLiteralExpressionNode extends ExpressionNode {
       this._values = _values;
     }
   evaluate(): Command[] {
-    return [
-      new HighlightExpressionCommand(this),
-      // TODO: fix implementation and do list literal logic
-    ];
+    const commands: Command[] = [];
+    commands.push(new HighlightExpressionCommand(this));
+    // if values empty, no values to push or evaluate.
+    if (this._values) {
+      commands.push(...this._values.evaluate());
+    }
+    // count values so we know how many elements to pop off stack.
+    let count = this._values.length;
+    commands.push(new CreateListCommand(count));
+    return commands;
+
   }
  }
 
@@ -615,11 +680,10 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
       this._value = _value;
   }
   evaluate(): Command[] {
-    return [
-      new HighlightExpressionCommand(this), // highlight
-      new PushValueCommand(this._value)
-      // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-    ]
+    const commands: Command[] = [];
+    commands.push(new HighlightExpressionCommand(this));
+    commands.push(new PushValueCommand(this._value));
+    return commands;
   }
  }
 

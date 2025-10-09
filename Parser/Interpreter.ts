@@ -463,22 +463,30 @@ export class IndexAccessCommand extends Command {
   }
 }
 
+export class ListSliceCommand extends Command {
+  do(_currentState: State) {
+
+  }
+}
 
 // CreateListCommand -> Creates a list of values
 export class CreateListCommand extends Command {
-  private _name: string;
-  private _values: PythonValue[];
-  constructor(_name: string, _values: PythonValue[]) {
+  private _count: number;
+  constructor( _count: number) {
     super();
-    this._name = _name;
-    this._values = _values;
+    this._count = _count;
   }
   do(_currentState: State) {
-    this._undoCommand = new CreateListCommand(this._name, this._values);
-    _currentState.setVariable(this._name, this._values);
+    this._undoCommand = new CreateListCommand(this._count);
+    let list: PythonValue[] = [];
+    for (let i = 0; i < this._count; i++) {
+      const elem: PythonValue = _currentState.evaluationStack.pop();
+      list.push(elem);
+    }
+    _currentState.evaluationStack.push(list);
   }
   override undo(_currentState: State) {
-    _currentState.variables.delete(this._name);
+    // _currentState.variables.delete(this._name);
   }
 }
 
