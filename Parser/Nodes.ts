@@ -1,11 +1,11 @@
 import * as moo from 'moo';
-import { Command, 
-         AssignVariableCommand, 
-         ChangeVariableCommand, 
-         PushValueCommand, 
-         PopValueCommand, 
-         HighlightExpressionCommand, 
-         RetrieveValueCommand,  
+import { Command,
+         AssignVariableCommand,
+         ChangeVariableCommand,
+         PushValueCommand,
+         PopValueCommand,
+         HighlightExpressionCommand,
+         RetrieveValueCommand,
          MoveLinePointerCommand,
          HighlightStatementCommand,
          ReplaceHighlightedExpressionCommand,
@@ -40,7 +40,7 @@ export type UnaryOp = "-" | "+" | "!" | "not"
 // ------------------------------------------------------------------
 // ProgramNode
 //
-// Establishes list of statements that make up the program, encapsulates the 
+// Establishes list of statements that make up the program, encapsulates the
 // entire program. All commands collectively get added here to returned array here.
 // ------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ export class ProgramNode {
 // Statement Node is the base class for all statement type nodes.
 export abstract class StatementNode {
     abstract execute(): Command[];
-    public _startTok: moo.Token; 
+    public _startTok: moo.Token;
     public _endTok: moo.Token;
     constructor(_tok: moo.Token) {
       this._startTok = _tok;
@@ -288,7 +288,7 @@ export class ElseBlockStatementNode extends StatementNode {
 export class ExpressionStatementNode extends StatementNode {
     private _expression: ExpressionNode;
     constructor(_expression: ExpressionNode, _tok: moo.Token) {
-      super(_tok); 
+      super(_tok);
       this._expression = _expression;
    }
     execute(): Command[] {
@@ -320,8 +320,13 @@ export class BlockStatementNode extends StatementNode {
 // Expression Nodes
 // ------------------------------------------------------------------
 
+
+/*
+EXPRESSION NODE BASE CLASS
+
+*/
 export abstract class ExpressionNode {
-    public _tok: moo.Token; 
+    public _tok: moo.Token;
     constructor(_tok: moo.Token) {
       this._tok = _tok;
    }
@@ -333,6 +338,12 @@ export abstract class ExpressionNode {
   public get endCol() {return this._tok.col + (this._tok.text.length - 1)};
 }
 
+/*
+NUMBER LITERAL EXPRESSION NODE
+
+Handles:
+  - 5, 102, 68, etc...
+*/
 export class NumberLiteralExpressionNode extends ExpressionNode {
   private _value: string;
   constructor(value: string, tok: moo.Token) {
@@ -341,6 +352,8 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
   }
 
   evaluate(): Command[] {
+    const commands: Command[] = [];
+
     let numValue: Number | BigInt;
     if (this._value.startsWith('0x')) { // hexadecimal
       numValue = parseInt(this._value, 16);
@@ -351,12 +364,9 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     } else {
       numValue = BigInt(this._value); // regular integer, base 10.
     }
-    
-    // Create list of commands and return as result to add to overall steps.
-    return [
-      new HighlightExpressionCommand(this), // visually indicate what expression to highlight.
-      new PushValueCommand(numValue) // push onto stack
-    ];
+    commands.push(new HighlightExpressionCommand(this));
+    commands.push(new PushValueCommand(numValue));
+    return commands;
   }
  }
 
@@ -367,10 +377,10 @@ export class IdentifierExpressionNode extends ExpressionNode {
       this._tok = _tok;
     }
     evaluate(): Command[] {
-      return [
-        new HighlightExpressionCommand(this), // highlight, no need for replace.
-        new RetrieveValueCommand(this._tok.text)
-      ]
+      const commands: Command[] = [];
+      commands.push(new HighlightExpressionCommand(this)) // highlight, no need for replace.
+      commands.push(new RetrieveValueCommand(this._tok.text))
+      return commands;
     }
 }
 
@@ -390,10 +400,9 @@ export class FormalParamsListExpressionNode extends ExpressionNode {
   }
    evaluate(): Command[] {
       const commands: Command[] = [];
-      // for each parameter...
-      // 
-      // TODO: do parameter list logic (???) not really sure where to start here yet.
-      
+      for (const param of this._paramsList) {
+          commands.push(...param.evaluate());
+      }
       return commands;
    }
   //  override public get endLine() {
@@ -435,7 +444,7 @@ export class ArgListExpressionNode extends ExpressionNode {
     else {
         super(_argsList[0]._tok);
         this._argsList = _argsList;
-    }
+      }
     }
 
     get length(): number {
@@ -446,17 +455,17 @@ export class ArgListExpressionNode extends ExpressionNode {
       return this._argsList;
     }
 
-    
+
     evaluate(): Command[] {
-        const commands: Command[] = [];
-        for (const arg of this._argsList) {
-            commands.push(...arg.evaluate());
-        }
-        return commands;
+      const commands: Command[] = [];
+      for (const arg of this._argsList) {
+          commands.push(...arg.evaluate());
+      }
+      return commands;
     }
 }
 
-/* 
+/*
 COMPARISON EXPRESSION NODE
 
 Handles:
@@ -470,7 +479,7 @@ export class ComparisonExpressionNode extends ExpressionNode {
     private _right: ExpressionNode;
 
     constructor(_left: ExpressionNode, _operator: ComparisonOp, _right: ExpressionNode) {
-      super(_left._tok); 
+      super(_left._tok);
       this._left = _left;
       this._operator = _operator;
       this._right = _right;
@@ -537,7 +546,7 @@ export class FuncCallExpressionNode extends ExpressionNode {
       if (this._args_list) {
         commands.push(...this._args_list.evaluate());
       }
-      
+
       // Grab function name and then deal with whatever we get. Built in functions first, then user defined after.
 
       // if function name is an identifier.
@@ -565,7 +574,7 @@ LIST ACCESS EXPRESSION NODE
 
 Handles:
   - arr[2], nums[i], etc...
-*/ 
+*/
 export class ListAccessExpressionNode extends ExpressionNode  {
     private _list: ExpressionNode;
     private _index: ExpressionNode;
@@ -584,6 +593,9 @@ export class ListAccessExpressionNode extends ExpressionNode  {
     }
  }
 
+ /*
+
+ */
 export class MethodCallExpressionNode extends ExpressionNode {
     private _list: ExpressionNode;
     private _methodName: IdentifierExpressionNode;
@@ -596,6 +608,7 @@ export class MethodCallExpressionNode extends ExpressionNode {
    }
     evaluate(): Command[] {
       const commands: Command[] = [];
+      commands.push(new HighlightExpressionCommand(this));
       // TODO: do method call logic
       return commands;
     }
@@ -617,25 +630,25 @@ export class ListSliceExpressionNode extends ExpressionNode {
         const commands: Command[] = [];
         commands.push(new HighlightExpressionCommand(this));
         commands.push(...this._list.evaluate());
-        
+
         // if start exists, if stop exists, if step exists, otherwise push a null value and handle accordingly.
         if (this._start) {
             commands.push(...this._start.evaluate());
-        } 
+        }
         else {
             commands.push(new PushValueCommand(null));
         }
-        
+
         if (this._stop) {
             commands.push(...this._stop.evaluate());
-        } 
+        }
         else {
             commands.push(new PushValueCommand(null));
         }
-        
+
         if (this._step) {
             commands.push(...this._step.evaluate());
-        } 
+        }
         else {
             commands.push(new PushValueCommand(null));
         }
@@ -645,7 +658,7 @@ export class ListSliceExpressionNode extends ExpressionNode {
     }
  }
 
-/* 
+/*
 LIST LITERAL EXPRESSION NODE
 
 Handles:
@@ -694,11 +707,11 @@ export class StringLiteralExpressionNode extends ExpressionNode {
       this._value = _value;
   }
     evaluate(): Command[] {
-      return [
-        new HighlightExpressionCommand(this), // highlight
-        new PushValueCommand(this._value.text)
-        // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-    ]
+      const commands: Command[] = [];
+      commands.push(new HighlightExpressionCommand(this)); // highlight
+      commands.push(new PushValueCommand(this._value.text));
+      // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+      return commands;
     }
  }
 
