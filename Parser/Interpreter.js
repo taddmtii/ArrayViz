@@ -272,6 +272,7 @@ var HighlightStatementCommand = /** @class */ (function (_super) {
     return HighlightStatementCommand;
 }(Command));
 exports.HighlightStatementCommand = HighlightStatementCommand;
+// TODO: call this everywhere too
 var ReplaceHighlightedExpressionCommand = /** @class */ (function (_super) {
     __extends(ReplaceHighlightedExpressionCommand, _super);
     function ReplaceHighlightedExpressionCommand(_oldExpression, _newExpression) {
@@ -298,14 +299,14 @@ var BinaryOpCommand = /** @class */ (function (_super) {
     BinaryOpCommand.prototype.do = function (_currentState) {
         var evaluatedRight = _currentState.evaluationStack.pop(); // always pop right first!!
         var evaluatedLeft = _currentState.evaluationStack.pop();
-        var res = null;
+        var res = 0;
         if (this._op === "+" &&
             typeof evaluatedLeft === "string" &&
             typeof evaluatedRight === "string") {
             res = evaluatedLeft + evaluatedRight;
         }
-        if (typeof evaluatedLeft === "number" &&
-            typeof evaluatedRight === "number") {
+        if (typeof evaluatedLeft === "bigint" &&
+            typeof evaluatedRight === "bigint") {
             switch (this._op) {
                 case "+":
                     res = evaluatedLeft + evaluatedRight;
@@ -319,9 +320,9 @@ var BinaryOpCommand = /** @class */ (function (_super) {
                 case "*":
                     res = evaluatedLeft * evaluatedRight;
                     break;
-                case "//":
-                    res = Math.floor(evaluatedLeft / evaluatedRight);
-                    break;
+                // case "//":
+                //   res = Math.floor(evaluatedLeft / evaluatedRight);
+                //   break;
                 case "/":
                     res = evaluatedLeft / evaluatedRight;
                     break;
@@ -380,17 +381,15 @@ var UnaryOpCommand = /** @class */ (function (_super) {
     }
     UnaryOpCommand.prototype.do = function (_currentState) {
         var operand = _currentState.evaluationStack.pop();
-        var res = null;
+        var res = 0;
         switch (this._operator) {
             case "-":
-                if (typeof operand === "number") {
+                if (typeof operand === "bigint") {
                     res = -operand;
                 }
                 break;
             case "+":
-                if (typeof operand === "number") {
-                    res = Math.abs(operand);
-                }
+                res = operand;
                 break;
             case "!":
                 res = !operand;
@@ -524,14 +523,7 @@ var InputCommand = /** @class */ (function (_super) {
         var promptValue = _currentState.evaluationStack.pop();
         var prompt = promptValue;
         var ans = "";
-        // var rl = readline.createInterface({
-        //   input: process.stdin,
-        //   output: process.stdout,
-        // });
-        // rl.question(prompt, function (answer) {
-        //   ans = answer;
-        //   rl.close();
-        // });
+        // ask UI for input, grab here.
         _currentState.evaluationStack.push(ans);
     };
     return InputCommand;

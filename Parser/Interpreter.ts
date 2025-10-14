@@ -256,6 +256,7 @@ export class HighlightStatementCommand extends Command {
   }
 }
 
+// TODO: call this everywhere too
 export class ReplaceHighlightedExpressionCommand extends Command {
   private _oldExpression: ExpressionNode;
   private _newExpression: ExpressionNode;
@@ -284,7 +285,7 @@ export class BinaryOpCommand extends Command {
     const evaluatedRight = _currentState.evaluationStack.pop()!; // always pop right first!!
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
 
-    let res: PythonValue = null;
+    let res: PythonValue = 0;
 
     if (
       this._op === "+" &&
@@ -295,8 +296,8 @@ export class BinaryOpCommand extends Command {
     }
 
     if (
-      typeof evaluatedLeft === "number" &&
-      typeof evaluatedRight === "number"
+      typeof evaluatedLeft === "bigint" &&
+      typeof evaluatedRight === "bigint"
     ) {
       switch (this._op) {
         case "+":
@@ -311,9 +312,9 @@ export class BinaryOpCommand extends Command {
         case "*":
           res = evaluatedLeft * evaluatedRight;
           break;
-        case "//":
-          res = Math.floor(evaluatedLeft / evaluatedRight);
-          break;
+        // case "//":
+        //   res = Math.floor(evaluatedLeft / evaluatedRight);
+        //   break;
         case "/":
           res = evaluatedLeft / evaluatedRight;
           break;
@@ -338,7 +339,7 @@ export class ComparisonOpCommand extends Command {
   do(_currentState: State) {
     const evaluatedRight = _currentState.evaluationStack.pop()!; // right should be popped first.
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    let res: PythonValue = null;
+    let res: PythonValue = false;
 
     switch (this._op) {
       case "<":
@@ -368,20 +369,18 @@ export class UnaryOpCommand extends Command {
     this._operator = _operator;
   }
   do(_currentState: State) {
-    const operand = _currentState.evaluationStack.pop()!;
-    let res: PythonValue = null;
+    let operand = _currentState.evaluationStack.pop()!;
+    let res: PythonValue = 0;
 
     switch (this._operator) {
       case "-":
-        if (typeof operand === "number") {
+        if (typeof operand === "bigint") {
           res = -operand;
         }
         break;
       case "+":
-        if (typeof operand === "number") {
-          res = Math.abs(operand);
-        }
-        break;
+        res = operand;
+        break; 
       case "!":
         res = !operand;
         break;
@@ -499,14 +498,7 @@ export class InputCommand extends Command {
     const promptValue = _currentState.evaluationStack.pop()!;
     const prompt = promptValue;
     let ans = "";
-    // var rl = readline.createInterface({
-    //   input: process.stdin,
-    //   output: process.stdout,
-    // });
-    // rl.question(prompt, function (answer) {
-    //   ans = answer;
-    //   rl.close();
-    // });
+    // ask UI for input, grab here.
     _currentState.evaluationStack.push(ans);
   }
 }
