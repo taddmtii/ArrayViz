@@ -552,7 +552,6 @@ export class FuncCallExpressionNode extends ExpressionNode {
       // if function name is an identifier.
       if (this._func_name instanceof IdentifierExpressionNode) {
         const funcName = this._func_name._tok.text;
-        commands.push(new PushValueCommand(this._args_list[0]))
         if (funcName === 'print') {
           commands.push(new PrintCommand());
         } else if (funcName === 'len') {
@@ -563,11 +562,12 @@ export class FuncCallExpressionNode extends ExpressionNode {
           commands.push(new InputCommand());
         } else {
           console.log("User defined function")
+          // TODO: handle user defined functions
         }
-
-      return commands;
     }
+    return commands;
  }
+}
 
 /*
 LIST ACCESS EXPRESSION NODE
@@ -609,7 +609,7 @@ export class MethodCallExpressionNode extends ExpressionNode {
     evaluate(): Command[] {
       const commands: Command[] = [];
       commands.push(new HighlightExpressionCommand(this));
-      // TODO: do method call logic
+
       return commands;
     }
  }

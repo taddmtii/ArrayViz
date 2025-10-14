@@ -10,7 +10,7 @@ import {
 } from "./Nodes";
 import * as readline from "readline";
 // ---------------------------------------------------------------------------------------
-// INTERFACES AND CLASSES
+// COMMANDS ABC
 // ---------------------------------------------------------------------------------------
 export abstract class Command {
   protected _undoCommand: Command | null = null;
@@ -21,7 +21,7 @@ export abstract class Command {
 }
 
 // ---------------------------------------------------------------------------------------
-// MACHINE STATE
+// PROGRAM STATE
 // ---------------------------------------------------------------------------------------
 
 export class State {
@@ -151,7 +151,8 @@ export class AssignVariableCommand extends Command {
   }
 }
 
-// For assignments to a variable. If variable name is not already assigned, it will be assigned.
+// NOTE: probably do not need this command.
+// For reassignments to a variable. If variable name is not already assigned, it will be assigned.
 export class ChangeVariableCommand extends Command {
   private _name: string; // variable name
   private _value: PythonValue; // value to be connected to variable
@@ -280,8 +281,9 @@ export class BinaryOpCommand extends Command {
     this._op = _op;
   }
   do(_currentState: State) {
+    const evaluatedRight = _currentState.evaluationStack.pop()!; // always pop right first!!
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    const evaluatedRight = _currentState.evaluationStack.pop()!;
+
     let res: PythonValue = null;
 
     if (
@@ -334,8 +336,8 @@ export class ComparisonOpCommand extends Command {
     this._op = _op;
   }
   do(_currentState: State) {
+    const evaluatedRight = _currentState.evaluationStack.pop()!; // right should be popped first.
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    const evaluatedRight = _currentState.evaluationStack.pop()!;
     let res: PythonValue = null;
 
     switch (this._op) {
@@ -451,62 +453,60 @@ export class ExitScopeCommand extends Command {
 
 // PrintCommand -> prints something to the console.
 export class PrintCommand extends Command {
-  private _value: PythonValue;
-  constructor(_value: PythonValue) {
+  constructor() {
     super();
-    this._value = _value;
   }
   do(_currentState: State) {
-    console.log(this._value);
+    const value = _currentState.evaluationStack.pop()!;
+    console.log(value);
+    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
 // LenCommand -> gets length of strings and lists, etc...
 export class LenCommand extends Command {
-  private _value: PythonValue;
-  constructor(_value: PythonValue) {
+  constructor() {
     super();
-    this._value = _value;
   }
   do(_currentState: State) {
-    if (typeof this._value === "string") {
-      _currentState.evaluationStack.push(this._value.length);
-    } else if (Array.isArray(this._value)) {
-      _currentState.evaluationStack.push(this._value.length);
+    const value = _currentState.evaluationStack.pop()!;
+    // let length = 0;
+    if (typeof value === "string") {
+      _currentState.evaluationStack.push(value.length);
+    } else if (Array.isArray(value)) {
+      _currentState.evaluationStack.push(value.length);
     }
   }
 }
 
 // TypeCommand -> returns type of value
 export class TypeCommand extends Command {
-  private _value: PythonValue;
-  constructor(_value: PythonValue) {
+  constructor() {
     super();
-    this._value = _value;
   }
   do(_currentState: State) {
-    this._undoCommand = new PopValueCommand();
-    _currentState.evaluationStack.push(typeof this._value);
+    const value = _currentState.evaluationStack.pop()!;
+    _currentState.evaluationStack.push(typeof value);
   }
 }
 
 // InputCommand -> cin for user input
 export class InputCommand extends Command {
-  private _prompt: string;
-  constructor(_prompt: string) {
+  constructor() {
     super();
-    this._prompt = _prompt;
   }
   do(_currentState: State) {
-    let ans: string = "";
-    var rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    rl.question(this._prompt, function (answer) {
-      ans = answer;
-      rl.close();
-    });
+    const promptValue = _currentState.evaluationStack.pop()!;
+    const prompt = promptValue;
+    let ans = "";
+    // var rl = readline.createInterface({
+    //   input: process.stdin,
+    //   output: process.stdout,
+    // });
+    // rl.question(prompt, function (answer) {
+    //   ans = answer;
+    //   rl.close();
+    // });
     _currentState.evaluationStack.push(ans);
   }
 }
@@ -532,31 +532,32 @@ export class ListSliceCommand extends Command {
 // CreateListCommand -> Creates a list of values
 export class CreateListCommand extends Command {
   private _count: number;
+  
   constructor(_count: number) {
     super();
     this._count = _count;
   }
+  
   do(_currentState: State) {
-    this._undoCommand = new CreateListCommand(this._count);
-    let list: PythonValue[] = [];
+    const list: PythonValue[] = [];
+    
+    // Pop elements in REVERSE order, then add them to the front array to maintain initial order.
     for (let i = 0; i < this._count; i++) {
-      const elem: PythonValue = _currentState.evaluationStack.pop();
-      list.push(elem);
+      const elem: PythonValue = _currentState.evaluationStack.pop()!;
+      list.unshift(elem);
     }
+
     _currentState.evaluationStack.push(list);
-  }
-  override undo(_currentState: State) {
-    // _currentState.variables.delete(this._name);
   }
 }
 
 export class ReturnCommand extends Command {
-  private _value: PythonValue;
-  constructor(_value: PythonValue) {
+
+  constructor() {
     super();
-    this._value = _value;
   }
   do(_currentState: State) {
-    _currentState.pushReturnStack(this._value);
+    const value = _currentState.evaluationStack.pop()!;
+    _currentState.pushReturnStack(value);
   }
 }

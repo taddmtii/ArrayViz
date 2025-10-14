@@ -24,7 +24,7 @@ var Interpreter_1 = require("./Interpreter");
 // ------------------------------------------------------------------
 // ProgramNode
 //
-// Establishes list of statements that make up the program, encapsulates the 
+// Establishes list of statements that make up the program, encapsulates the
 // entire program. All commands collectively get added here to returned array here.
 // ------------------------------------------------------------------
 var ProgramNode = /** @class */ (function () {
@@ -329,6 +329,10 @@ exports.BlockStatementNode = BlockStatementNode;
 // ------------------------------------------------------------------
 // Expression Nodes
 // ------------------------------------------------------------------
+/*
+EXPRESSION NODE BASE CLASS
+
+*/
 var ExpressionNode = /** @class */ (function () {
     function ExpressionNode(_tok) {
         this._tok = _tok;
@@ -366,6 +370,12 @@ var ExpressionNode = /** @class */ (function () {
     return ExpressionNode;
 }());
 exports.ExpressionNode = ExpressionNode;
+/*
+NUMBER LITERAL EXPRESSION NODE
+
+Handles:
+  - 5, 102, 68, etc...
+*/
 var NumberLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(NumberLiteralExpressionNode, _super);
     function NumberLiteralExpressionNode(value, tok) {
@@ -374,6 +384,7 @@ var NumberLiteralExpressionNode = /** @class */ (function (_super) {
         return _this;
     }
     NumberLiteralExpressionNode.prototype.evaluate = function () {
+        var commands = [];
         var numValue;
         if (this._value.startsWith('0x')) { // hexadecimal
             numValue = parseInt(this._value, 16);
@@ -387,11 +398,9 @@ var NumberLiteralExpressionNode = /** @class */ (function (_super) {
         else {
             numValue = BigInt(this._value); // regular integer, base 10.
         }
-        // Create list of commands and return as result to add to overall steps.
-        return [
-            new Interpreter_1.HighlightExpressionCommand(this), // visually indicate what expression to highlight.
-            new Interpreter_1.PushValueCommand(numValue) // push onto stack
-        ];
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
+        commands.push(new Interpreter_1.PushValueCommand(numValue));
+        return commands;
     };
     return NumberLiteralExpressionNode;
 }(ExpressionNode));
@@ -404,10 +413,10 @@ var IdentifierExpressionNode = /** @class */ (function (_super) {
         return _this;
     }
     IdentifierExpressionNode.prototype.evaluate = function () {
-        return [
-            new Interpreter_1.HighlightExpressionCommand(this), // highlight, no need for replace.
-            new Interpreter_1.RetrieveValueCommand(this._tok.text)
-        ];
+        var commands = [];
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this)); // highlight, no need for replace.
+        commands.push(new Interpreter_1.RetrieveValueCommand(this._tok.text));
+        return commands;
     };
     return IdentifierExpressionNode;
 }(ExpressionNode));
@@ -430,9 +439,10 @@ var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     }
     FormalParamsListExpressionNode.prototype.evaluate = function () {
         var commands = [];
-        // for each parameter...
-        // 
-        // TODO: do parameter list logic (???) not really sure where to start here yet.
+        for (var _i = 0, _a = this._paramsList; _i < _a.length; _i++) {
+            var param = _a[_i];
+            commands.push.apply(commands, param.evaluate());
+        }
         return commands;
     };
     return FormalParamsListExpressionNode;
@@ -472,6 +482,20 @@ var ArgListExpressionNode = /** @class */ (function (_super) {
         }
         return _this;
     }
+    Object.defineProperty(ArgListExpressionNode.prototype, "length", {
+        get: function () {
+            return this._argsList.length;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(ArgListExpressionNode.prototype, "args", {
+        get: function () {
+            return this._argsList;
+        },
+        enumerable: false,
+        configurable: true
+    });
     ArgListExpressionNode.prototype.evaluate = function () {
         var commands = [];
         for (var _i = 0, _a = this._argsList; _i < _a.length; _i++) {
@@ -483,6 +507,13 @@ var ArgListExpressionNode = /** @class */ (function (_super) {
     return ArgListExpressionNode;
 }(ExpressionNode));
 exports.ArgListExpressionNode = ArgListExpressionNode;
+/*
+COMPARISON EXPRESSION NODE
+
+Handles:
+  - 5 < 10, x > y, x >= 1, x != 0, and so on.
+
+*/
 var ComparisonExpressionNode = /** @class */ (function (_super) {
     __extends(ComparisonExpressionNode, _super);
     function ComparisonExpressionNode(_left, _operator, _right) {
@@ -494,7 +525,10 @@ var ComparisonExpressionNode = /** @class */ (function (_super) {
     }
     ComparisonExpressionNode.prototype.evaluate = function () {
         var commands = [];
-        // TODO: comparison logic
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
+        commands.push.apply(commands, this._left.evaluate());
+        commands.push.apply(commands, this._right.evaluate());
+        commands.push(new Interpreter_1.ComparisonOpCommand(this._operator));
         return commands;
     };
     return ComparisonExpressionNode;
@@ -548,12 +582,42 @@ var FuncCallExpressionNode = /** @class */ (function (_super) {
     }
     FuncCallExpressionNode.prototype.evaluate = function () {
         var commands = [];
-        // TODO: do func call logic
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
+        if (this._args_list) {
+            commands.push.apply(commands, this._args_list.evaluate());
+        }
+        // Grab function name and then deal with whatever we get. Built in functions first, then user defined after.
+        // if function name is an identifier.
+        if (this._func_name instanceof IdentifierExpressionNode) {
+            var funcName = this._func_name._tok.text;
+            if (funcName === 'print') {
+                commands.push(new Interpreter_1.PrintCommand());
+            }
+            else if (funcName === 'len') {
+                commands.push(new Interpreter_1.LenCommand());
+            }
+            else if (funcName === 'type') {
+                commands.push(new Interpreter_1.TypeCommand());
+            }
+            else if (funcName === 'input') {
+                commands.push(new Interpreter_1.InputCommand());
+            }
+            else {
+                console.log("User defined function");
+                // TODO: handle user defined functions
+            }
+        }
         return commands;
     };
     return FuncCallExpressionNode;
 }(ExpressionNode));
 exports.FuncCallExpressionNode = FuncCallExpressionNode;
+/*
+LIST ACCESS EXPRESSION NODE
+
+Handles:
+  - arr[2], nums[i], etc...
+*/
 var ListAccessExpressionNode = /** @class */ (function (_super) {
     __extends(ListAccessExpressionNode, _super);
     function ListAccessExpressionNode(_list, _index) {
@@ -567,12 +631,15 @@ var ListAccessExpressionNode = /** @class */ (function (_super) {
         commands.push(new Interpreter_1.HighlightExpressionCommand(this));
         commands.push.apply(commands, this._list.evaluate());
         commands.push.apply(commands, this._index.evaluate());
-        // commands.push(new IndexAccessCommand());
+        commands.push(new Interpreter_1.IndexAccessCommand());
         return commands;
     };
     return ListAccessExpressionNode;
 }(ExpressionNode));
 exports.ListAccessExpressionNode = ListAccessExpressionNode;
+/*
+
+*/
 var MethodCallExpressionNode = /** @class */ (function (_super) {
     __extends(MethodCallExpressionNode, _super);
     function MethodCallExpressionNode(_list, _methodName, _argsList) {
@@ -584,7 +651,7 @@ var MethodCallExpressionNode = /** @class */ (function (_super) {
     }
     MethodCallExpressionNode.prototype.evaluate = function () {
         var commands = [];
-        // TODO: do method call logic
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
         return commands;
     };
     return MethodCallExpressionNode;
@@ -623,11 +690,18 @@ var ListSliceExpressionNode = /** @class */ (function (_super) {
         else {
             commands.push(new Interpreter_1.PushValueCommand(null));
         }
+        commands.push(new Interpreter_1.ListSliceCommand());
         return commands;
     };
     return ListSliceExpressionNode;
 }(ExpressionNode));
 exports.ListSliceExpressionNode = ListSliceExpressionNode;
+/*
+LIST LITERAL EXPRESSION NODE
+
+Handles:
+  - [1, 2, 3], [1, x, y, 5, 2], [], etc...
+*/
 var ListLiteralExpressionNode = /** @class */ (function (_super) {
     __extends(ListLiteralExpressionNode, _super);
     function ListLiteralExpressionNode(_values, _tok) {
@@ -636,10 +710,16 @@ var ListLiteralExpressionNode = /** @class */ (function (_super) {
         return _this;
     }
     ListLiteralExpressionNode.prototype.evaluate = function () {
-        return [
-            new Interpreter_1.HighlightExpressionCommand(this),
-            // TODO: fix implementation and do list literal logic
-        ];
+        var commands = [];
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
+        // if values empty, no values to push or evaluate.
+        if (this._values) {
+            commands.push.apply(commands, this._values.evaluate());
+        }
+        // count values so we know how many elements to pop off stack.
+        var count = this._values.length;
+        commands.push(new Interpreter_1.CreateListCommand(count));
+        return commands;
     };
     return ListLiteralExpressionNode;
 }(ExpressionNode));
@@ -652,11 +732,10 @@ var BooleanLiteralExpressionNode = /** @class */ (function (_super) {
         return _this;
     }
     BooleanLiteralExpressionNode.prototype.evaluate = function () {
-        return [
-            new Interpreter_1.HighlightExpressionCommand(this), // highlight
-            new Interpreter_1.PushValueCommand(this._value)
-            // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-        ];
+        var commands = [];
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this));
+        commands.push(new Interpreter_1.PushValueCommand(this._value));
+        return commands;
     };
     return BooleanLiteralExpressionNode;
 }(ExpressionNode));
@@ -669,11 +748,11 @@ var StringLiteralExpressionNode = /** @class */ (function (_super) {
         return _this;
     }
     StringLiteralExpressionNode.prototype.evaluate = function () {
-        return [
-            new Interpreter_1.HighlightExpressionCommand(this), // highlight
-            new Interpreter_1.PushValueCommand(this._value.text)
-            // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-        ];
+        var commands = [];
+        commands.push(new Interpreter_1.HighlightExpressionCommand(this)); // highlight
+        commands.push(new Interpreter_1.PushValueCommand(this._value.text));
+        // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
+        return commands;
     };
     return StringLiteralExpressionNode;
 }(ExpressionNode));

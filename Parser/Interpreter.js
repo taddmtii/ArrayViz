@@ -15,10 +15,9 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReturnCommand = exports.CreateListCommand = exports.IndexAccessCommand = exports.InputCommand = exports.TypeCommand = exports.LenCommand = exports.PrintCommand = exports.ExitScopeCommand = exports.EnterScopeCommand = exports.JumpCommand = exports.ConditionalJumpCommand = exports.UnaryOpCommand = exports.ComparisonOpCommand = exports.BinaryOpCommand = exports.ReplaceHighlightedExpressionCommand = exports.HighlightStatementCommand = exports.MoveLinePointerCommand = exports.RetrieveValueCommand = exports.HighlightExpressionCommand = exports.PopValueCommand = exports.PushValueCommand = exports.ChangeVariableCommand = exports.AssignVariableCommand = exports.State = exports.Command = void 0;
-var readline = require("readline");
+exports.ReturnCommand = exports.CreateListCommand = exports.ListSliceCommand = exports.IndexAccessCommand = exports.InputCommand = exports.TypeCommand = exports.LenCommand = exports.PrintCommand = exports.ExitScopeCommand = exports.EnterScopeCommand = exports.JumpCommand = exports.ConditionalJumpCommand = exports.UnaryOpCommand = exports.ComparisonOpCommand = exports.BinaryOpCommand = exports.ReplaceHighlightedExpressionCommand = exports.HighlightStatementCommand = exports.MoveLinePointerCommand = exports.RetrieveValueCommand = exports.HighlightExpressionCommand = exports.PopValueCommand = exports.PushValueCommand = exports.ChangeVariableCommand = exports.AssignVariableCommand = exports.State = exports.Command = void 0;
 // ---------------------------------------------------------------------------------------
-// INTERFACES AND CLASSES
+// COMMANDS ABC
 // ---------------------------------------------------------------------------------------
 var Command = /** @class */ (function () {
     function Command() {
@@ -32,7 +31,7 @@ var Command = /** @class */ (function () {
 }());
 exports.Command = Command;
 // ---------------------------------------------------------------------------------------
-// MACHINE STATE
+// PROGRAM STATE
 // ---------------------------------------------------------------------------------------
 var State = /** @class */ (function () {
     function State(_programCounter, _lineCount, _currentExpression, _currentStatement, _callStack, _history, _variables, _currentLine, _evaluationStack, _returnStack) {
@@ -52,53 +51,93 @@ var State = /** @class */ (function () {
         this._returnStack = _returnStack;
     }
     Object.defineProperty(State.prototype, "programCounter", {
-        get: function () { return this._programCounter; },
-        set: function (val) { this._programCounter = val; },
+        get: function () {
+            return this._programCounter;
+        },
+        set: function (val) {
+            this._programCounter = val;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "lineCount", {
-        get: function () { return this._lineCount; },
-        set: function (val) { this._lineCount = val; },
+        get: function () {
+            return this._lineCount;
+        },
+        set: function (val) {
+            this._lineCount = val;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "currentLine", {
-        get: function () { return this._currentLine; },
-        set: function (val) { this._currentLine = val; },
+        get: function () {
+            return this._currentLine;
+        },
+        set: function (val) {
+            this._currentLine = val;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "currentExpression", {
-        get: function () { return this._currentExpression; },
-        set: function (expr) { this._currentExpression = expr; },
+        get: function () {
+            return this._currentExpression;
+        },
+        set: function (expr) {
+            this._currentExpression = expr;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "currentStatement", {
-        get: function () { return this._currentStatement; },
-        set: function (stmt) { this._currentStatement = stmt; },
+        get: function () {
+            return this._currentStatement;
+        },
+        set: function (stmt) {
+            this._currentStatement = stmt;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "evaluationStack", {
-        get: function () { return this._evaluationStack; },
+        get: function () {
+            return this._evaluationStack;
+        },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(State.prototype, "variables", {
-        get: function () { return this._variables; },
+        get: function () {
+            return this._variables;
+        },
         enumerable: false,
         configurable: true
     });
-    State.prototype.setVariable = function (name, value) { this._variables.set(name, value); }; // adds new key value into variables map.
-    State.prototype.getVariable = function (name) { return this._variables.get(name) || null; }; // could be nullable upon lookup. null is important here.
-    State.prototype.pushCallStack = function (func) { this._callStack.push(func); }; // pushes element onto stack
-    State.prototype.popCallStack = function () { return this._callStack.pop(); }; // gets element from top of stack
-    State.prototype.addHistoryCommand = function (step) { this._history.push(step); };
-    State.prototype.getMostRecentHistoryCommand = function () { return this._history.pop(); };
-    State.prototype.pushReturnStack = function (value) { this._returnStack.push(value); };
-    State.prototype.popReturnStack = function () { return this._returnStack.pop(); };
+    State.prototype.setVariable = function (name, value) {
+        this._variables.set(name, value);
+    }; // adds new key value into variables map.
+    State.prototype.getVariable = function (name) {
+        return this._variables.get(name) || null;
+    }; // could be nullable upon lookup. null is important here.
+    State.prototype.pushCallStack = function (func) {
+        this._callStack.push(func);
+    }; // pushes element onto stack
+    State.prototype.popCallStack = function () {
+        return this._callStack.pop();
+    }; // gets element from top of stack
+    State.prototype.addHistoryCommand = function (step) {
+        this._history.push(step);
+    };
+    State.prototype.getMostRecentHistoryCommand = function () {
+        return this._history.pop();
+    };
+    State.prototype.pushReturnStack = function (value) {
+        this._returnStack.push(value);
+    };
+    State.prototype.popReturnStack = function () {
+        return this._returnStack.pop();
+    };
     return State;
 }());
 exports.State = State;
@@ -122,7 +161,8 @@ var AssignVariableCommand = /** @class */ (function (_super) {
     return AssignVariableCommand;
 }(Command));
 exports.AssignVariableCommand = AssignVariableCommand;
-// For assignments to a variable. If variable name is not already assigned, it will be assigned.
+// NOTE: probably do not need this command.
+// For reassignments to a variable. If variable name is not already assigned, it will be assigned.
 var ChangeVariableCommand = /** @class */ (function (_super) {
     __extends(ChangeVariableCommand, _super);
     function ChangeVariableCommand(_name, _value) {
@@ -223,7 +263,7 @@ var HighlightStatementCommand = /** @class */ (function (_super) {
         return _this;
     }
     HighlightStatementCommand.prototype.do = function (_currentState) {
-        // Create undocommand that 
+        // Create undocommand that
         this._undoCommand = new HighlightStatementCommand(_currentState.currentStatement);
         _currentState.currentStatement = this._statement;
         console.log("Statement Highlighted!");
@@ -256,36 +296,39 @@ var BinaryOpCommand = /** @class */ (function (_super) {
         return _this;
     }
     BinaryOpCommand.prototype.do = function (_currentState) {
+        var evaluatedRight = _currentState.evaluationStack.pop(); // always pop right first!!
         var evaluatedLeft = _currentState.evaluationStack.pop();
-        var evaluatedRight = _currentState.evaluationStack.pop();
         var res = null;
-        if (this._op === '+' && (typeof evaluatedLeft === 'string' && typeof evaluatedRight === 'string')) {
+        if (this._op === "+" &&
+            typeof evaluatedLeft === "string" &&
+            typeof evaluatedRight === "string") {
             res = evaluatedLeft + evaluatedRight;
         }
-        if (typeof evaluatedLeft === 'number' && typeof evaluatedRight === 'number') {
+        if (typeof evaluatedLeft === "number" &&
+            typeof evaluatedRight === "number") {
             switch (this._op) {
-                case '+':
+                case "+":
                     res = evaluatedLeft + evaluatedRight;
                     break;
-                case '-':
+                case "-":
                     res = evaluatedLeft - evaluatedRight;
                     break;
-                case '%':
+                case "%":
                     res = evaluatedLeft % evaluatedRight;
                     break;
-                case '*':
+                case "*":
                     res = evaluatedLeft * evaluatedRight;
                     break;
-                case '//':
+                case "//":
                     res = Math.floor(evaluatedLeft / evaluatedRight);
                     break;
-                case '/':
+                case "/":
                     res = evaluatedLeft / evaluatedRight;
                     break;
-                case 'and':
+                case "and":
                     res = evaluatedLeft && evaluatedRight;
                     break;
-                case 'or':
+                case "or":
                     res = evaluatedRight || evaluatedRight;
                     break;
             }
@@ -303,23 +346,23 @@ var ComparisonOpCommand = /** @class */ (function (_super) {
         return _this;
     }
     ComparisonOpCommand.prototype.do = function (_currentState) {
+        var evaluatedRight = _currentState.evaluationStack.pop(); // right should be popped first.
         var evaluatedLeft = _currentState.evaluationStack.pop();
-        var evaluatedRight = _currentState.evaluationStack.pop();
         var res = null;
         switch (this._op) {
-            case '<':
+            case "<":
                 res = evaluatedLeft < evaluatedRight;
                 break;
-            case '>':
+            case ">":
                 res = evaluatedLeft > evaluatedRight;
                 break;
-            case '<=':
+            case "<=":
                 res = evaluatedLeft <= evaluatedRight;
                 break;
-            case '>=':
+            case ">=":
                 res = evaluatedLeft >= evaluatedRight;
                 break;
-            case '!=':
+            case "!=":
                 res = evaluatedLeft != evaluatedRight;
                 break;
         }
@@ -339,20 +382,20 @@ var UnaryOpCommand = /** @class */ (function (_super) {
         var operand = _currentState.evaluationStack.pop();
         var res = null;
         switch (this._operator) {
-            case '-':
-                if (typeof operand === 'number') {
-                    res = -(operand);
+            case "-":
+                if (typeof operand === "number") {
+                    res = -operand;
                 }
                 break;
-            case '+':
-                if (typeof operand === 'number') {
+            case "+":
+                if (typeof operand === "number") {
                     res = Math.abs(operand);
                 }
                 break;
-            case '!':
+            case "!":
                 res = !operand;
                 break;
-            case 'not':
+            case "not":
                 res = !operand;
                 break;
         }
@@ -371,8 +414,7 @@ var ConditionalJumpCommand = /** @class */ (function (_super) {
         _this._jumpBool = true; // default to true
         return _this;
     }
-    ConditionalJumpCommand.prototype.do = function (_currentState) {
-    };
+    ConditionalJumpCommand.prototype.do = function (_currentState) { };
     return ConditionalJumpCommand;
 }(Command));
 exports.ConditionalJumpCommand = ConditionalJumpCommand;
@@ -419,6 +461,7 @@ var ExitScopeCommand = /** @class */ (function (_super) {
         this._undoCommand = new ExitScopeCommand(currentVariables); // undo is going back in scope, so restore variabels to local ones.
         _currentState.variables.clear(); // clear all local variables.
         this._previousVariables.forEach(function (value, key) {
+            // iterate over all previous variables
             _currentState.setVariable(key, value); // set each one by one to restore state.
         });
     };
@@ -428,13 +471,13 @@ exports.ExitScopeCommand = ExitScopeCommand;
 // PrintCommand -> prints something to the console.
 var PrintCommand = /** @class */ (function (_super) {
     __extends(PrintCommand, _super);
-    function PrintCommand(_value) {
-        var _this = _super.call(this) || this;
-        _this._value = _value;
-        return _this;
+    function PrintCommand() {
+        return _super.call(this) || this;
     }
     PrintCommand.prototype.do = function (_currentState) {
-        console.log(this._value);
+        var value = _currentState.evaluationStack.pop();
+        console.log(value);
+        // this._undoCommand = new PushValueCommand(value);
     };
     return PrintCommand;
 }(Command));
@@ -442,17 +485,17 @@ exports.PrintCommand = PrintCommand;
 // LenCommand -> gets length of strings and lists, etc...
 var LenCommand = /** @class */ (function (_super) {
     __extends(LenCommand, _super);
-    function LenCommand(_value) {
-        var _this = _super.call(this) || this;
-        _this._value = _value;
-        return _this;
+    function LenCommand() {
+        return _super.call(this) || this;
     }
     LenCommand.prototype.do = function (_currentState) {
-        if (typeof this._value === 'string') {
-            _currentState.evaluationStack.push(this._value.length);
+        var value = _currentState.evaluationStack.pop();
+        // let length = 0;
+        if (typeof value === "string") {
+            _currentState.evaluationStack.push(value.length);
         }
-        else if (Array.isArray(this._value)) {
-            _currentState.evaluationStack.push(this._value.length);
+        else if (Array.isArray(value)) {
+            _currentState.evaluationStack.push(value.length);
         }
     };
     return LenCommand;
@@ -461,14 +504,12 @@ exports.LenCommand = LenCommand;
 // TypeCommand -> returns type of value
 var TypeCommand = /** @class */ (function (_super) {
     __extends(TypeCommand, _super);
-    function TypeCommand(_value) {
-        var _this = _super.call(this) || this;
-        _this._value = _value;
-        return _this;
+    function TypeCommand() {
+        return _super.call(this) || this;
     }
     TypeCommand.prototype.do = function (_currentState) {
-        this._undoCommand = new PopValueCommand();
-        _currentState.evaluationStack.push(typeof this._value);
+        var value = _currentState.evaluationStack.pop();
+        _currentState.evaluationStack.push(typeof value);
     };
     return TypeCommand;
 }(Command));
@@ -476,21 +517,21 @@ exports.TypeCommand = TypeCommand;
 // InputCommand -> cin for user input
 var InputCommand = /** @class */ (function (_super) {
     __extends(InputCommand, _super);
-    function InputCommand(_prompt) {
-        var _this = _super.call(this) || this;
-        _this._prompt = _prompt;
-        return _this;
+    function InputCommand() {
+        return _super.call(this) || this;
     }
     InputCommand.prototype.do = function (_currentState) {
+        var promptValue = _currentState.evaluationStack.pop();
+        var prompt = promptValue;
         var ans = "";
-        var rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-        rl.question(this._prompt, function (answer) {
-            ans = answer;
-            rl.close();
-        });
+        // var rl = readline.createInterface({
+        //   input: process.stdin,
+        //   output: process.stdout,
+        // });
+        // rl.question(prompt, function (answer) {
+        //   ans = answer;
+        //   rl.close();
+        // });
         _currentState.evaluationStack.push(ans);
     };
     return InputCommand;
@@ -506,7 +547,7 @@ var IndexAccessCommand = /** @class */ (function (_super) {
         var index = _currentState.evaluationStack.pop();
         var list = _currentState.evaluationStack.pop();
         // at the end of the day, we need to verify these types if there was some problem in the popped stack values.
-        if (Array.isArray(list) && typeof index === 'number') {
+        if (Array.isArray(list) && typeof index === "number") {
             this._undoCommand = new PopValueCommand();
             _currentState.evaluationStack.push(list[index]);
         }
@@ -514,34 +555,43 @@ var IndexAccessCommand = /** @class */ (function (_super) {
     return IndexAccessCommand;
 }(Command));
 exports.IndexAccessCommand = IndexAccessCommand;
+var ListSliceCommand = /** @class */ (function (_super) {
+    __extends(ListSliceCommand, _super);
+    function ListSliceCommand() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ListSliceCommand.prototype.do = function (_currentState) { };
+    return ListSliceCommand;
+}(Command));
+exports.ListSliceCommand = ListSliceCommand;
 // CreateListCommand -> Creates a list of values
 var CreateListCommand = /** @class */ (function (_super) {
     __extends(CreateListCommand, _super);
-    function CreateListCommand(_name, _values) {
+    function CreateListCommand(_count) {
         var _this = _super.call(this) || this;
-        _this._name = _name;
-        _this._values = _values;
+        _this._count = _count;
         return _this;
     }
     CreateListCommand.prototype.do = function (_currentState) {
-        this._undoCommand = new CreateListCommand(this._name, this._values);
-        _currentState.setVariable(this._name, this._values);
-    };
-    CreateListCommand.prototype.undo = function (_currentState) {
-        _currentState.variables.delete(this._name);
+        var list = [];
+        // Pop elements in REVERSE order, then add them to the front array to maintain initial order.
+        for (var i = 0; i < this._count; i++) {
+            var elem = _currentState.evaluationStack.pop();
+            list.unshift(elem);
+        }
+        _currentState.evaluationStack.push(list);
     };
     return CreateListCommand;
 }(Command));
 exports.CreateListCommand = CreateListCommand;
 var ReturnCommand = /** @class */ (function (_super) {
     __extends(ReturnCommand, _super);
-    function ReturnCommand(_value) {
-        var _this = _super.call(this) || this;
-        _this._value = _value;
-        return _this;
+    function ReturnCommand() {
+        return _super.call(this) || this;
     }
     ReturnCommand.prototype.do = function (_currentState) {
-        _currentState.pushReturnStack(this._value);
+        var value = _currentState.evaluationStack.pop();
+        _currentState.pushReturnStack(value);
     };
     return ReturnCommand;
 }(Command));
