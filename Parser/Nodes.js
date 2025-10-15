@@ -52,23 +52,26 @@ var StatementNode = /** @class */ (function () {
         this._endTok = _tok;
     }
     Object.defineProperty(StatementNode.prototype, "lineNum", {
-        get: function () { return this._startTok.line; },
+        get: function () {
+            return this._startTok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(StatementNode.prototype, "startLine", {
-        get: function () { return this._startTok.line; },
+        get: function () {
+            return this._startTok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(StatementNode.prototype, "endLine", {
-        get: function () { return (this._endTok.line || this._startTok.line); },
+        get: function () {
+            return this._endTok.line || this._startTok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     return StatementNode;
 }());
 exports.StatementNode = StatementNode;
@@ -85,7 +88,7 @@ var AssignmentStatementNode = /** @class */ (function (_super) {
         var commands = [];
         commands.push(new Interpreter_1.HighlightStatementCommand(this)); // Highlight
         commands.push.apply(// Highlight
-        commands, (this._right.evaluate())); // evaluate (which may generate an array of commands, hence the spread operator)
+        commands, this._right.evaluate()); // evaluate (which may generate an array of commands, hence the spread operator)
         commands.push(new Interpreter_1.AssignVariableCommand(this._left)); // Bind variable.
         commands.push(new Interpreter_1.MoveLinePointerCommand(this._tok.line));
         return commands;
@@ -104,9 +107,9 @@ var ReturnStatementNode = /** @class */ (function (_super) {
     ReturnStatementNode.prototype.execute = function () {
         var commands = [];
         commands.push(new Interpreter_1.HighlightStatementCommand(this)); // highlight entire statement
-        if (this._value) { // value not null
-            commands.push.apply(// value not null
-            commands, (this._value.evaluate()));
+        if (this._value) {
+            // value not null
+            commands.push.apply(commands, this._value.evaluate());
         }
         else {
             commands.push(new Interpreter_1.PushValueCommand(null));
@@ -185,9 +188,9 @@ var IfStatementNode = /** @class */ (function (_super) {
             commands.push.apply(commands, this._thenBranch.execute());
         }
         // if else branch exists...
-        if (this._elseBranch) { // if else branch exists...
-            commands.push.apply(// if else branch exists...
-            commands, this._elseBranch.execute());
+        if (this._elseBranch) {
+            // if else branch exists...
+            commands.push.apply(commands, this._elseBranch.execute());
         }
         return commands;
     };
@@ -285,7 +288,7 @@ var ElseBlockStatementNode = /** @class */ (function (_super) {
     }
     ElseBlockStatementNode.prototype.execute = function () {
         var commands = [];
-        this._block.execute();
+        commands.push.apply(commands, this._block.execute());
         return commands;
     };
     return ElseBlockStatementNode;
@@ -338,35 +341,40 @@ var ExpressionNode = /** @class */ (function () {
         this._tok = _tok;
     }
     Object.defineProperty(ExpressionNode.prototype, "lineNum", {
-        get: function () { return this._tok.line; },
+        get: function () {
+            return this._tok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(ExpressionNode.prototype, "startLine", {
-        get: function () { return this._tok.line; },
+        get: function () {
+            return this._tok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(ExpressionNode.prototype, "endLine", {
-        get: function () { return this._tok.line; },
+        get: function () {
+            return this._tok.line;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(ExpressionNode.prototype, "startCol", {
-        get: function () { return this._tok.col; },
+        get: function () {
+            return this._tok.col;
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     Object.defineProperty(ExpressionNode.prototype, "endCol", {
-        get: function () { return this._tok.col + (this._tok.text.length - 1); },
+        get: function () {
+            return this._tok.col + (this._tok.text.length - 1);
+        },
         enumerable: false,
         configurable: true
     });
-    ;
     return ExpressionNode;
 }());
 exports.ExpressionNode = ExpressionNode;
@@ -386,13 +394,16 @@ var NumberLiteralExpressionNode = /** @class */ (function (_super) {
     NumberLiteralExpressionNode.prototype.evaluate = function () {
         var commands = [];
         var numValue;
-        if (this._value.startsWith('0x')) { // hexadecimal
+        if (this._value.startsWith("0x")) {
+            // hexadecimal
             numValue = parseInt(this._value, 16);
         }
-        else if (this._value.startsWith('0b')) { // binary
-            numValue = parseInt(this._value, 2);
+        else if (this._value.startsWith("0b")) {
+            // binary
+            numValue = parseInt(this._value.slice(2), 2);
         }
-        else if (this._value.includes('.')) { // float
+        else if (this._value.includes(".")) {
+            // float
             numValue = parseFloat(this._value);
         }
         else {
@@ -426,8 +437,16 @@ var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     function FormalParamsListExpressionNode(_paramsList) {
         var _this = this;
         // need to check if array is empty, probably need to do this for arg list too.
-        if (_paramsList === null || _paramsList === undefined || _paramsList.length === 0) {
-            var dummy = { line: 0, col: 0, text: '', type: '', value: '' };
+        if (_paramsList === null ||
+            _paramsList === undefined ||
+            _paramsList.length === 0) {
+            var dummy = {
+                line: 0,
+                col: 0,
+                text: "",
+                type: "",
+                value: "",
+            };
             _this = _super.call(this, dummy) || this; // pass empty token in here.
             _this._paramsList = []; // nothing there.
         }
@@ -471,8 +490,16 @@ var ArgListExpressionNode = /** @class */ (function (_super) {
     __extends(ArgListExpressionNode, _super);
     function ArgListExpressionNode(_argsList) {
         var _this = this;
-        if (_argsList === null || _argsList === undefined || _argsList.length === 0) {
-            var dummy = { line: 0, col: 0, text: '', type: '', value: '' };
+        if (_argsList === null ||
+            _argsList === undefined ||
+            _argsList.length === 0) {
+            var dummy = {
+                line: 0,
+                col: 0,
+                text: "",
+                type: "",
+                value: "",
+            };
             _this = _super.call(this, dummy) || this; // pass empty token in here.
             _this._argsList = []; // nothing there.
         }
@@ -590,16 +617,16 @@ var FuncCallExpressionNode = /** @class */ (function (_super) {
         // if function name is an identifier.
         if (this._func_name instanceof IdentifierExpressionNode) {
             var funcName = this._func_name._tok.text;
-            if (funcName === 'print') {
+            if (funcName === "print") {
                 commands.push(new Interpreter_1.PrintCommand());
             }
-            else if (funcName === 'len') {
+            else if (funcName === "len") {
                 commands.push(new Interpreter_1.LenCommand());
             }
-            else if (funcName === 'type') {
+            else if (funcName === "type") {
                 commands.push(new Interpreter_1.TypeCommand());
             }
-            else if (funcName === 'input') {
+            else if (funcName === "input") {
                 commands.push(new Interpreter_1.InputCommand());
             }
             else {
@@ -639,7 +666,7 @@ var ListAccessExpressionNode = /** @class */ (function (_super) {
 exports.ListAccessExpressionNode = ListAccessExpressionNode;
 /*
 
-*/
+ */
 var MethodCallExpressionNode = /** @class */ (function (_super) {
     __extends(MethodCallExpressionNode, _super);
     function MethodCallExpressionNode(_list, _methodName, _argsList) {
@@ -750,7 +777,14 @@ var StringLiteralExpressionNode = /** @class */ (function (_super) {
     StringLiteralExpressionNode.prototype.evaluate = function () {
         var commands = [];
         commands.push(new Interpreter_1.HighlightExpressionCommand(this)); // highlight
-        commands.push(new Interpreter_1.PushValueCommand(this._value.text));
+        var text = this._value.text;
+        if (
+        // needed to remove surrounding quotes, there was some double wrapping.
+        (text.startsWith('"') && text.endsWith('"')) ||
+            (text.startsWith("'") && text.endsWith("'"))) {
+            text = text.slice(1, -1); // remove front quote and back quote to "clean" string
+        }
+        commands.push(new Interpreter_1.PushValueCommand(text));
         // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
         return commands;
     };

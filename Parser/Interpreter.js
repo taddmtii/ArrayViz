@@ -323,7 +323,9 @@ var BinaryOpCommand = /** @class */ (function (_super) {
                 // case "//":
                 //   res = Math.floor(evaluatedLeft / evaluatedRight);
                 //   break;
+                // BigInt division is inheritly integer division.
                 case "/":
+                case "//":
                     res = evaluatedLeft / evaluatedRight;
                     break;
                 case "and":
@@ -349,7 +351,7 @@ var ComparisonOpCommand = /** @class */ (function (_super) {
     ComparisonOpCommand.prototype.do = function (_currentState) {
         var evaluatedRight = _currentState.evaluationStack.pop(); // right should be popped first.
         var evaluatedLeft = _currentState.evaluationStack.pop();
-        var res = null;
+        var res = false;
         switch (this._op) {
             case "<":
                 res = evaluatedLeft < evaluatedRight;
@@ -530,6 +532,7 @@ var InputCommand = /** @class */ (function (_super) {
 }(Command));
 exports.InputCommand = InputCommand;
 // IndexAccessCommand -> arr[5]
+// ONLY HANDLES LISTS/ARRAYS right now, TODO: add string and list literal support.
 var IndexAccessCommand = /** @class */ (function (_super) {
     __extends(IndexAccessCommand, _super);
     function IndexAccessCommand() {
@@ -538,10 +541,17 @@ var IndexAccessCommand = /** @class */ (function (_super) {
     IndexAccessCommand.prototype.do = function (_currentState) {
         var index = _currentState.evaluationStack.pop();
         var list = _currentState.evaluationStack.pop();
+        var newindex = 0;
+        if (typeof index === "bigint") {
+            newindex = Number(index);
+        }
+        else if (typeof index === "number") {
+            newindex = index;
+        }
         // at the end of the day, we need to verify these types if there was some problem in the popped stack values.
-        if (Array.isArray(list) && typeof index === "number") {
-            this._undoCommand = new PopValueCommand();
-            _currentState.evaluationStack.push(list[index]);
+        if (Array.isArray(list) || typeof list === "string") {
+            this._undoCommand = new PopValueCommand(); // placeholder
+            _currentState.evaluationStack.push(list[newindex]);
         }
     };
     return IndexAccessCommand;

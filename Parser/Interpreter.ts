@@ -315,7 +315,9 @@ export class BinaryOpCommand extends Command {
         // case "//":
         //   res = Math.floor(evaluatedLeft / evaluatedRight);
         //   break;
+        // BigInt division is inheritly integer division.
         case "/":
+        case "//":
           res = evaluatedLeft / evaluatedRight;
           break;
         case "and":
@@ -380,7 +382,7 @@ export class UnaryOpCommand extends Command {
         break;
       case "+":
         res = operand;
-        break; 
+        break;
       case "!":
         res = !operand;
         break;
@@ -504,15 +506,21 @@ export class InputCommand extends Command {
 }
 
 // IndexAccessCommand -> arr[5]
+// ONLY HANDLES LISTS/ARRAYS right now, TODO: add string and list literal support.
 export class IndexAccessCommand extends Command {
   do(_currentState: State) {
     const index = _currentState.evaluationStack.pop();
     const list = _currentState.evaluationStack.pop();
-
+    let newindex: number = 0;
+    if (typeof index === "bigint") {
+      newindex = Number(index);
+    } else if (typeof index === "number") {
+      newindex = index;
+    }
     // at the end of the day, we need to verify these types if there was some problem in the popped stack values.
-    if (Array.isArray(list) && typeof index === "number") {
-      this._undoCommand = new PopValueCommand();
-      _currentState.evaluationStack.push(list[index]);
+    if (Array.isArray(list) || typeof list === "string") {
+      this._undoCommand = new PopValueCommand(); // placeholder
+      _currentState.evaluationStack.push(list[newindex]);
     }
   }
 }
@@ -524,15 +532,15 @@ export class ListSliceCommand extends Command {
 // CreateListCommand -> Creates a list of values
 export class CreateListCommand extends Command {
   private _count: number;
-  
+
   constructor(_count: number) {
     super();
     this._count = _count;
   }
-  
+
   do(_currentState: State) {
     const list: PythonValue[] = [];
-    
+
     // Pop elements in REVERSE order, then add them to the front array to maintain initial order.
     for (let i = 0; i < this._count; i++) {
       const elem: PythonValue = _currentState.evaluationStack.pop()!;
@@ -544,7 +552,6 @@ export class CreateListCommand extends Command {
 }
 
 export class ReturnCommand extends Command {
-
   constructor() {
     super();
   }
