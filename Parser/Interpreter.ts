@@ -525,8 +525,27 @@ export class IndexAccessCommand extends Command {
   }
 }
 
+// Helper function
+function bigintToNumber(val: any): number | null {
+  if (val === null) return null;
+  if (typeof val === "bigint") return Number(val);
+  if (typeof val === "number") return val;
+  return null;
+}
+
 export class ListSliceCommand extends Command {
-  do(_currentState: State) {}
+  do(_currentState: State) {
+    let step = _currentState.evaluationStack.pop();
+    let end = _currentState.evaluationStack.pop();
+    let start = _currentState.evaluationStack.pop();
+    let list = _currentState.evaluationStack.pop();
+
+    step = bigintToNumber(step);
+    end = bigintToNumber(end);
+    start = bigintToNumber(start);
+
+    // handle arrays first
+  }
 }
 
 // CreateListCommand -> Creates a list of values

@@ -478,6 +478,15 @@ export class FormalParamsListExpressionNode extends ExpressionNode {
   // }
 }
 
+/*
+CONDITIONAL EXPRESSION NODE
+
+Handles:
+- If-Else
+- If-Else-If
+- If-Else-If-Else
+*/
+
 export class ConditionalExpressionNode extends ExpressionNode {
   private _left: ExpressionNode;
   private _condition: ExpressionNode;
