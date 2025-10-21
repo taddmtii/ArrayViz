@@ -4,12 +4,12 @@
 //import IndentationLexer from 'moo-indentation-lexer';
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
-const { ProgramNode, 
-        StatementNode, 
-        AssignmentStatementNode, 
+const { ProgramNode,
+        StatementNode,
+        AssignmentStatementNode,
         ReturnStatementNode,
-        BreakStatementNode, 
-        ContinueStatementNode, 
+        BreakStatementNode,
+        ContinueStatementNode,
         PassStatementNode,
         IfStatementNode,
         ForStatementNode,
@@ -36,8 +36,8 @@ const { ProgramNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
         } = require('./Nodes.js');
-const lexer = new IndentationLexer({ 
-    indentationType: 'WS', 
+const lexer = new IndentationLexer({
+    indentationType: 'WS',
     newlineType: 'NL',
     commentType: 'COMMENT',
     indentName: 'INDENT',
@@ -134,8 +134,8 @@ program -> statement_list {% d => d[0] %}
 
 statement_list -> statement:+ {% d => new ProgramNode(d[0].filter(statement => statement !== null)) %} # statements cannot be null.
 
-statement -> simple_statement %NL {% d => d[0] %} 
-           | compound_statement {% d => d[0] %} # compound statement already eats newline. 
+statement -> simple_statement %NL {% d => d[0] %}
+           | compound_statement {% d => d[0] %} # compound statement already eats newline.
            | %NL {% d => null %}
 
 # A simple statement is a standalone statement.
@@ -172,9 +172,9 @@ formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):*  {% d => new FormalPara
 arg_list -> expression (%COMMA expression):* {% d => new ArgListExpressionNode([d[0], ...d[1].map(x => x[1])]) %}
 
 block -> %NL %INDENT statement:+ %DEDENT {% d => (new BlockStatementNode(d[2], d[1])) %}
-       | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0]._startTok)) %} 
+       | simple_statement %NL {% d => (new BlockStatementNode([d[0]], d[0]._startTok)) %}
 
-return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1], new Map(), d[0])) %} 
+return_statement -> %RETURN expression:? {% d => (new ReturnStatementNode(d[1], new Map(), d[0])) %}
 
 expression -> conditional_expression {% d => d[0] %}
 
@@ -186,14 +186,14 @@ conditional_expression -> or_expression %IF or_expression %ELSE conditional_expr
                         | or_expression {% d => d[0] %}
 
 #-----------------------------------------------------------------------------------------
-# LOGIC EXPRESSIONS 
+# LOGIC EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-or_expression -> or_expression %OR and_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %} 
+or_expression -> or_expression %OR and_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %}
                | and_expression {% d => d[0] %}
 
-and_expression -> and_expression %AND not_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %} 
-                | not_expression {% d => d[0] %} 
+and_expression -> and_expression %AND not_expression {% d => (new BinaryExpressionNode(d[0], d[1].value, d[2], d[1])) %}
+                | not_expression {% d => d[0] %}
 
 not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0].value, d[1], d[0])) %}
                 | comparison_expression {% d => d[0] %}
@@ -202,7 +202,7 @@ not_expression -> %NOT not_expression {% d => (new UnaryExpressionNode(d[0].valu
 # COMPARISON EXPRESSIONS
 #-----------------------------------------------------------------------------------------
 
-comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => (new ComparisonExpressionNode(d[0], d[1], d[2], d[1][0])) %}
+comparison_expression -> additive (%LT | %GT | %LTE | %GTE | %EQ | %NEQ | %IN | (%NOT %IN)) additive {% d => (new ComparisonExpressionNode(d[0], d[1][0].value, d[2])) %}
             | additive {% d => d[0] %}
 
 #-----------------------------------------------------------------------------------------
@@ -267,4 +267,4 @@ number -> %HEX {% d => (new NumberLiteralExpressionNode(d[0].value, d[0])) %}
 
 list_literal -> %LSQBRACK arg_list:? %RSQBRACK {% d => (new ListLiteralExpressionNode(d[1] || null, d[0])) %}
 
-group -> %LPAREN expression %RPAREN {% d => d[1] %} 
+group -> %LPAREN expression %RPAREN {% d => d[1] %}

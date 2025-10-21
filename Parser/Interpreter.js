@@ -220,7 +220,11 @@ var HighlightExpressionCommand = /** @class */ (function (_super) {
     HighlightExpressionCommand.prototype.do = function (_currentState) {
         this._undoCommand = new HighlightExpressionCommand(_currentState.currentExpression);
         _currentState.currentExpression = this._expression;
-        console.log("Expression Highlighted!");
+        var exprType = this._expression.constructor.name;
+        var tok = this._expression._tok
+            ? "\"".concat(this._expression._tok.text, "\" at line ").concat(this._expression._tok.line)
+            : "at line ".concat(this._expression.lineNum);
+        console.log("[EXPR] ".concat(exprType, ": ").concat(tok));
     };
     return HighlightExpressionCommand;
 }(Command));
@@ -557,12 +561,31 @@ var IndexAccessCommand = /** @class */ (function (_super) {
     return IndexAccessCommand;
 }(Command));
 exports.IndexAccessCommand = IndexAccessCommand;
+// Helper function
+function bigintToNumber(val) {
+    if (val === null)
+        return null;
+    if (typeof val === "bigint")
+        return Number(val);
+    if (typeof val === "number")
+        return val;
+    return null;
+}
 var ListSliceCommand = /** @class */ (function (_super) {
     __extends(ListSliceCommand, _super);
     function ListSliceCommand() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    ListSliceCommand.prototype.do = function (_currentState) { };
+    ListSliceCommand.prototype.do = function (_currentState) {
+        var step = _currentState.evaluationStack.pop();
+        var end = _currentState.evaluationStack.pop();
+        var start = _currentState.evaluationStack.pop();
+        var list = _currentState.evaluationStack.pop();
+        step = bigintToNumber(step);
+        end = bigintToNumber(end);
+        start = bigintToNumber(start);
+        // handle arrays first
+    };
     return ListSliceCommand;
 }(Command));
 exports.ListSliceCommand = ListSliceCommand;

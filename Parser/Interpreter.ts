@@ -206,7 +206,11 @@ export class HighlightExpressionCommand extends Command {
       _currentState.currentExpression,
     );
     _currentState.currentExpression = this._expression;
-    console.log("Expression Highlighted!");
+    const exprType = this._expression.constructor.name;
+    const tok = this._expression._tok
+      ? `"${this._expression._tok.text}" at line ${this._expression._tok.line}`
+      : `at line ${this._expression.lineNum}`;
+    console.log(`[EXPR] ${exprType}: ${tok}`);
   }
 }
 

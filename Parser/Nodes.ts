@@ -36,7 +36,7 @@ export type PythonValue =
   | Boolean
   | BigInt
   | null;
-export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or";
+export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=";
 export type UnaryOp = "-" | "+" | "!" | "not";
 
@@ -779,7 +779,7 @@ export class ListLiteralExpressionNode extends ExpressionNode {
       commands.push(...this._values.evaluate());
     }
     // count values so we know how many elements to pop off stack.
-    let count = this._values.length;
+    let count = this._values ? this._values.length : 0; // null check in case arg list is empty
     commands.push(new CreateListCommand(count));
     return commands;
   }

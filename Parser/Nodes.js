@@ -467,6 +467,14 @@ var FormalParamsListExpressionNode = /** @class */ (function (_super) {
     return FormalParamsListExpressionNode;
 }(ExpressionNode));
 exports.FormalParamsListExpressionNode = FormalParamsListExpressionNode;
+/*
+CONDITIONAL EXPRESSION NODE
+
+Handles:
+- If-Else
+- If-Else-If
+- If-Else-If-Else
+*/
 var ConditionalExpressionNode = /** @class */ (function (_super) {
     __extends(ConditionalExpressionNode, _super);
     function ConditionalExpressionNode(_left, _condition, _right) {
@@ -744,7 +752,7 @@ var ListLiteralExpressionNode = /** @class */ (function (_super) {
             commands.push.apply(commands, this._values.evaluate());
         }
         // count values so we know how many elements to pop off stack.
-        var count = this._values.length;
+        var count = this._values ? this._values.length : 0; // null check in case arg list is empty
         commands.push(new Interpreter_1.CreateListCommand(count));
         return commands;
     };
