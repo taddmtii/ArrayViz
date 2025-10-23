@@ -785,15 +785,15 @@ export class ListLiteralExpressionNode extends ExpressionNode {
 }
 
 export class BooleanLiteralExpressionNode extends ExpressionNode {
-  private _value: Boolean;
-  constructor(_value: Boolean, _tok: moo.Token) {
+  private _value: boolean;
+  constructor(_value: boolean, _tok: moo.Token) {
     super(_tok);
     this._value = _value;
   }
   evaluate(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightExpressionCommand(this));
-    commands.push(new PushValueCommand(this._value));
+    commands.push(new PushValueCommand(Boolean(this._value)));
     return commands;
   }
 }

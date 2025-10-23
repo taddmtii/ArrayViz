@@ -7,12 +7,12 @@ function id(x) { return x[0]; }
 //import IndentationLexer from 'moo-indentation-lexer';
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
-const { ProgramNode, 
-        StatementNode, 
-        AssignmentStatementNode, 
+const { ProgramNode,
+        StatementNode,
+        AssignmentStatementNode,
         ReturnStatementNode,
-        BreakStatementNode, 
-        ContinueStatementNode, 
+        BreakStatementNode,
+        ContinueStatementNode,
         PassStatementNode,
         IfStatementNode,
         ForStatementNode,
@@ -39,8 +39,8 @@ const { ProgramNode,
         StringLiteralExpressionNode,
         IdentifierExpressionNode
         } = require('./Nodes.js');
-const lexer = new IndentationLexer({ 
-    indentationType: 'WS', 
+const lexer = new IndentationLexer({
+    indentationType: 'WS',
     newlineType: 'NL',
     commentType: 'COMMENT',
     indentName: 'INDENT',
@@ -204,7 +204,7 @@ var grammar = {
     {"name": "comparison_expression$subexpression$1", "symbols": [(lexer.has("IN") ? {type: "IN"} : IN)]},
     {"name": "comparison_expression$subexpression$1$subexpression$1", "symbols": [(lexer.has("NOT") ? {type: "NOT"} : NOT), (lexer.has("IN") ? {type: "IN"} : IN)]},
     {"name": "comparison_expression$subexpression$1", "symbols": ["comparison_expression$subexpression$1$subexpression$1"]},
-    {"name": "comparison_expression", "symbols": ["additive", "comparison_expression$subexpression$1", "additive"], "postprocess": d => (new ComparisonExpressionNode(d[0], d[1], d[2], d[1][0]))},
+    {"name": "comparison_expression", "symbols": ["additive", "comparison_expression$subexpression$1", "additive"], "postprocess": d => (new ComparisonExpressionNode(d[0], d[1][0].value, d[2]))},
     {"name": "comparison_expression", "symbols": ["additive"], "postprocess": d => d[0]},
     {"name": "additive$subexpression$1", "symbols": [(lexer.has("PLUS") ? {type: "PLUS"} : PLUS)]},
     {"name": "additive$subexpression$1", "symbols": [(lexer.has("MINUS") ? {type: "MINUS"} : MINUS)]},

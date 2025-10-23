@@ -353,7 +353,6 @@ export class ComparisonOpCommand extends Command {
     switch (this._op.toString()) {
       case "<":
         res = evaluatedLeft < evaluatedRight;
-        console.log("LT hit");
         break;
       case ">":
         res = evaluatedLeft > evaluatedRight;
