@@ -356,10 +356,13 @@ var ComparisonOpCommand = /** @class */ (function (_super) {
     ComparisonOpCommand.prototype.do = function (_currentState) {
         var evaluatedRight = _currentState.evaluationStack.pop(); // right should be popped first.
         var evaluatedLeft = _currentState.evaluationStack.pop();
+        //console.log(`Left: ${evaluatedLeft}, Right: ${evaluatedRight}`);
+        //console.log(`Operator: ${this._op == ">"}`);
         var res = false;
-        switch (this._op) {
+        switch (this._op.toString()) {
             case "<":
                 res = evaluatedLeft < evaluatedRight;
+                console.log("LT hit");
                 break;
             case ">":
                 res = evaluatedLeft > evaluatedRight;
@@ -373,6 +376,8 @@ var ComparisonOpCommand = /** @class */ (function (_super) {
             case "!=":
                 res = evaluatedLeft != evaluatedRight;
                 break;
+            default:
+                res = false;
         }
         _currentState.evaluationStack.push(res);
     };

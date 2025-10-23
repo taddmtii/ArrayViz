@@ -346,11 +346,14 @@ export class ComparisonOpCommand extends Command {
   do(_currentState: State) {
     const evaluatedRight = _currentState.evaluationStack.pop()!; // right should be popped first.
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    let res: PythonValue = false;
+    //console.log(`Left: ${evaluatedLeft}, Right: ${evaluatedRight}`);
+    //console.log(`Operator: ${this._op == ">"}`);
+    let res: Boolean = false;
 
-    switch (this._op) {
+    switch (this._op.toString()) {
       case "<":
         res = evaluatedLeft < evaluatedRight;
+        console.log("LT hit");
         break;
       case ">":
         res = evaluatedLeft > evaluatedRight;
@@ -364,6 +367,8 @@ export class ComparisonOpCommand extends Command {
       case "!=":
         res = evaluatedLeft != evaluatedRight;
         break;
+      default:
+        res = false;
     }
     _currentState.evaluationStack.push(res);
   }
