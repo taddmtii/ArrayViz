@@ -50,9 +50,6 @@ function executeProgram(code: string): State {
 
 // Helper to format values
 function formatValue(val: any): string {
-  if (typeof val === "bigint") {
-    return val.toString();
-  }
   if (Array.isArray(val)) {
     return JSON.stringify(val);
   }
@@ -77,7 +74,7 @@ try {
   const result = state1.getVariable("x");
   console.log("✓ Test 1 passed: x = 5 + 3");
   console.log(`  Result: x = ${formatValue(result)}`);
-  if (result === BigInt(8)) {
+  if (result === 8) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 8, got ${result}`);
@@ -94,7 +91,7 @@ try {
   const result = state2.getVariable("y");
   console.log("✓ Test 2 passed: y = 10 - 4");
   console.log(`  Result: y = ${formatValue(result)}`);
-  if (result === BigInt(6)) {
+  if (result === 6) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 6, got ${result}`);
@@ -111,7 +108,7 @@ try {
   const result = state3.getVariable("z");
   console.log("✓ Test 3 passed: z = 7 * 6");
   console.log(`  Result: z = ${formatValue(result)}`);
-  if (result === BigInt(42)) {
+  if (result === 42) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 42, got ${result}`);
@@ -128,7 +125,7 @@ try {
   const result = state4.getVariable("a");
   console.log("✓ Test 4 passed: a = 20 / 4");
   console.log(`  Result: a = ${formatValue(result)}`);
-  if (result === BigInt(5)) {
+  if (result === 5) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 5, got ${result}`);
@@ -145,7 +142,7 @@ try {
   const result = state5.getVariable("b");
   console.log("✓ Test 5 passed: b = 17 // 5");
   console.log(`  Result: b = ${formatValue(result)}`);
-  if (result === BigInt(3)) {
+  if (result === 3) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 3, got ${result}`);
@@ -162,7 +159,7 @@ try {
   const result = state6.getVariable("c");
   console.log("✓ Test 6 passed: c = 17 % 5");
   console.log(`  Result: c = ${formatValue(result)}`);
-  if (result === BigInt(2)) {
+  if (result === 2) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 2, got ${result}`);
@@ -179,7 +176,7 @@ try {
   const result = state7.getVariable("d");
   console.log("✓ Test 7 passed: d = 2 ** 3");
   console.log(`  Result: d = ${formatValue(result)}`);
-  if (result === BigInt(8)) {
+  if (result === 8) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 8, got ${result}`);
@@ -198,7 +195,7 @@ try {
   const result = state8.getVariable("result");
   console.log("✓ Test 8 passed: result = 2 + 3 * 4");
   console.log(`  Result: result = ${formatValue(result)}`);
-  if (result === BigInt(14)) {
+  if (result === 14) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 14, got ${result}`);
@@ -215,7 +212,7 @@ try {
   const result = state9.getVariable("result2");
   console.log("✓ Test 9 passed: result2 = (2 + 3) * 4");
   console.log(`  Result: result2 = ${formatValue(result)}`);
-  if (result === BigInt(20)) {
+  if (result === 20) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 20, got ${result}`);
@@ -232,7 +229,7 @@ try {
   const result = state10.getVariable("neg");
   console.log("✓ Test 10 passed: neg = -5");
   console.log(`  Result: neg = ${formatValue(result)}`);
-  if (result === BigInt(-5)) {
+  if (result === -5) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected -5, got ${result}`);
@@ -252,7 +249,12 @@ try {
   const result = state11.getVariable("comp1");
   console.log("✓ Test 11 passed: comp1 = 5 < 10");
   console.log(`  Result: comp1 = ${formatValue(result)}`);
-  passedTests++;
+  if (result === true) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected true, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 11 failed:", e.message);
   failedTests++;
@@ -264,7 +266,12 @@ try {
   const result = state12.getVariable("comp2");
   console.log("✓ Test 12 passed: comp2 = 10 > 5");
   console.log(`  Result: comp2 = ${formatValue(result)}`);
-  passedTests++;
+  if (result === true) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected true, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 12 failed:", e.message);
   failedTests++;
@@ -276,7 +283,12 @@ try {
   const result = state13.getVariable("comp3");
   console.log("✓ Test 13 passed: comp3 = 5 != 3");
   console.log(`  Result: comp3 = ${formatValue(result)}`);
-  passedTests++;
+  if (result === true) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected true, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 13 failed:", e.message);
   failedTests++;
@@ -292,7 +304,7 @@ try {
   const result = state14.getVariable("y");
   console.log("✓ Test 14 passed: x = 5, y = x + 3");
   console.log(`  Result: y = ${formatValue(result)}`);
-  if (result === BigInt(8)) {
+  if (result === 8) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 8, got ${result}`);
@@ -310,7 +322,7 @@ try {
   const result = state15.getVariable("c");
   console.log("✓ Test 15 passed: a = 10, b = 20, c = a + b");
   console.log(`  Result: c = ${formatValue(result)}`);
-  if (result === BigInt(30)) {
+  if (result === 30) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 30, got ${result}`);
@@ -330,7 +342,12 @@ try {
   const result = state16.getVariable("greeting");
   console.log('✓ Test 16 passed: greeting = "Hello" + " World"');
   console.log(`  Result: greeting = ${formatValue(result)}`);
-  passedTests++;
+  if (result === "Hello World") {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected "Hello World", got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 16 failed:", e.message);
   failedTests++;
@@ -342,7 +359,12 @@ try {
   const result = state17.getVariable("msg");
   console.log("✓ Test 17 passed: msg = 'Python'");
   console.log(`  Result: msg = ${formatValue(result)}`);
-  passedTests++;
+  if (result === "Python") {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected "Python", got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 17 failed:", e.message);
   failedTests++;
@@ -361,7 +383,14 @@ try {
   console.log(
     `  Result: flag1 = ${formatValue(flag1)}, flag2 = ${formatValue(flag2)}`,
   );
-  passedTests++;
+  if (flag1 === true && flag2 === false) {
+    passedTests++;
+  } else {
+    console.log(
+      `  ⚠ Warning: Expected true and false, got ${flag1} and ${flag2}`,
+    );
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 18 failed:", e.message);
   failedTests++;
@@ -373,7 +402,12 @@ try {
   const result = state19.getVariable("logic1");
   console.log("✓ Test 19 passed: logic1 = 1 and 2");
   console.log(`  Result: logic1 = ${formatValue(result)}`);
-  passedTests++;
+  if (result === 2) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 2, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 19 failed:", e.message);
   failedTests++;
@@ -385,7 +419,12 @@ try {
   const result = state20.getVariable("logic2");
   console.log("✓ Test 20 passed: logic2 = 0 or 5");
   console.log(`  Result: logic2 = ${formatValue(result)}`);
-  passedTests++;
+  if (result === 5) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 5, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 20 failed:", e.message);
   failedTests++;
@@ -400,7 +439,12 @@ try {
   const result = state21.getVariable("empty");
   console.log("✓ Test 21 passed: empty = []");
   console.log(`  Result: empty = ${formatValue(result)}`);
-  passedTests++;
+  if (Array.isArray(result) && result.length === 0) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected [], got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 21 failed:", e.message);
   failedTests++;
@@ -412,7 +456,14 @@ try {
   const result = state22.getVariable("nums");
   console.log("✓ Test 22 passed: nums = [1, 2, 3, 4, 5]");
   console.log(`  Result: nums = ${formatValue(result)}`);
-  passedTests++;
+  if (JSON.stringify(result) === JSON.stringify([1, 2, 3, 4, 5])) {
+    passedTests++;
+  } else {
+    console.log(
+      `  ⚠ Warning: Expected [1,2,3,4,5], got ${formatValue(result)}`,
+    );
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 22 failed:", e.message);
   failedTests++;
@@ -425,7 +476,12 @@ try {
   const result = state23.getVariable("val");
   console.log("✓ Test 23 passed: nums = [10, 20, 30], val = nums[1]");
   console.log(`  Result: val = ${formatValue(result)}`);
-  passedTests++;
+  if (result === 20) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 20, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 23 failed:", e.message);
   failedTests++;
@@ -440,7 +496,12 @@ try {
   const result = state24.getVariable("hex_num");
   console.log("✓ Test 24 passed: hex_num = 0xFF");
   console.log(`  Result: hex_num = ${formatValue(result)}`);
-  passedTests++;
+  if (result === 255) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 255, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 24 failed:", e.message);
   failedTests++;
@@ -452,7 +513,12 @@ try {
   const result = state25.getVariable("bin_num");
   console.log("✓ Test 25 passed: bin_num = 0b1010");
   console.log(`  Result: bin_num = ${formatValue(result)}`);
-  passedTests++;
+  if (result === 10) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 10, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 25 failed:", e.message);
   failedTests++;
@@ -467,7 +533,7 @@ try {
   const result = state26.getVariable("result");
   console.log("✓ Test 26 passed: result = ((2 + 3) * 4) - 5");
   console.log(`  Result: result = ${formatValue(result)}`);
-  if (result === BigInt(15)) {
+  if (result === 15) {
     passedTests++;
   } else {
     console.log(`  ⚠ Warning: Expected 15, got ${result}`);
@@ -484,7 +550,13 @@ try {
   const result = state27.getVariable("mixed");
   console.log("✓ Test 27 passed: mixed = 2 ** 3 + 4 * 5 - 6 / 2");
   console.log(`  Result: mixed = ${formatValue(result)}`);
-  passedTests++;
+  // 2**3 = 8, 4*5 = 20, 6/2 = 3, so 8 + 20 - 3 = 25
+  if (result === 25) {
+    passedTests++;
+  } else {
+    console.log(`  ⚠ Warning: Expected 25, got ${result}`);
+    failedTests++;
+  }
 } catch (e: any) {
   console.log("✗ Test 27 failed:", e.message);
   failedTests++;

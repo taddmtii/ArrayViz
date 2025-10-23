@@ -309,8 +309,8 @@ var BinaryOpCommand = /** @class */ (function (_super) {
             typeof evaluatedRight === "string") {
             res = evaluatedLeft + evaluatedRight;
         }
-        if (typeof evaluatedLeft === "bigint" &&
-            typeof evaluatedRight === "bigint") {
+        if (typeof evaluatedLeft === "number" &&
+            typeof evaluatedRight === "number") {
             switch (this._op) {
                 case "+":
                     res = evaluatedLeft + evaluatedRight;
@@ -324,13 +324,14 @@ var BinaryOpCommand = /** @class */ (function (_super) {
                 case "*":
                     res = evaluatedLeft * evaluatedRight;
                     break;
-                // case "//":
-                //   res = Math.floor(evaluatedLeft / evaluatedRight);
-                //   break;
-                // BigInt division is inheritly integer division.
+                case "**":
+                    res = Math.pow(evaluatedLeft, evaluatedRight);
+                    break;
                 case "/":
-                case "//":
                     res = evaluatedLeft / evaluatedRight;
+                    break;
+                case "//":
+                    res = Math.floor(evaluatedLeft / evaluatedRight);
                     break;
                 case "and":
                     res = evaluatedLeft && evaluatedRight;
@@ -390,9 +391,7 @@ var UnaryOpCommand = /** @class */ (function (_super) {
         var res = 0;
         switch (this._operator) {
             case "-":
-                if (typeof operand === "bigint") {
-                    res = -operand;
-                }
+                res = -operand;
                 break;
             case "+":
                 res = operand;
@@ -546,7 +545,7 @@ var IndexAccessCommand = /** @class */ (function (_super) {
         var index = _currentState.evaluationStack.pop();
         var list = _currentState.evaluationStack.pop();
         var newindex = 0;
-        if (typeof index === "bigint") {
+        if (typeof index === "number") {
             newindex = Number(index);
         }
         else if (typeof index === "number") {
@@ -561,16 +560,6 @@ var IndexAccessCommand = /** @class */ (function (_super) {
     return IndexAccessCommand;
 }(Command));
 exports.IndexAccessCommand = IndexAccessCommand;
-// Helper function
-function bigintToNumber(val) {
-    if (val === null)
-        return null;
-    if (typeof val === "bigint")
-        return Number(val);
-    if (typeof val === "number")
-        return val;
-    return null;
-}
 var ListSliceCommand = /** @class */ (function (_super) {
     __extends(ListSliceCommand, _super);
     function ListSliceCommand() {
@@ -581,9 +570,6 @@ var ListSliceCommand = /** @class */ (function (_super) {
         var end = _currentState.evaluationStack.pop();
         var start = _currentState.evaluationStack.pop();
         var list = _currentState.evaluationStack.pop();
-        step = bigintToNumber(step);
-        end = bigintToNumber(end);
-        start = bigintToNumber(start);
         // handle arrays first
     };
     return ListSliceCommand;

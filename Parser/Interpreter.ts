@@ -300,8 +300,8 @@ export class BinaryOpCommand extends Command {
     }
 
     if (
-      typeof evaluatedLeft === "bigint" &&
-      typeof evaluatedRight === "bigint"
+      typeof evaluatedLeft === "number" &&
+      typeof evaluatedRight === "number"
     ) {
       switch (this._op) {
         case "+":
@@ -316,13 +316,14 @@ export class BinaryOpCommand extends Command {
         case "*":
           res = evaluatedLeft * evaluatedRight;
           break;
-        // case "//":
-        //   res = Math.floor(evaluatedLeft / evaluatedRight);
-        //   break;
-        // BigInt division is inheritly integer division.
+        case "**":
+          res = evaluatedLeft ** evaluatedRight;
+          break;
         case "/":
-        case "//":
           res = evaluatedLeft / evaluatedRight;
+          break;
+        case "//":
+          res = Math.floor(evaluatedLeft / evaluatedRight);
           break;
         case "and":
           res = evaluatedLeft && evaluatedRight;
@@ -380,9 +381,7 @@ export class UnaryOpCommand extends Command {
 
     switch (this._operator) {
       case "-":
-        if (typeof operand === "bigint") {
-          res = -operand;
-        }
+        res = -operand;
         break;
       case "+":
         res = operand;
@@ -516,7 +515,7 @@ export class IndexAccessCommand extends Command {
     const index = _currentState.evaluationStack.pop();
     const list = _currentState.evaluationStack.pop();
     let newindex: number = 0;
-    if (typeof index === "bigint") {
+    if (typeof index === "number") {
       newindex = Number(index);
     } else if (typeof index === "number") {
       newindex = index;
@@ -529,24 +528,12 @@ export class IndexAccessCommand extends Command {
   }
 }
 
-// Helper function
-function bigintToNumber(val: any): number | null {
-  if (val === null) return null;
-  if (typeof val === "bigint") return Number(val);
-  if (typeof val === "number") return val;
-  return null;
-}
-
 export class ListSliceCommand extends Command {
   do(_currentState: State) {
     let step = _currentState.evaluationStack.pop();
     let end = _currentState.evaluationStack.pop();
     let start = _currentState.evaluationStack.pop();
     let list = _currentState.evaluationStack.pop();
-
-    step = bigintToNumber(step);
-    end = bigintToNumber(end);
-    start = bigintToNumber(start);
 
     // handle arrays first
   }

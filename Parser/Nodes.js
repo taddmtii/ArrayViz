@@ -407,7 +407,7 @@ var NumberLiteralExpressionNode = /** @class */ (function (_super) {
             numValue = parseFloat(this._value);
         }
         else {
-            numValue = BigInt(this._value); // regular integer, base 10.
+            numValue = Number(this._value); // regular integer, base 10.
         }
         commands.push(new Interpreter_1.HighlightExpressionCommand(this));
         commands.push(new Interpreter_1.PushValueCommand(numValue));

@@ -34,7 +34,6 @@ export type PythonValue =
   | PythonValue[]
   | Function
   | Boolean
-  | BigInt
   | null;
 export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=";
@@ -406,7 +405,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
   evaluate(): Command[] {
     const commands: Command[] = [];
 
-    let numValue: Number | BigInt;
+    let numValue: Number;
     if (this._value.startsWith("0x")) {
       // hexadecimal
       numValue = parseInt(this._value, 16);
@@ -417,7 +416,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
       // float
       numValue = parseFloat(this._value);
     } else {
-      numValue = BigInt(this._value); // regular integer, base 10.
+      numValue = Number(this._value); // regular integer, base 10.
     }
     commands.push(new HighlightExpressionCommand(this));
     commands.push(new PushValueCommand(numValue));
