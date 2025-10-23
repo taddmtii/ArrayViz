@@ -29,11 +29,11 @@ import {
 
 export type Assignable = AssignmentStatementNode;
 export type PythonValue =
-  | Number
-  | String
+  | number
+  | string
   | PythonValue[]
   | Function
-  | Boolean
+  | boolean
   | null;
 export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=";
@@ -788,7 +788,7 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
   private _value: boolean;
   constructor(_value: boolean, _tok: moo.Token) {
     super(_tok);
-    this._value = _value;
+    this._value = Boolean(_value);
   }
   evaluate(): Command[] {
     const commands: Command[] = [];

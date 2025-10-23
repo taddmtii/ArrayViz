@@ -379,7 +379,9 @@ try {
   const state18 = executeProgram(code18);
   const flag1 = state18.getVariable("flag1");
   const flag2 = state18.getVariable("flag2");
+  console.log(state18.variables.get("flag2"));
   console.log("✓ Test 18 passed: flag1 = True, flag2 = False");
+  console.log(`type of flag1: ${typeof flag1}, flag2: ${flag2}`);
   console.log(
     `  Result: flag1 = ${formatValue(flag1)}, flag2 = ${formatValue(flag2)}`,
   );

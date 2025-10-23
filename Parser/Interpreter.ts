@@ -106,7 +106,9 @@ export class State {
     this._variables.set(name, value);
   } // adds new key value into variables map.
   public getVariable(name: string): PythonValue | PythonValue[] {
-    return this._variables.get(name) || null;
+    const v = this._variables.get(name);
+    if (v === undefined) return null;
+    return v;
   } // could be nullable upon lookup. null is important here.
 
   public pushCallStack(func: ExpressionNode) {
