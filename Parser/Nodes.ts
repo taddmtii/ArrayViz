@@ -405,7 +405,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
   evaluate(): Command[] {
     const commands: Command[] = [];
 
-    let numValue: Number;
+    let numValue: number;
     if (this._value.startsWith("0x")) {
       // hexadecimal
       numValue = parseInt(this._value, 16);
