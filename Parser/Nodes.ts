@@ -2,7 +2,6 @@ import * as moo from "moo";
 import {
   Command,
   AssignVariableCommand,
-  ChangeVariableCommand,
   PushValueCommand,
   PopValueCommand,
   HighlightExpressionCommand,

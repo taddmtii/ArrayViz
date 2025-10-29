@@ -35,6 +35,7 @@ export class State {
   private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
   private _returnStack: PythonValue[]; // stack for return values
+  private _loopStack: [number, number][];
 
   constructor(
     _programCounter: number,
@@ -47,6 +48,7 @@ export class State {
     _currentLine: number,
     _evaluationStack: PythonValue[],
     _returnStack: PythonValue[],
+    _loopStack: [number, number][],
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -58,6 +60,7 @@ export class State {
     this._currentLine = _currentLine;
     this._evaluationStack = _evaluationStack;
     this._returnStack = _returnStack;
+    this._loopStack = _loopStack;
   }
 
   public get programCounter() {
@@ -77,6 +80,7 @@ export class State {
   public get currentLine() {
     return this._currentLine;
   }
+
   public set currentLine(val: number) {
     this._currentLine = val;
   }
@@ -148,26 +152,8 @@ export class AssignVariableCommand extends Command {
   do(_currentState: State) {
     const newValue = _currentState.evaluationStack.pop()!; // get value from evaluation stack
     const oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
-    this._undoCommand = new ChangeVariableCommand(this._name, oldValue); // undo command: Change variable BACK to old value.
+    //this._undoCommand = new AssignVariableCommand(this._name, oldValue); // undo command: Change variable BACK to old value.
     _currentState.setVariable(this._name, newValue);
-  }
-}
-
-// NOTE: probably do not need this command.
-// For reassignments to a variable. If variable name is not already assigned, it will be assigned.
-export class ChangeVariableCommand extends Command {
-  private _name: string; // variable name
-  private _value: PythonValue; // value to be connected to variable
-  constructor(_name: string, _value: PythonValue) {
-    super();
-    this._name = _name;
-    this._value = _value;
-  }
-
-  do(_currentState: State) {
-    const oldValue = _currentState.getVariable(this._name); // get current variables value
-    this._undoCommand = new ChangeVariableCommand(this._name, oldValue); // undo command: Change variable to old value.
-    _currentState.setVariable(this._name, this._value); // set variable to new value passed in
   }
 }
 
@@ -404,7 +390,6 @@ export class UnaryOpCommand extends Command {
 }
 
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
-// TODO: Refer to Prof. O on this one.
 export class ConditionalJumpCommand extends Command {
   private _lineNum: number;
   private _jumpBool: boolean; // true if condition is true, false is condition is false
@@ -418,14 +403,14 @@ export class ConditionalJumpCommand extends Command {
 
 // JumpCommand -> jumps to a line number
 export class JumpCommand extends Command {
-  private _lineNum: number;
-  constructor(_lineNum: number) {
+  private _linesToJump: number;
+  constructor(_linesToJump: number) {
     super();
-    this._lineNum = _lineNum;
+    this._linesToJump = _linesToJump;
   }
   do(_currentState: State) {
     this._undoCommand = new JumpCommand(_currentState.programCounter);
-    _currentState.programCounter = this._lineNum;
+    _currentState.programCounter = this._linesToJump;
   }
 }
 
