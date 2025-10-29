@@ -159,7 +159,7 @@ if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d
 
 elif_statement -> %ELIF expression %COLON block (elif_statement | else_block):? {% d => (new ElifStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 
-else_block -> %ELSE %COLON block {% d => (new ElseBlockStatementNode(d[2], d[0])) %}
+else_block -> %ELSE %COLON block {% d => d[2] %}
 
 for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[5], d[0])) %}
 

@@ -161,7 +161,7 @@ var grammar = {
     {"name": "elif_statement$ebnf$1", "symbols": ["elif_statement$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "elif_statement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "elif_statement", "symbols": [(lexer.has("ELIF") ? {type: "ELIF"} : ELIF), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block", "elif_statement$ebnf$1"], "postprocess": d => (new ElifStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0]))},
-    {"name": "else_block", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => (new ElseBlockStatementNode(d[2], d[0]))},
+    {"name": "else_block", "symbols": [(lexer.has("ELSE") ? {type: "ELSE"} : ELSE), (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => d[2]},
     {"name": "for_loop", "symbols": [(lexer.has("FOR") ? {type: "FOR"} : FOR), (lexer.has("IDENTIFIER") ? {type: "IDENTIFIER"} : IDENTIFIER), (lexer.has("IN") ? {type: "IN"} : IN), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => (new ForStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[5], d[0]))},
     {"name": "while_loop", "symbols": [(lexer.has("WHILE") ? {type: "WHILE"} : WHILE), "expression", (lexer.has("COLON") ? {type: "COLON"} : COLON), "block"], "postprocess": d => (new WhileStatementNode(d[1], d[3], d[0]))},
     {"name": "func_def$ebnf$1$subexpression$1", "symbols": ["formal_params_list"]},

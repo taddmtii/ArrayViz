@@ -34,6 +34,7 @@ export type PythonValue =
   | PythonValue[]
   | Function
   | boolean
+  | Object
   | null;
 export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=";
@@ -148,7 +149,10 @@ export class BreakStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // TODO: do break logic
+    // Break statement itself should jump out of current loop and go to the next enclosing loop.
+    // I may need some additional context about how deep loops may be nested, which the parser knows but
+    // I do not here. TODO: Need to look into this more.
+    commands.push(new JumpCommand(Infinity));
     return commands;
   }
 }
@@ -184,11 +188,11 @@ export class PassStatementNode extends StatementNode {
 export class IfStatementNode extends StatementNode {
   private _condition: ExpressionNode;
   private _thenBranch: BlockStatementNode | null;
-  private _elseBranch: ElseBlockStatementNode | null;
+  private _elseBranch: BlockStatementNode | null;
   constructor(
     _condition: ExpressionNode,
     _thenBranch: BlockStatementNode | null,
-    _elseBranch: ElseBlockStatementNode | null,
+    _elseBranch: BlockStatementNode | null,
     _tok: moo.Token,
   ) {
     super(_tok);
@@ -211,6 +215,8 @@ export class IfStatementNode extends StatementNode {
       // if else branch exists...
       commands.push(...this._elseBranch.execute());
     }
+    // after we evaluate those branches, we can then conidtionally jump.
+
     return commands;
   }
 }
@@ -233,6 +239,7 @@ export class ForStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
+    // evaluate iterable and then push onto stack
     commands.push(...this._iterable.evaluate());
     // TODO: do for loop logic
     commands.push(...this._block.execute());
@@ -280,7 +287,20 @@ export class FuncDefStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // TODO: do function definition logic
+    const blockCommands = this._block.execute();
+
+    // Create function object with commands above to represent the body.
+    const functionObj = {
+      name: this._name._tok.text,
+      params: this._formalParamList,
+      body: blockCommands,
+      type: "Function",
+    } as Object;
+
+    // function pushed onto stack, and THEN be binded to a variable name.
+    commands.push(new PushValueCommand(functionObj));
+    commands.push(new AssignVariableCommand(this._name._tok.text));
+    commands.push(new JumpCommand(blockCommands.length));
     return commands;
   }
 }
@@ -288,11 +308,11 @@ export class FuncDefStatementNode extends StatementNode {
 export class ElifStatementNode extends StatementNode {
   private _condition: ExpressionNode;
   private _thenBranch: BlockStatementNode | null;
-  private _elseBranch: ElseBlockStatementNode | null;
+  private _elseBranch: BlockStatementNode | null;
   constructor(
     _condition: ExpressionNode,
     _thenBranch: BlockStatementNode,
-    _elseBranch: ElseBlockStatementNode,
+    _elseBranch: BlockStatementNode,
     _tok: moo.Token,
   ) {
     super(_tok);
@@ -311,19 +331,6 @@ export class ElifStatementNode extends StatementNode {
     if (this._elseBranch) {
       commands.push(...this._elseBranch.execute());
     }
-    return commands;
-  }
-}
-
-export class ElseBlockStatementNode extends StatementNode {
-  private _block: BlockStatementNode;
-  constructor(_block: BlockStatementNode, _tok: moo.Token) {
-    super(_tok);
-    this._block = _block;
-  }
-  execute(): Command[] {
-    const commands: Command[] = [];
-    commands.push(...this._block.execute());
     return commands;
   }
 }
