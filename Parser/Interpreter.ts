@@ -106,6 +106,10 @@ export class State {
     return this._variables;
   }
 
+  public get loopStack() {
+    return this._loopStack;
+  }
+
   public setVariable(name: string, value: PythonValue | PythonValue[]) {
     this._variables.set(name, value);
   } // adds new key value into variables map.
@@ -171,6 +175,50 @@ export class PushValueCommand extends Command {
   }
 }
 
+export class PushLoopBoundsCommand extends Command {
+  private _start: number;
+  private _end: number;
+  constructor(_start: number, _end: number) {
+    super();
+    this._start = _start;
+    this._end = _end;
+  }
+
+  do(_currentState: State) {
+    _currentState.loopStack.push([this._start, this._end]);
+    this._undoCommand = new PopLoopBoundsCommand();
+  }
+}
+
+export class PopLoopBoundsCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const loopBound = _currentState.loopStack.pop()!;
+    this._undoCommand = new PushLoopBoundsCommand(loopBound[0], loopBound[1]);
+  }
+}
+
+export class BreakCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    let startStop = _currentState.loopStack.pop()!;
+  }
+}
+
+export class ContinueCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    let startStop = _currentState.loopStack.pop()!;
+  }
+}
+
 // Pops value off Evaluation Stack during Expression processing.
 export class PopValueCommand extends Command {
   do(_currentState: State) {
@@ -198,7 +246,7 @@ export class HighlightExpressionCommand extends Command {
     const tok = this._expression._tok
       ? `"${this._expression._tok.text}" at line ${this._expression._tok.line}`
       : `at line ${this._expression.lineNum}`;
-    console.log(`[EXPR] ${exprType}: ${tok}`);
+    console.log(`Highlight in UI: [EXPR] ${exprType}: ${tok}`);
   }
 }
 
@@ -390,18 +438,20 @@ export class UnaryOpCommand extends Command {
 }
 
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+// Used exclusively by if, while, for statements. Decides whether to skiop or continue executing a block based on the condition (jumoBool)
 export class ConditionalJumpCommand extends Command {
-  private _lineNum: number;
+  private _linesToJump: number;
   private _jumpBool: boolean; // true if condition is true, false is condition is false
-  constructor(_lineNum: number, _jumpBool: boolean) {
+  constructor(_linesToJump: number, _jumpBool: boolean) {
     super();
-    this._lineNum = _lineNum;
+    this._linesToJump = _linesToJump;
     this._jumpBool = true; // default to true
   }
   do(_currentState: State) {}
 }
 
 // JumpCommand -> jumps to a line number
+// Used whenever want to always jump, end of loop is a great example.
 export class JumpCommand extends Command {
   private _linesToJump: number;
   constructor(_linesToJump: number) {

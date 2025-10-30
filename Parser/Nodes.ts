@@ -23,7 +23,11 @@ import {
   IndexAccessCommand,
   CreateListCommand,
   ReturnCommand,
+  BreakCommand,
+  ContinueCommand,
   ListSliceCommand,
+  PushLoopBoundsCommand,
+  PopLoopBoundsCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -150,8 +154,8 @@ export class BreakStatementNode extends StatementNode {
     commands.push(new HighlightStatementCommand(this));
     // Break statement itself should jump out of current loop and go to the next enclosing loop.
     // I may need some additional context about how deep loops may be nested, which the parser knows but
-    // I do not here. TODO: Need to look into this more.
-    commands.push(new JumpCommand(Infinity));
+    // I do not here.
+    commands.push(new BreakCommand());
     return commands;
   }
 }
@@ -165,7 +169,7 @@ export class ContinueStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // TODO: do continue logic
+    commands.push(new ContinueCommand());
     return commands;
   }
 }
@@ -203,19 +207,28 @@ export class IfStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     commands.push(...this._condition.evaluate());
-    // TODO: do conditional jump logic here
+    let thenCommands: Command[] = [];
+    let elseCommands: Command[] = [];
 
     // if then branch exists
     if (this._thenBranch) {
-      commands.push(...this._thenBranch.execute());
+      thenCommands = this._thenBranch.execute();
     }
     // if else branch exists...
     if (this._elseBranch) {
       // if else branch exists...
-      commands.push(...this._elseBranch.execute());
+      elseCommands = this._elseBranch.execute();
     }
     // after we evaluate those branches, we can then conidtionally jump.
+    // if condition is true, execute then block. if not, jump OVER it.
+    //commands.push(new ConditionalJumpCommand(thenCommands.length + 1, true));
+    commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
+    // then branch now run, jump over else branch.
+    if (elseCommands.length > 0) {
+      commands.push(new JumpCommand(elseCommands.length));
+      commands.push(...elseCommands);
+    }
     return commands;
   }
 }
@@ -240,8 +253,8 @@ export class ForStatementNode extends StatementNode {
     commands.push(new HighlightStatementCommand(this));
     // evaluate iterable and then push onto stack
     commands.push(...this._iterable.evaluate());
-    // TODO: do for loop logic
-    commands.push(...this._block.execute());
+
+    const blockCommands = this._block.execute();
     return commands;
   }
 }
@@ -323,12 +336,20 @@ export class ElifStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     commands.push(...this._condition.evaluate());
-    // TODO: do elif logic
+    let thenCommands: Command[] = [];
+    let elseCommands: Command[] = [];
     if (this._thenBranch) {
-      commands.push(...this._thenBranch.execute());
+      thenCommands = this._thenBranch.execute();
     }
     if (this._elseBranch) {
-      commands.push(...this._elseBranch.execute());
+      elseCommands = this._elseBranch.execute();
+    }
+    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, true));
+    commands.push(...thenCommands);
+
+    if (elseCommands.length > 0) {
+      commands.push(new JumpCommand(elseCommands.length));
+      commands.push(...elseCommands);
     }
     return commands;
   }
