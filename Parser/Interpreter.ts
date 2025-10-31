@@ -154,10 +154,32 @@ export class AssignVariableCommand extends Command {
   }
 
   do(_currentState: State) {
-    const newValue = _currentState.evaluationStack.pop()!; // get value from evaluation stack
-    const oldValue = _currentState.getVariable(this._name); // grab current value of variable from map
-    //this._undoCommand = new AssignVariableCommand(this._name, oldValue); // undo command: Change variable BACK to old value.
-    _currentState.setVariable(this._name, newValue);
+    const top =
+      _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
+
+    // For loop iteration?
+    // check if loopstack is not empty AND if top of stack is an iterable (array)
+    if (_currentState.loopStack.length > 0 && Array.isArray(top)) {
+      // we can pop NOW instead of peeking because we know we are handling an array.
+      const iterable = _currentState.evaluationStack.pop()!;
+
+      if (Array.isArray(iterable) && iterable.length > 0) {
+        // next item grab
+        let nextItem = iterable.shift(); // shift() grabs first item in array.
+        _currentState.setVariable(this._name, nextItem);
+        // now we push the iterable with element removed back onto the stack.
+        _currentState.evaluationStack.push(iterable);
+        // push TRUE to say that we have an item (iterable is not empty, signaling end of loop)
+        _currentState.evaluationStack.push(true);
+      } else {
+        // no more items, so push false to say iterable is EMPTY.
+        _currentState.evaluationStack.push(false);
+      }
+    } else {
+      // NORMAL ASSIGNMENT, regular old assignment logic.
+      const newValue = _currentState.evaluationStack.pop()!;
+      _currentState.setVariable(this._name, newValue);
+    }
   }
 }
 
@@ -438,29 +460,41 @@ export class UnaryOpCommand extends Command {
 }
 
 // ConditionalJumpCommand -> jumps to line if condition in loop is true/false
-// Used exclusively by if, while, for statements. Decides whether to skiop or continue executing a block based on the condition (jumoBool)
+// Used exclusively by if, while, for statements. only jumps if a conidtion (from the stack) evaluates to true/false.
+// Example of use case:
+// x > 5 gets evaluated, pushes True or False. ConditionalJumpCommand(2) would execute the next two commands, False would jump forward 2 commands.
 export class ConditionalJumpCommand extends Command {
-  private _linesToJump: number;
-  private _jumpBool: boolean; // true if condition is true, false is condition is false
-  constructor(_linesToJump: number, _jumpBool: boolean) {
+  private _commandsToJump: number;
+  constructor(_commandsToJump: number) {
     super();
-    this._linesToJump = _linesToJump;
-    this._jumpBool = true; // default to true
+    this._commandsToJump = _commandsToJump;
   }
-  do(_currentState: State) {}
+  do(_currentState: State) {
+    const condition = _currentState.evaluationStack.pop()!; // true or false depending on
+    const boolCondition = Boolean(condition);
+
+    // shoudl we jump?
+    if (boolCondition === false) {
+      _currentState.programCounter += this._commandsToJump;
+    }
+    // PC should be incremented normally.
+  }
 }
 
 // JumpCommand -> jumps to a line number
 // Used whenever want to always jump, end of loop is a great example.
+// Use case:
+// JumpCommand(2) -> skips two statements in block via skipping the commands themselves.
 export class JumpCommand extends Command {
-  private _linesToJump: number;
-  constructor(_linesToJump: number) {
+  private _commandsToJump: number;
+  constructor(_commandsToJump: number) {
     super();
-    this._linesToJump = _linesToJump;
+    this._commandsToJump = _commandsToJump;
   }
   do(_currentState: State) {
     this._undoCommand = new JumpCommand(_currentState.programCounter);
-    _currentState.programCounter = this._linesToJump;
+    // jump to a new position within the command array.
+    _currentState.programCounter += this._commandsToJump;
   }
 }
 

@@ -48,6 +48,11 @@ export type UnaryOp = "-" | "+" | "!" | "not";
 // "Cannot read properties of undefined (reading _tok)" -> accessing an undefined or null's token.
 // -----------------------------------------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------------------------------------
+// References:
+// https://craftinginterpreters.com/statements-and-state.html
+// -----------------------------------------------------------------------------------------------------------
+
 // ------------------------------------------------------------------
 // ProgramNode
 //
@@ -216,12 +221,11 @@ export class IfStatementNode extends StatementNode {
     }
     // if else branch exists...
     if (this._elseBranch) {
-      // if else branch exists...
       elseCommands = this._elseBranch.execute();
     }
     // after we evaluate those branches, we can then conidtionally jump.
     // if condition is true, execute then block. if not, jump OVER it.
-    //commands.push(new ConditionalJumpCommand(thenCommands.length + 1, true));
+    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, false));
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
     // then branch now run, jump over else branch.
@@ -234,7 +238,7 @@ export class IfStatementNode extends StatementNode {
 }
 
 export class ForStatementNode extends StatementNode {
-  private _loopVar: IdentifierExpressionNode; // not sure how to deal with this yet.
+  private _loopVar: IdentifierExpressionNode;
   private _iterable: ExpressionNode;
   private _block: BlockStatementNode;
   constructor(
@@ -249,12 +253,30 @@ export class ForStatementNode extends StatementNode {
     this._block = _block;
   }
   execute(): Command[] {
+    // Loop Structure:
+    // 1. Evaluate iterable
+    // 2. Push loop bounds
+    // 3. Execute block
+
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     // evaluate iterable and then push onto stack
     commands.push(...this._iterable.evaluate());
 
     const blockCommands = this._block.execute();
+    // + 3 accounts for commands below this one
+    commands.push(new PushLoopBoundsCommand(0, blockCommands.length + 3));
+    // Iterable now on stack, so we want to assign the loopvar to whatever it evaluated to on the stack.
+    // Then, we conidtionally jump. ( + 2 is to account for the commands below)
+    commands.push(new AssignVariableCommand(this._loopVar._tok.text));
+    commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
+    // execute the loop body
+    commands.push(...blockCommands);
+    // jump back up to loop condition check (we get original start value and just negate it to go back)
+    commands.push(new JumpCommand(-(blockCommands.length + 3)));
+
+    // since we are now done, we can pop loop bounds.
+    commands.push(new PopLoopBoundsCommand());
     return commands;
   }
 }
@@ -274,9 +296,20 @@ export class WhileStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
+    const blockCommands = this._block.execute();
+
+    commands.push(new PushLoopBoundsCommand(0, blockCommands.length + 3));
+
     commands.push(...this._expression.evaluate());
-    // TODO: do while loop logic
-    commands.push(...this._block.execute());
+    // if condition is false, jump to end
+    commands.push(new ConditionalJumpCommand(blockCommands.length + 2, false));
+    // execute block commands
+    commands.push(...blockCommands);
+    // jump back to condition check
+    commands.push(new JumpCommand(-blockCommands.length));
+
+    // finally, pop loop bounds
+    commands.push(new PopLoopBoundsCommand());
     return commands;
   }
 }
@@ -344,7 +377,7 @@ export class ElifStatementNode extends StatementNode {
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
-    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, true));
+    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, false));
     commands.push(...thenCommands);
 
     if (elseCommands.length > 0) {
