@@ -207,7 +207,11 @@ export class PushLoopBoundsCommand extends Command {
   }
 
   do(_currentState: State) {
-    _currentState.loopStack.push([this._start, this._end]);
+    // start, end passed in are not the absolute positions we would need to jump to and from. There are three commands that execute before every for loop (highlights and pushing the iterable)
+    // we would need to calculate the absolute positions (the actual start and end of the loop) to calculate where we would need to break from or to continue from.
+    let continueTarget = _currentState.programCounter + this._start; // this shoud always jump to the loop variable reassignment (which is AssignVariableCommand)
+    let breakTarget = _currentState.programCounter + this._end; // this should always break out of the loop, to where we pop the loop bounds signaling the completetion of a loop (which is PopLoopBound)
+    _currentState.loopStack.push([continueTarget, breakTarget]);
     this._undoCommand = new PopLoopBoundsCommand();
   }
 }
@@ -228,7 +232,12 @@ export class BreakCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    let startStop = _currentState.loopStack.pop()!;
+    // get most recent loop bounds by grabbing the top.
+    let startStop: [number, number] =
+      _currentState.loopStack[_currentState.loopStack.length - 1];
+    // jump to whereever we should break to. Set PC to that - 1 because main loop will increment it as part of
+    // interpreter loop.
+    _currentState.programCounter = startStop[1] - 1;
   }
 }
 
@@ -237,7 +246,51 @@ export class ContinueCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    let startStop = _currentState.loopStack.pop()!;
+    // get most recent loop bounds by grabbing the top.
+    let startStop: [number, number] =
+      _currentState.loopStack[_currentState.loopStack.length - 1];
+    // jump to whereever we should continue to. Set PC to that - 1 because main loop will increment it as part of
+    // interpreter loop.
+    _currentState.programCounter = startStop[0] - 1;
+  }
+}
+
+// ConditionalJumpCommand -> jumps to line if condition in loop is true/false
+// Used exclusively by if, while, for statements. only jumps if a conidtion (from the stack) evaluates to true/false.
+// Example of use case:
+// x > 5 gets evaluated, pushes True or False. ConditionalJumpCommand(2) would execute the next two commands, False would jump forward 2 commands.
+export class ConditionalJumpCommand extends Command {
+  private _commandsToJump: number;
+  constructor(_commandsToJump: number) {
+    super();
+    this._commandsToJump = _commandsToJump;
+  }
+  do(_currentState: State) {
+    const condition = _currentState.evaluationStack.pop()!; // true or false depending on
+    const boolCondition = Boolean(condition);
+
+    // shoudl we jump?
+    if (boolCondition === false) {
+      _currentState.programCounter += this._commandsToJump;
+    }
+    // PC should be incremented normally.
+  }
+}
+
+// JumpCommand -> jumps to a line number
+// Used whenever want to always jump, end of loop is a great example.
+// Use case:
+// JumpCommand(2) -> skips two statements in block via skipping the commands themselves.
+export class JumpCommand extends Command {
+  private _commandsToJump: number;
+  constructor(_commandsToJump: number) {
+    super();
+    this._commandsToJump = _commandsToJump;
+  }
+  do(_currentState: State) {
+    this._undoCommand = new JumpCommand(_currentState.programCounter);
+    // jump to a new position within the command array.
+    _currentState.programCounter += this._commandsToJump;
   }
 }
 
@@ -459,45 +512,6 @@ export class UnaryOpCommand extends Command {
   }
 }
 
-// ConditionalJumpCommand -> jumps to line if condition in loop is true/false
-// Used exclusively by if, while, for statements. only jumps if a conidtion (from the stack) evaluates to true/false.
-// Example of use case:
-// x > 5 gets evaluated, pushes True or False. ConditionalJumpCommand(2) would execute the next two commands, False would jump forward 2 commands.
-export class ConditionalJumpCommand extends Command {
-  private _commandsToJump: number;
-  constructor(_commandsToJump: number) {
-    super();
-    this._commandsToJump = _commandsToJump;
-  }
-  do(_currentState: State) {
-    const condition = _currentState.evaluationStack.pop()!; // true or false depending on
-    const boolCondition = Boolean(condition);
-
-    // shoudl we jump?
-    if (boolCondition === false) {
-      _currentState.programCounter += this._commandsToJump;
-    }
-    // PC should be incremented normally.
-  }
-}
-
-// JumpCommand -> jumps to a line number
-// Used whenever want to always jump, end of loop is a great example.
-// Use case:
-// JumpCommand(2) -> skips two statements in block via skipping the commands themselves.
-export class JumpCommand extends Command {
-  private _commandsToJump: number;
-  constructor(_commandsToJump: number) {
-    super();
-    this._commandsToJump = _commandsToJump;
-  }
-  do(_currentState: State) {
-    this._undoCommand = new JumpCommand(_currentState.programCounter);
-    // jump to a new position within the command array.
-    _currentState.programCounter += this._commandsToJump;
-  }
-}
-
 // EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
 export class EnterScopeCommand extends Command {
   private _savedVariables: Map<string, PythonValue>; // place to store current state of variables before we enter function scope.
@@ -603,6 +617,7 @@ export class IndexAccessCommand extends Command {
   }
 }
 
+// TODO: handle negative indices, reverse slicing.
 export class ListSliceCommand extends Command {
   do(_currentState: State) {
     let step = _currentState.evaluationStack.pop();
@@ -610,7 +625,35 @@ export class ListSliceCommand extends Command {
     let start = _currentState.evaluationStack.pop();
     let list = _currentState.evaluationStack.pop();
 
+    // convert to numbers
+    let startIndex = Number(start);
+    let endIndex = Number(end);
+    let stepIndex = Number(step);
+
     // handle arrays first
+    if (Array.isArray(list)) {
+      // TODO: handle negative indices
+      let result: PythonValue[] = [];
+      for (
+        let i = startIndex;
+        i < endIndex && i < list.length;
+        i += stepIndex
+      ) {
+        result.push(list[i]);
+      }
+
+      _currentState.evaluationStack.push(result);
+    } else if (typeof list === "string") {
+      let result: string = "";
+      for (
+        let i = startIndex;
+        i < endIndex && i < list.length;
+        i += stepIndex
+      ) {
+        result += list[i];
+      }
+      _currentState.evaluationStack.push(result);
+    }
   }
 }
 

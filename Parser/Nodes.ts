@@ -225,7 +225,7 @@ export class IfStatementNode extends StatementNode {
     }
     // after we evaluate those branches, we can then conidtionally jump.
     // if condition is true, execute then block. if not, jump OVER it.
-    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, false));
+    commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
     // then branch now run, jump over else branch.
@@ -256,7 +256,12 @@ export class ForStatementNode extends StatementNode {
     // Loop Structure:
     // 1. Evaluate iterable
     // 2. Push loop bounds
-    // 3. Execute block
+    // 3. check if there is a next item
+    // 4. Conditionally jump based on boolean from stack that signals if the condition was true or not (in a for loops case, if there is a next item to iterate) (if false, we jump forward three commands to signal end of loop)
+    // 5. Retreive the value of next item
+    // 6. Execute bodyE
+    // 7. Jump back to step 3.
+    // 8. once loop is finished, pop loop bounds.
 
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
@@ -264,7 +269,7 @@ export class ForStatementNode extends StatementNode {
     commands.push(...this._iterable.evaluate());
 
     const blockCommands = this._block.execute();
-    // + 3 accounts for commands below this one
+    // + 3 accounts for commands "above" this one: the whole statement highlight, the iterable hghlight, and the push value for the iterable.
     commands.push(new PushLoopBoundsCommand(0, blockCommands.length + 3));
     // Iterable now on stack, so we want to assign the loopvar to whatever it evaluated to on the stack.
     // Then, we conidtionally jump. ( + 2 is to account for the commands below)
@@ -273,7 +278,8 @@ export class ForStatementNode extends StatementNode {
     // execute the loop body
     commands.push(...blockCommands);
     // jump back up to loop condition check (we get original start value and just negate it to go back)
-    commands.push(new JumpCommand(-(blockCommands.length + 3)));
+    // We are jumping to AssignVariableCommand to get the next item/value in the list.
+    commands.push(new JumpCommand(-(blockCommands.length + 2)));
 
     // since we are now done, we can pop loop bounds.
     commands.push(new PopLoopBoundsCommand());
@@ -302,7 +308,7 @@ export class WhileStatementNode extends StatementNode {
 
     commands.push(...this._expression.evaluate());
     // if condition is false, jump to end
-    commands.push(new ConditionalJumpCommand(blockCommands.length + 2, false));
+    commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
     // execute block commands
     commands.push(...blockCommands);
     // jump back to condition check
@@ -377,7 +383,7 @@ export class ElifStatementNode extends StatementNode {
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
-    commands.push(new ConditionalJumpCommand(thenCommands.length + 1, false));
+    commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
     commands.push(...thenCommands);
 
     if (elseCommands.length > 0) {
