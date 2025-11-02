@@ -626,31 +626,56 @@ export class ListSliceCommand extends Command {
     let list = _currentState.evaluationStack.pop();
 
     // convert to numbers
-    let startIndex = Number(start);
-    let endIndex = Number(end);
-    let stepIndex = Number(step);
+    let startIndex = start === null ? 0 : Number(start);
+    let endIndex = end === null ? 0 : Number(end);
+    let stepIndex = step === null ? 1 : Number(step); // we by default step by 1
 
     // handle arrays first
     if (Array.isArray(list)) {
-      // TODO: handle negative indices
-      let result: PythonValue[] = [];
-      for (
-        let i = startIndex;
-        i < endIndex && i < list.length;
-        i += stepIndex
-      ) {
-        result.push(list[i]);
+      // handle negative indices first.
+      if (startIndex < 0) {
+        startIndex = list.length + startIndex;
       }
-
+      if (endIndex < 0) {
+        endIndex = list.length + endIndex;
+      }
+      // then we slice.
+      let result: PythonValue[] = [];
+      if (stepIndex > 0) {
+        for (
+          let i = startIndex;
+          i < endIndex && i < list.length;
+          i += stepIndex
+        ) {
+          result.push(list[i]);
+        }
+      } else if (stepIndex < 0) {
+        for (let i = startIndex; i > endIndex && i >= 0; i += stepIndex) {
+          result.push(list[i]);
+        }
+      }
       _currentState.evaluationStack.push(result);
     } else if (typeof list === "string") {
       let result: string = "";
-      for (
-        let i = startIndex;
-        i < endIndex && i < list.length;
-        i += stepIndex
-      ) {
-        result += list[i];
+
+      if (startIndex < 0) {
+        startIndex = list.length + startIndex;
+      }
+      if (endIndex < 0) {
+        endIndex = list.length + endIndex;
+      }
+      if (stepIndex > 0) {
+        for (
+          let i = startIndex;
+          i < endIndex && i < list.length;
+          i += stepIndex
+        ) {
+          result += list[i];
+        }
+      } else if (stepIndex < 0) {
+        for (let i = startIndex; i > endIndex && i >= 0; i += stepIndex) {
+          result += list[i];
+        }
       }
       _currentState.evaluationStack.push(result);
     }
