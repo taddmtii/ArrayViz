@@ -115,7 +115,7 @@ export class AssignmentStatementNode extends StatementNode {
     commands.push(new HighlightStatementCommand(this)); // Highlight
     commands.push(...this._right.evaluate()); // evaluate (which may generate an array of commands, hence the spread operator)
     commands.push(new AssignVariableCommand(this._left)); // Bind variable.
-    commands.push(new MoveLinePointerCommand(this._tok.line));
+    //   commands.push(new MoveLinePointerCommand(this._tok.line));
     return commands;
   }
 }
@@ -188,18 +188,18 @@ export class PassStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    commands.push(new MoveLinePointerCommand(this._tok.line)); // Move line pointer to token itself (the statement)
+    // commands.push(new MoveLinePointerCommand(this._tok.line)); // Move line pointer to token itself (the statement)
     return commands;
   }
 }
 
 export class IfStatementNode extends StatementNode {
   private _condition: ExpressionNode;
-  private _thenBranch: BlockStatementNode | null;
+  private _thenBranch: BlockStatementNode;
   private _elseBranch: BlockStatementNode | null;
   constructor(
     _condition: ExpressionNode,
-    _thenBranch: BlockStatementNode | null,
+    _thenBranch: BlockStatementNode,
     _elseBranch: BlockStatementNode | null,
     _tok: moo.Token,
   ) {
@@ -211,21 +211,23 @@ export class IfStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    commands.push(...this._condition.evaluate());
+    let conditionCommands: Command[] = this._condition.evaluate();
+    commands.push(...conditionCommands);
     let thenCommands: Command[] = [];
     let elseCommands: Command[] = [];
 
-    // if then branch exists
-    if (this._thenBranch) {
-      thenCommands = this._thenBranch.execute();
-    }
+    thenCommands = this._thenBranch.execute();
     // if else branch exists...
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
     // after we evaluate those branches, we can then conidtionally jump.
     // if condition is true, execute then block. if not, jump OVER it.
-    commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
+    commands.push(
+      new ConditionalJumpCommand(
+        1 + conditionCommands.length + thenCommands.length,
+      ),
+    );
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
     // then branch now run, jump over else branch.
@@ -259,18 +261,24 @@ export class ForStatementNode extends StatementNode {
     // 3. check if there is a next item
     // 4. Conditionally jump based on boolean from stack that signals if the condition was true or not (in a for loops case, if there is a next item to iterate) (if false, we jump forward three commands to signal end of loop)
     // 5. Retreive the value of next item
-    // 6. Execute bodyE
+    // 6. Execute body
     // 7. Jump back to step 3.
     // 8. once loop is finished, pop loop bounds.
 
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     // evaluate iterable and then push onto stack
-    commands.push(...this._iterable.evaluate());
+    let iterableCommands: Command[] = this._iterable.evaluate();
+    commands.push(...iterableCommands);
 
     const blockCommands = this._block.execute();
     // + 3 accounts for commands "above" this one: the whole statement highlight, the iterable hghlight, and the push value for the iterable.
-    commands.push(new PushLoopBoundsCommand(0, blockCommands.length + 3));
+    commands.push(
+      new PushLoopBoundsCommand(
+        0,
+        1 + iterableCommands.length + blockCommands.length,
+      ),
+    );
     // Iterable now on stack, so we want to assign the loopvar to whatever it evaluated to on the stack.
     // Then, we conidtionally jump. ( + 2 is to account for the commands below)
     commands.push(new AssignVariableCommand(this._loopVar._tok.text));
@@ -303,16 +311,24 @@ export class WhileStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     const blockCommands = this._block.execute();
+    const conditionCommands = this._expression.evaluate();
 
-    commands.push(new PushLoopBoundsCommand(0, blockCommands.length + 3));
+    commands.push(
+      new PushLoopBoundsCommand(
+        0,
+        blockCommands.length + conditionCommands.length + 2,
+      ),
+    );
 
-    commands.push(...this._expression.evaluate());
+    commands.push(...conditionCommands);
     // if condition is false, jump to end
     commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
     // execute block commands
     commands.push(...blockCommands);
     // jump back to condition check
-    commands.push(new JumpCommand(-blockCommands.length));
+    commands.push(
+      new JumpCommand(-(blockCommands.length + conditionCommands.length + 1)),
+    );
 
     // finally, pop loop bounds
     commands.push(new PopLoopBoundsCommand());
@@ -374,7 +390,8 @@ export class ElifStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    commands.push(...this._condition.evaluate());
+    let conditionCommands: Command[] = this._condition.evaluate();
+    commands.push(...conditionCommands);
     let thenCommands: Command[] = [];
     let elseCommands: Command[] = [];
     if (this._thenBranch) {
@@ -383,7 +400,11 @@ export class ElifStatementNode extends StatementNode {
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
-    commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
+    commands.push(
+      new ConditionalJumpCommand(
+        1 + conditionCommands.length + thenCommands.length,
+      ),
+    );
     commands.push(...thenCommands);
 
     if (elseCommands.length > 0) {

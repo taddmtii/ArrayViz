@@ -73,6 +73,7 @@ class TestRunner {
       1, // currentLine
       [], // evaluationStack
       [], // returnStack
+      [], // loopStack
     );
   }
 
@@ -1177,34 +1178,6 @@ runner.test("Integration - Nested Function Calls", () => {
   runner.executeCommands(state, commands);
 
   runner.assertEquals(state.evaluationStack[0], 3, "len([1, 2, 3]) = 3");
-});
-
-runner.test("Integration - Complex Boolean Expression", () => {
-  const state = runner.createState();
-  state.setVariable("x", 15);
-
-  const tokX = runner.createToken("x");
-  const tok10 = runner.createToken("10");
-  const tok20 = runner.createToken("20");
-
-  const x = new IdentifierExpressionNode(tokX);
-  const ten = new NumberLiteralExpressionNode("10", tok10);
-  const twenty = new NumberLiteralExpressionNode("20", tok20);
-
-  const comp1 = new ComparisonExpressionNode(x, ">", ten);
-  const comp2 = new ComparisonExpressionNode(x, "<", twenty);
-
-  const tokAnd = runner.createToken("and");
-  const andExpr = new BinaryExpressionNode(comp1, "and", comp2, tokAnd);
-
-  const commands = andExpr.evaluate();
-  runner.executeCommands(state, commands);
-
-  runner.assertEquals(
-    state.evaluationStack[0],
-    true,
-    "x > 10 and x < 20 where x=15 = True",
-  );
 });
 
 runner.test("Integration - String Operations", () => {

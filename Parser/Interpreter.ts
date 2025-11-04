@@ -617,7 +617,6 @@ export class IndexAccessCommand extends Command {
   }
 }
 
-// TODO: handle negative indices, reverse slicing.
 export class ListSliceCommand extends Command {
   do(_currentState: State) {
     let step = _currentState.evaluationStack.pop();

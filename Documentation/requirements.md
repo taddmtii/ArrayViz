@@ -7,8 +7,8 @@ Course: CPTR-486 Senior Seminar
 # 1. Introduction
     1.1 Purpose and Intended Use
 
-        Define the functional and non-functional requirements for ArrayViz, which is an interactive educational tool for visualing array operations and algorithms. ArrayViz aims to help students understand these fundamental array sorting algorithms by simulating execution manually, while also allowing the student to alter opeations such as indexing and swapping. 
-        
+        Define the functional and non-functional requirements for ArrayViz, which is an interactive educational tool for visualing array operations and algorithms. ArrayViz aims to help students understand these fundamental array sorting algorithms by simulating execution manually, while also allowing the student to alter opeations such as indexing and swapping.
+
     1.2 Intended Audience (Actors)
 
         Students: The indended user base, undergraduate students enrolled in programming courses such as Fundamentals of Software Design or Data Structures and Algorithms.
@@ -16,13 +16,13 @@ Course: CPTR-486 Senior Seminar
         Instructor: Professor who is utilizing this tool to help support teaching.
 
         Administrators: Developers and system admins, needed for maintenance.
-        
+
     1.3 Product Scope
 
-        ArrayViz simulates core array based searching and sorting algorithms by supporting step by step alteration of array elements, and giving visual feedback on operations with analytics to supplement understanding of time complexity. 
+        ArrayViz simulates core array based searching and sorting algorithms by supporting step by step alteration of array elements, and giving visual feedback on operations with analytics to supplement understanding of time complexity.
 
     1.4 Definitions
-        
+
         Index Variable: A pointer or placeholder value that is initialized to track/access a position in an array.
 
         Fixed-size Array: Non-dynamic, linear data structure that holds a collection of elements of the same data type stored contiguously in memory.
@@ -50,7 +50,7 @@ Course: CPTR-486 Senior Seminar
         - what software does (user stories)
         - update variable
         - update contents of array
-        
+
     3.2 External Interface Requirements
 
     3.3 System Features
@@ -69,8 +69,6 @@ Course: CPTR-486 Senior Seminar
     - Establish Architecture diagram (Parser, Evaluator, GUI components).
 % Milestone 3:
     - Full statement support
-    - CLI test suite established
     - Frontend foundation set.
 % Milestone 4:
     - Complete frontend
-
