@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 function Header() {
+  const [page, setPage] = useState("view");
   return (
     <>
       {/* Main container */}
@@ -9,10 +12,16 @@ function Header() {
         </div>
         {/* Controls */}
         <div className="flex gap-6 mr-4">
-          <button className="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 cursor-pointer rounded">
+          <button
+            className="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 cursor-pointer rounded"
+            onClick={() => setPage("view")}
+          >
             View
           </button>
-          <button className="btn btn bg-[#242424] hover:bg-[#343434]  text-white font-bold py-2 px-4 cursor-pointer rounded ">
+          <button
+            className="btn btn bg-[#242424] hover:bg-[#343434]  text-white font-bold py-2 px-4 cursor-pointer rounded "
+            onClick={() => setPage("predict")}
+          >
             Predict
           </button>
         </div>
