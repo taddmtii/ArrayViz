@@ -1,7 +1,9 @@
-import { useState } from "react";
+type HeaderProps = {
+  page: string;
+  setPage: (page: string) => void;
+};
 
-function Header() {
-  const [page, setPage] = useState("view");
+function Header({ page, setPage }: HeaderProps) {
   return (
     <>
       {/* Main container */}

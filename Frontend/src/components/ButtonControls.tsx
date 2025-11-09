@@ -14,6 +14,9 @@ function ButtonControls() {
         <button className="btn btn bg-[#242424] hover:bg-[#343434]  text-white font-bold py-2 px-4 cursor-pointer rounded">
           &gt;&gt;Last
         </button>
+        <button className="btn btn bg-[#242424] hover:bg-[#343434]  text-white font-bold py-2 px-4 cursor-pointer rounded">
+          Settings
+        </button>
       </div>
     </>
   );
