@@ -13,16 +13,25 @@ function CodeWindow() {
 
   return (
     <>
-      <Editor
-        height={"80vh"}
-        width={"60vw"}
-        theme="vs-dark"
-        defaultLanguage="python"
-        defaultValue="# Type code here..."
-        onMount={onMount}
-        value={code}
-        onChange={(code) => setCode(code as string)}
-      />
+      <div className="flex flex-col h-full bg-[#1E1E1E] border border-gray-700">
+        <div className="bg-[#2D2D2D] px-4 py-2 border-b border-gray-700 text-center text-white">
+          Code
+        </div>
+        <Editor
+          height={"80vh"}
+          width={"60vw"}
+          theme="vs-dark"
+          defaultLanguage="python"
+          defaultValue=""
+          onMount={onMount}
+          value={code}
+          onChange={(code) => setCode(code as string)}
+          options={{
+            lineNumbers: "on",
+            minimap: { enabled: false },
+          }}
+        />
+      </div>
     </>
   );
 }
