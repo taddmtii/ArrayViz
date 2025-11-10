@@ -95,6 +95,20 @@ export class InterpreterService {
     if (command.constructor.name === "PrintCommand") {
       this.outputs.pop();
     }
+    return true;
+  }
+  // returns a modified state snapshot that we can then send to the UI.
+  getState() {
+    return {
+      variables: Object.fromEntries(this.state.variables),
+      currentLine: this.state.currentLine,
+      currentExpression: this.state.currentExpression,
+      outputs: this.outputs,
+      canStepForward: this.currentStep < this.commands.length,
+      canStepBackward: this.currentStep > 0,
+      currentStep: this.currentStep,
+      totalSteps: this.commands.length,
+    };
   }
 
   toEnd(): void {
