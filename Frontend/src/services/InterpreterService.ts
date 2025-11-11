@@ -1,12 +1,10 @@
 // const grammar = require("../../../Parser/grammar.js");
-import * as grammarModule from "../../../Parser/grammar";
-import nearley, { type CompiledRules } from "nearley";
+import { default as grammar } from "../../../Parser/grammar";
+import nearley from "nearley";
 
 import { State, Command } from "../../../Parser/Interpreter";
 import { ProgramNode } from "../../../Parser/Nodes";
 import type { SimplifiedState } from "../App";
-
-const grammar = grammarModule.default || grammarModule;
 
 export class InterpreterService {
   private commands: Command[] = [];
@@ -32,10 +30,7 @@ export class InterpreterService {
 
   // parse and compile the code.
   parseCode(code: string): boolean {
-    console.log("entered parsecode");
-    const parser = new nearley.Parser(
-      nearley.Grammar.fromCompiled(grammar as unknown as CompiledRules),
-    );
+    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     console.log("parser created");
 
     console.log("about to feed stuff");
