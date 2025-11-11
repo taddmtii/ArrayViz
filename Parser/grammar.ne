@@ -1,7 +1,7 @@
 
 @{%
-//import * as moo from 'moo';
-//import IndentationLexer from 'moo-indentation-lexer';
+// import * as moo from 'moo';
+// import IndentationLexer from 'moo-indentation-lexer';
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
 const { ProgramNode,
@@ -16,7 +16,6 @@ const { ProgramNode,
         WhileStatementNode,
         FuncDefStatementNode,
         ElifStatementNode,
-        ElseBlockStatementNode,
         ExpressionStatementNode,
         BlockStatementNode,
         ExpressionNode,

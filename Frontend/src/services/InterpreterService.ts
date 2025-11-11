@@ -1,9 +1,12 @@
-// @ts-ignore
-const grammar = require("../../../Parser/grammar.js");
+// const grammar = require("../../../Parser/grammar.js");
+import * as grammarModule from "../../../Parser/grammar";
+import nearley, { type CompiledRules } from "nearley";
 
-import nearley from "nearley";
-import { State, Command, PrintCommand } from "../../../Parser/Interpreter.js";
-import { ProgramNode } from "../../../Parser/Nodes.js";
+import { State, Command } from "../../../Parser/Interpreter";
+import { ProgramNode } from "../../../Parser/Nodes";
+import type { SimplifiedState } from "../App";
+
+const grammar = grammarModule.default || grammarModule;
 
 export class InterpreterService {
   private commands: Command[] = [];
@@ -15,8 +18,8 @@ export class InterpreterService {
     this.state = new State(
       0, // programCounter
       0, // lineCount
-      null as any, // currentExpression
-      null as any, // currentStatement
+      null, // currentExpression
+      null, // currentStatement
       [], // callStack
       [], // history
       new Map(), // variables
@@ -29,9 +32,15 @@ export class InterpreterService {
 
   // parse and compile the code.
   parseCode(code: string): boolean {
-    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    parser.feed(code);
+    console.log("entered parsecode");
+    const parser = new nearley.Parser(
+      nearley.Grammar.fromCompiled(grammar as unknown as CompiledRules),
+    );
+    console.log("parser created");
 
+    console.log("about to feed stuff");
+    parser.feed(code);
+    console.log("parser is fed");
     // if parse results are 0, code did not parse.
     if (parser.results.length === 0) {
       return false;
@@ -41,19 +50,7 @@ export class InterpreterService {
     const program: ProgramNode = parser.results[0];
     this.commands = program.execute();
     this.currentStep = 0;
-    this.state = new State(
-      0,
-      0,
-      null as any,
-      null as any,
-      [],
-      [],
-      new Map(),
-      1,
-      [],
-      [],
-      [],
-    );
+    this.state = new State(0, 0, null, null, [], [], new Map(), 1, [], [], []);
     this.outputs = [];
 
     return true;
@@ -62,7 +59,7 @@ export class InterpreterService {
   stepForward(): boolean {
     // if current step execeeds commands length, we are out of bounds.
     if (this.currentStep >= this.commands.length) {
-      return false;
+      return false; // no more steps
     }
 
     // get current command based on current step.
@@ -97,15 +94,15 @@ export class InterpreterService {
     }
     return true;
   }
-  // returns a modified state snapshot that we can then send to the UI.
-  getState() {
+  // returns a modified state snapshot that we can then send to the UI with only things is cares about.
+  getState(): SimplifiedState {
     return {
       variables: Object.fromEntries(this.state.variables),
       currentLine: this.state.currentLine,
-      currentExpression: this.state.currentExpression,
+      // currentExpression: this.state.currentExpression,
       outputs: this.outputs,
-      canStepForward: this.currentStep < this.commands.length,
-      canStepBackward: this.currentStep > 0,
+      canStepForward: this.currentStep < this.commands.length, // are there any more steps remaining?
+      canStepBackward: this.currentStep > 0, // are we out of bounds?
       currentStep: this.currentStep,
       totalSteps: this.commands.length,
     };

@@ -1,14 +1,13 @@
 // ------------------------------------------------------------------
 import {
-  PythonValue,
-  BinaryOp,
-  ComparisonOp,
-  UnaryOp,
+  type PythonValue,
+  type BinaryOp,
+  type ComparisonOp,
+  type UnaryOp,
   StatementNode,
   ExpressionNode,
-  ListAccessExpressionNode,
 } from "./Nodes";
-import * as readline from "readline";
+
 // ---------------------------------------------------------------------------------------
 // COMMANDS ABC
 // ---------------------------------------------------------------------------------------
@@ -28,8 +27,8 @@ export class State {
   private _programCounter: number = 0; // which line of execution are we on.
   private _lineCount: number = 0; // all lines in program.
   private _currentLine: number = 1; // current line number
-  private _currentExpression: ExpressionNode; // current highlighted expression we are evaluating
-  private _currentStatement: StatementNode; // what statement are we on
+  private _currentExpression: ExpressionNode | null; // current highlighted expression we are evaluating
+  private _currentStatement: StatementNode | null; // what statement are we on
   private _callStack: ExpressionNode[]; // function call stack
   private _history: Command[]; // history of all commands
   private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
@@ -40,8 +39,8 @@ export class State {
   constructor(
     _programCounter: number,
     _lineCount: number,
-    _currentExpression: ExpressionNode,
-    _currentStatement: StatementNode,
+    _currentExpression: ExpressionNode | null,
+    _currentStatement: StatementNode | null,
     _callStack: ExpressionNode[],
     _history: Command[],
     _variables: Map<string, PythonValue>,
@@ -88,14 +87,14 @@ export class State {
   public get currentExpression() {
     return this._currentExpression;
   }
-  public set currentExpression(expr: ExpressionNode) {
+  public set currentExpression(expr: ExpressionNode | null) {
     this._currentExpression = expr;
   }
 
   public get currentStatement() {
     return this._currentStatement;
   }
-  public set currentStatement(stmt: StatementNode) {
+  public set currentStatement(stmt: StatementNode | null) {
     this._currentStatement = stmt;
   }
 
@@ -313,9 +312,11 @@ export class HighlightExpressionCommand extends Command {
   }
 
   do(_currentState: State) {
-    this._undoCommand = new HighlightExpressionCommand(
-      _currentState.currentExpression,
-    );
+    const previousExpression = _currentState.currentExpression;
+    if (previousExpression) {
+      this._undoCommand = new HighlightExpressionCommand(previousExpression);
+    }
+
     _currentState.currentExpression = this._expression;
     const exprType = this._expression.constructor.name;
     const tok = this._expression._tok
@@ -362,9 +363,11 @@ export class HighlightStatementCommand extends Command {
   }
   do(_currentState: State) {
     // Create undocommand that
-    this._undoCommand = new HighlightStatementCommand(
-      _currentState.currentStatement,
-    );
+    const previousStatement = _currentState.currentStatement;
+    if (previousStatement) {
+      this._undoCommand = new HighlightStatementCommand(previousStatement);
+    }
+
     _currentState.currentStatement = this._statement;
     console.log("Statement Highlighted!");
     // Tell UI somehow to highlight command we want it to.

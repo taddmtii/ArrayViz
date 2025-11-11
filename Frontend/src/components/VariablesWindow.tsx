@@ -1,4 +1,21 @@
-function VariablesWindow() {
+import type { PythonValue } from "../../../Parser/Nodes";
+
+interface VariablesWindowProps {
+  variables: Record<string, PythonValue>;
+}
+
+function VariablesWindow({ variables }: VariablesWindowProps) {
+  // we want to format the value depending on what it is for clean output.
+  function formattedValue(value: PythonValue) {
+    if (Array.isArray(value)) {
+      return `[${value.join(", ")}]`;
+    }
+    if (typeof value === "string") {
+      return `"${value}"`;
+    }
+    return String(value); // anything else.
+  }
+
   return (
     <>
       {/*<div className="flex h-2/3">*/}
@@ -14,6 +31,16 @@ function VariablesWindow() {
             </div>
             <div className="p-3 text-sm text-white overflow-auto">
               {/* frames should appear here */}
+              <div>
+                {Object.entries(variables).map(([name, value]) => (
+                  <div className="flex gap-2">
+                    <span className="text-blue-400">{name}:</span>
+                    <span className="text-green-400">
+                      {formattedValue(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           {/* Objects */}

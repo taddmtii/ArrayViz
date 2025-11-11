@@ -6,11 +6,22 @@ import VariablesWindow from "./components/VariablesWindow";
 import OutputWindow from "./components/OutputWindow";
 import { useRef, useState } from "react";
 import { InterpreterService } from "./services/InterpreterService";
+import { type PythonValue } from "../../Parser/Nodes";
+
+export interface SimplifiedState {
+  variables: Record<string, PythonValue>;
+  currentLine: number;
+  outputs: PythonValue[];
+  canStepForward: boolean;
+  canStepBackward: boolean;
+  currentStep: number;
+  totalSteps: number;
+}
 
 function App() {
   const [page, setPage] = useState("view");
   const [code, setCode] = useState("");
-  const [interpreterState, setInterpreterState] = useState({
+  const [interpreterState, setInterpreterState] = useState<SimplifiedState>({
     variables: {},
     currentLine: 1,
     outputs: [],
@@ -35,7 +46,8 @@ function App() {
 
   // updates current state (snapshot) with what we have when we call the function.
   function updateState() {
-    const state = interpreterServiceReference.current.getState();
+    const state: SimplifiedState =
+      interpreterServiceReference.current.getState();
     setInterpreterState(state);
   }
 
