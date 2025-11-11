@@ -44,6 +44,7 @@ export class InterpreterService {
     // initialize program itself, commands via executing the program, setting currentStep to start at 0.
     const program: ProgramNode = parser.results[0];
     this.commands = program.execute();
+    console.log(this.commands);
     this.currentStep = 0;
     this.state = new State(0, 0, null, null, [], [], new Map(), 1, [], [], []);
     this.outputs = [];

@@ -33,8 +33,8 @@ function VariablesWindow({ variables }: VariablesWindowProps) {
               {/* frames should appear here */}
               <div>
                 {Object.entries(variables).map(([name, value]) => (
-                  <div className="flex gap-2">
-                    <span className="text-blue-400">{name}:</span>
+                  <div key={name} className="flex gap-2">
+                    <span className="text-blue-400">{name} :</span>
                     <span className="text-green-400">
                       {formattedValue(value)}
                     </span>

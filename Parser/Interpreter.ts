@@ -582,7 +582,13 @@ export class TypeCommand extends Command {
   }
   do(_currentState: State) {
     const value = _currentState.evaluationStack.pop()!;
-    _currentState.evaluationStack.push(typeof value);
+    if (Array.isArray(value)) {
+      _currentState.evaluationStack.push("<class 'list'>");
+    } else if (typeof value === "number") {
+      _currentState.evaluationStack.push("<class 'int'>");
+    } else {
+      _currentState.evaluationStack.push(typeof value);
+    }
   }
 }
 
