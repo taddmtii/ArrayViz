@@ -225,7 +225,7 @@ export class IfStatementNode extends StatementNode {
     // if condition is true, execute then block. if not, jump OVER it.
     commands.push(
       new ConditionalJumpCommand(
-        1 + conditionCommands.length + thenCommands.length,
+        1 + thenCommands.length + (elseCommands.length > 0 ? 1 : 0),
       ),
     );
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
@@ -402,7 +402,7 @@ export class ElifStatementNode extends StatementNode {
     }
     commands.push(
       new ConditionalJumpCommand(
-        1 + conditionCommands.length + thenCommands.length,
+        1 + thenCommands.length + (elseCommands.length > 0 ? 1 : 0),
       ),
     );
     commands.push(...thenCommands);
