@@ -10,7 +10,6 @@ export class InterpreterService {
   private commands: Command[] = [];
   private state: State;
   private currentStep: number = 0;
-  private outputs: string[] = [];
 
   constructor() {
     this.state = new State(
@@ -25,52 +24,68 @@ export class InterpreterService {
       [], // evaluationStack
       [], // returnStack
       [], // loopStack
+      [], // outputs
     );
   }
 
   // parse and compile the code.
   parseCode(code: string): boolean {
-    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    console.log("parser created");
+    try {
+      const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+      parser.feed(code);
+      // if parse results are 0, code did not parse.
+      if (parser.results.length === 0) {
+        return false;
+      }
 
-    console.log("about to feed stuff");
-    parser.feed(code);
-    console.log("parser is fed");
-    // if parse results are 0, code did not parse.
-    if (parser.results.length === 0) {
+      // initialize program itself, commands via executing the program, setting currentStep to start at 0.
+      const program: ProgramNode = parser.results[0];
+      console.log(program);
+      this.commands = program.execute();
+      console.log(this.commands);
+      this.currentStep = 0;
+      this.state = new State(
+        0,
+        0,
+        null,
+        null,
+        [],
+        [],
+        new Map(),
+        1,
+        [],
+        [],
+        [],
+        [],
+      );
+
+      return true;
+    } catch (e) {
+      console.log(e);
       return false;
     }
-
-    // initialize program itself, commands via executing the program, setting currentStep to start at 0.
-    const program: ProgramNode = parser.results[0];
-    this.commands = program.execute();
-    console.log(this.commands);
-    this.currentStep = 0;
-    this.state = new State(0, 0, null, null, [], [], new Map(), 1, [], [], []);
-    this.outputs = [];
-
-    return true;
   }
 
   stepForward(): boolean {
     // if current step execeeds commands length, we are out of bounds.
-    if (this.currentStep >= this.commands.length) {
+    if (this.state.programCounter >= this.commands.length) {
       return false; // no more steps
     }
 
     // get current command based on current step.
-    const command = this.commands[this.currentStep];
+    const command = this.commands[this.state.programCounter];
 
     // if we are printing, need to get that value from evaluation stack and then send to outputs array.
-    if (command.constructor.name === "PrintCommand") {
-      const value =
-        this.state.evaluationStack[this.state.evaluationStack.length - 1];
-      this.outputs.push(String(value));
-    }
+    // if (command.constructor.name === "PrintCommand") {
+    //   const value =
+    //     this.state.evaluationStack[this.state.evaluationStack.length - 1];
+    //   this.outputs.push(String(value));
+    // }
 
     command.do(this.state);
-    this.currentStep++;
+    // this.currentStep++;
     this.state.programCounter++;
+    this.currentStep = this.state.programCounter;
 
     return true;
   }
@@ -85,23 +100,23 @@ export class InterpreterService {
     command.undo(this.state);
     this.state.programCounter--;
 
-    if (command.constructor.name === "PrintCommand") {
-      this.outputs.pop();
-    }
+    // if (command.constructor.name === "PrintCommand") {
+    //   this.outputs.pop();
+    // }
     return true;
   }
   // returns a modified state snapshot that we can then send to the UI with only things is cares about.
   getState(): SimplifiedState {
-    return {
+    const result = {
       variables: Object.fromEntries(this.state.variables),
       currentLine: this.state.currentLine,
-      // currentExpression: this.state.currentExpression,
-      outputs: this.outputs,
-      canStepForward: this.currentStep < this.commands.length, // are there any more steps remaining?
-      canStepBackward: this.currentStep > 0, // are we out of bounds?
+      outputs: [...this.state.outputs],
+      canStepForward: this.currentStep < this.commands.length,
+      canStepBackward: this.currentStep > 0,
       currentStep: this.currentStep,
       totalSteps: this.commands.length,
     };
+    return result;
   }
 
   toEnd(): void {

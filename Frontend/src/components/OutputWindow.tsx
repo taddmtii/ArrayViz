@@ -13,8 +13,8 @@ function OutputWindow({ outputs }: OutputWindowProps) {
         </div>
         <div className="flex-1 overflow-auto p-3 text-xs text-white">
           {/* any output should appear right here... */}
-          {outputs.map((output) => (
-            <div>{String(output)}</div>
+          {outputs.map((output, index) => (
+            <div key={index}>{String(output)}</div>
           ))}
         </div>
       </div>

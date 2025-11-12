@@ -143,7 +143,7 @@ simple_statement -> assignment_statement {% d => d[0] %}
                   | %BREAK  {% d => (new BreakStatementNode(d[0])) %}
                   | %CONTINUE {% d => (new ContinueStatementNode(d[0])) %}
                   | %PASS {% d => (new PassStatementNode(d[0])) %}
-                  | expression {% d => d[0] %}
+                  | expression {% d => (new ExpressionStatementNode(d[0], d[0]._tok)) %}
 
 # A compound statement is a statement is a statement explitly followed by a block (or a list of statements).
 compound_statement -> if_statement {% d => d[0] %}

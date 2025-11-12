@@ -8,6 +8,8 @@ import {
   ExpressionNode,
 } from "./Nodes";
 
+import { InterpreterService } from "../frontend/src/services/InterpreterService";
+
 // ---------------------------------------------------------------------------------------
 // COMMANDS ABC
 // ---------------------------------------------------------------------------------------
@@ -35,6 +37,7 @@ export class State {
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
   private _returnStack: PythonValue[]; // stack for return values
   private _loopStack: [number, number][];
+  private _outputs: PythonValue[] = [];
 
   constructor(
     _programCounter: number,
@@ -48,6 +51,7 @@ export class State {
     _evaluationStack: PythonValue[],
     _returnStack: PythonValue[],
     _loopStack: [number, number][],
+    _outputs: PythonValue[],
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -60,6 +64,7 @@ export class State {
     this._evaluationStack = _evaluationStack;
     this._returnStack = _returnStack;
     this._loopStack = _loopStack;
+    this._outputs = _outputs;
   }
 
   public get programCounter() {
@@ -67,6 +72,18 @@ export class State {
   }
   public set programCounter(val: number) {
     this._programCounter = val;
+  }
+
+  public get outputs() {
+    return this._outputs;
+  }
+
+  public addOutput(value: PythonValue) {
+    this._outputs.push(value);
+  }
+
+  public removeLastOutput() {
+    this._outputs.pop();
   }
 
   public get lineCount() {
@@ -270,7 +287,7 @@ export class ConditionalJumpCommand extends Command {
 
     // shoudl we jump?
     if (boolCondition === false) {
-      _currentState.programCounter += this._commandsToJump;
+      _currentState.programCounter += this._commandsToJump - 1; // subtract 1 because stepForward increments PC;
     }
     // PC should be incremented normally.
   }
@@ -289,7 +306,7 @@ export class JumpCommand extends Command {
   do(_currentState: State) {
     this._undoCommand = new JumpCommand(_currentState.programCounter);
     // jump to a new position within the command array.
-    _currentState.programCounter += this._commandsToJump;
+    _currentState.programCounter += this._commandsToJump - 1;
   }
 }
 
@@ -554,7 +571,7 @@ export class PrintCommand extends Command {
   }
   do(_currentState: State) {
     const value = _currentState.evaluationStack.pop()!;
-    console.log(value);
+    _currentState.addOutput(String(value));
     // this._undoCommand = new PushValueCommand(value);
   }
 }
