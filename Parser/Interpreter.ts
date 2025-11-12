@@ -564,6 +564,113 @@ export class ExitScopeCommand extends Command {
   }
 }
 
+// AppendCommand
+export class AppendCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    let newList;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        newList = list.push(argsList);
+        _currentState.evaluationStack.push(newList);
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+// CountCommand
+export class CountCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        _currentState.evaluationStack.push(
+          list.filter((elem) => elem === argsList).length,
+        );
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+export class PopCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    let poppedValue;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        poppedValue = list.pop();
+        _currentState.evaluationStack.push(poppedValue);
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+export class SortCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    let sortedList;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        sortedList = list.sort();
+        _currentState.evaluationStack.push(sortedList);
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+export class RemoveCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    let newList;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        const index = list.indexOf(argsList);
+        if (index > -1) {
+          newList = list.splice(index, 1);
+          _currentState.evaluationStack.push(newList);
+        }
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+// if (methodName === "append") {
+//   commands.push(new AppendCommand());
+// } else if (methodName === "count") {
+//   commands.push(new CountCommand());
+// } else if (methodName === "pop") {
+//   commands.push(new PopCommand());
+// } else if (methodName === "remove") {
+//   commands.push(new RemoveCommand());
+// } else if (methodName === "sort") {
+//   commands.push(new SortCommand());
+// }
+
 // PrintCommand -> prints something to the console.
 export class PrintCommand extends Command {
   constructor() {

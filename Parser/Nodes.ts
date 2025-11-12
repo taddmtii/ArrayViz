@@ -28,6 +28,11 @@ import {
   ListSliceCommand,
   PushLoopBoundsCommand,
   PopLoopBoundsCommand,
+  AppendCommand,
+  CountCommand,
+  PopCommand,
+  SortCommand,
+  RemoveCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -777,11 +782,11 @@ export class ListAccessExpressionNode extends ExpressionNode {
 
  */
 export class MethodCallExpressionNode extends ExpressionNode {
-  private _list: ExpressionNode;
+  private _list: ListLiteralExpressionNode;
   private _methodName: IdentifierExpressionNode;
   private _argsList: ArgListExpressionNode;
   constructor(
-    _list: ExpressionNode,
+    _list: ListLiteralExpressionNode,
     _methodName: IdentifierExpressionNode,
     _argsList: ArgListExpressionNode,
   ) {
@@ -793,7 +798,27 @@ export class MethodCallExpressionNode extends ExpressionNode {
   evaluate(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightExpressionCommand(this));
-
+    if (this._list) {
+      commands.push(...this._list.evaluate());
+    }
+    if (this._argsList) {
+      commands.push(...this._argsList.evaluate());
+    }
+    // append, count, pop, remove, sort
+    if (this._methodName instanceof IdentifierExpressionNode) {
+      const methodName = this._methodName._tok.text;
+      if (methodName === "append") {
+        commands.push(new AppendCommand());
+      } else if (methodName === "count") {
+        commands.push(new CountCommand());
+      } else if (methodName === "pop") {
+        commands.push(new PopCommand());
+      } else if (methodName === "remove") {
+        commands.push(new RemoveCommand());
+      } else if (methodName === "sort") {
+        commands.push(new SortCommand());
+      }
+    }
     return commands;
   }
 }
