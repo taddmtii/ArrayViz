@@ -33,6 +33,9 @@ import {
   PopCommand,
   SortCommand,
   RemoveCommand,
+  IndexCommand,
+  ReverseCommand,
+  ContainsCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -810,13 +813,19 @@ export class MethodCallExpressionNode extends ExpressionNode {
       if (methodName === "append") {
         commands.push(new AppendCommand());
       } else if (methodName === "count") {
-        commands.push(new CountCommand());
+        commands.push(new CountCommand()); // returning undefined.
       } else if (methodName === "pop") {
-        commands.push(new PopCommand());
+        commands.push(new PopCommand()); // printing undefined
       } else if (methodName === "remove") {
         commands.push(new RemoveCommand());
       } else if (methodName === "sort") {
-        commands.push(new SortCommand());
+        commands.push(new SortCommand()); // giving undefined
+      } else if (methodName === "index") {
+        commands.push(new IndexCommand()); // functioanlly equivaklent to indexof.
+      } else if (methodName === "reverse") {
+        commands.push(new ReverseCommand());
+      } else if (methodName === "contains") {
+        commands.push(new ContainsCommand());
       }
     }
     return commands;

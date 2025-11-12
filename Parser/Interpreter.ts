@@ -659,17 +659,53 @@ export class RemoveCommand extends Command {
   }
 }
 
-// if (methodName === "append") {
-//   commands.push(new AppendCommand());
-// } else if (methodName === "count") {
-//   commands.push(new CountCommand());
-// } else if (methodName === "pop") {
-//   commands.push(new PopCommand());
-// } else if (methodName === "remove") {
-//   commands.push(new RemoveCommand());
-// } else if (methodName === "sort") {
-//   commands.push(new SortCommand());
-// }
+export class IndexCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        _currentState.evaluationStack.push(list.indexOf(argsList));
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+export class ReverseCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        _currentState.evaluationStack.push(list.reverse());
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
+
+export class ContainsCommand extends Command {
+  constructor() {
+    super();
+  }
+  do(_currentState: State) {
+    const argsList = _currentState.evaluationStack.pop()!;
+    const list = _currentState.evaluationStack.pop()!;
+    if (Array.isArray(list)) {
+      if (argsList !== undefined) {
+        _currentState.evaluationStack.push(list.includes(argsList));
+      }
+    }
+    // this._undoCommand = new PushValueCommand(value);
+  }
+}
 
 // PrintCommand -> prints something to the console.
 export class PrintCommand extends Command {
