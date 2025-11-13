@@ -572,11 +572,11 @@ export class AppendCommand extends Command {
   do(_currentState: State) {
     const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
-    let newList;
+    // let newList;
     if (Array.isArray(list)) {
       if (argsList !== undefined) {
-        newList = list.push(argsList);
-        _currentState.evaluationStack.push(newList);
+        list.push(argsList);
+        _currentState.evaluationStack.push(null);
       }
     }
     // this._undoCommand = new PushValueCommand(value);
@@ -593,9 +593,8 @@ export class CountCommand extends Command {
     const list = _currentState.evaluationStack.pop()!;
     if (Array.isArray(list)) {
       if (argsList !== undefined) {
-        _currentState.evaluationStack.push(
-          list.filter((elem) => elem === argsList).length,
-        );
+        const count = list.filter((elem) => elem === argsList).length;
+        _currentState.evaluationStack.push(count);
       }
     }
     // this._undoCommand = new PushValueCommand(value);
@@ -607,14 +606,14 @@ export class PopCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    const argsList = _currentState.evaluationStack.pop()!;
+    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
     let poppedValue;
     if (Array.isArray(list)) {
-      if (argsList !== undefined) {
-        poppedValue = list.pop();
-        _currentState.evaluationStack.push(poppedValue);
-      }
+      console.log(list);
+      poppedValue = list.pop();
+
+      _currentState.evaluationStack.push(poppedValue);
     }
     // this._undoCommand = new PushValueCommand(value);
   }
@@ -625,14 +624,13 @@ export class SortCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    const argsList = _currentState.evaluationStack.pop()!;
+    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
-    let sortedList;
     if (Array.isArray(list)) {
-      if (argsList !== undefined) {
-        sortedList = list.sort();
-        _currentState.evaluationStack.push(sortedList);
-      }
+      // if (argsList !== undefined) {
+      list.sort();
+      _currentState.evaluationStack.push(null);
+      // }
     }
     // this._undoCommand = new PushValueCommand(value);
   }
@@ -645,13 +643,12 @@ export class RemoveCommand extends Command {
   do(_currentState: State) {
     const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
-    let newList;
     if (Array.isArray(list)) {
       if (argsList !== undefined) {
         const index = list.indexOf(argsList);
         if (index > -1) {
-          newList = list.splice(index, 1);
-          _currentState.evaluationStack.push(newList);
+          list.splice(index, 1);
+          _currentState.evaluationStack.push(null);
         }
       }
     }
@@ -680,12 +677,12 @@ export class ReverseCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    const argsList = _currentState.evaluationStack.pop()!;
+    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
     if (Array.isArray(list)) {
-      if (argsList !== undefined) {
-        _currentState.evaluationStack.push(list.reverse());
-      }
+      // if (argsList !== undefined) {
+      _currentState.evaluationStack.push(list.reverse());
+      // }
     }
     // this._undoCommand = new PushValueCommand(value);
   }

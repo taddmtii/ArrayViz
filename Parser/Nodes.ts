@@ -821,9 +821,9 @@ export class MethodCallExpressionNode extends ExpressionNode {
       } else if (methodName === "sort") {
         commands.push(new SortCommand()); // giving undefined
       } else if (methodName === "index") {
-        commands.push(new IndexCommand()); // functioanlly equivaklent to indexof.
+        commands.push(new IndexCommand());
       } else if (methodName === "reverse") {
-        commands.push(new ReverseCommand());
+        commands.push(new ReverseCommand()); // giving undefined
       } else if (methodName === "contains") {
         commands.push(new ContainsCommand());
       }
