@@ -6,6 +6,7 @@ import {
   type UnaryOp,
   StatementNode,
   ExpressionNode,
+  ListAccessExpressionNode,
 } from "./Nodes";
 
 import { InterpreterService } from "../frontend/src/services/InterpreterService";
@@ -163,13 +164,35 @@ export class State {
 
 // Take value from top of evaluation stack and store it in a variable.
 export class AssignVariableCommand extends Command {
-  private _name: string;
-  constructor(_name: string) {
+  private _name: string | ListAccessExpressionNode;
+  constructor(_name: string | ListAccessExpressionNode) {
     super();
     this._name = _name;
   }
 
   do(_currentState: State) {
+    // are we assigning to a list index? ex: list[1] = 3
+    if (typeof this._name !== "string") {
+      const value = _currentState.evaluationStack.pop()!;
+      const index = _currentState.evaluationStack.pop()!;
+      const list = _currentState.evaluationStack.pop()!;
+      if (typeof index !== "number") {
+        // throw error here if thats what we end up doing...
+        return;
+      }
+
+      if (Array.isArray(list)) {
+        let actualIndex = index;
+        if (actualIndex < 0) {
+          // if we have a negative index, calculate value to start from end of list.
+          actualIndex = list.length + actualIndex;
+        }
+        list[actualIndex] = value;
+      }
+      return;
+    }
+
+    // Normal variable assignment below.
     const top =
       _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
 

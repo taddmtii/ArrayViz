@@ -108,10 +108,14 @@ export abstract class StatementNode {
 }
 
 export class AssignmentStatementNode extends StatementNode {
-  private _left: string; // variable name
+  private _left: string | ListAccessExpressionNode; // variable name
   private _right: ExpressionNode; // value
   public _tok: moo.Token;
-  constructor(_left: string, _right: ExpressionNode, _tok: moo.Token) {
+  constructor(
+    _left: string | ListAccessExpressionNode,
+    _right: ExpressionNode,
+    _tok: moo.Token,
+  ) {
     super(_tok);
     this._left = _left;
     this._right = _right;
@@ -121,9 +125,15 @@ export class AssignmentStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this)); // Highlight
-    commands.push(...this._right.evaluate()); // evaluate (which may generate an array of commands, hence the spread operator)
-    commands.push(new AssignVariableCommand(this._left)); // Bind variable.
-    //   commands.push(new MoveLinePointerCommand(this._tok.line));
+    if (this._left instanceof ListAccessExpressionNode) {
+      commands.push(...this._left._list.evaluate()); // pushes list
+      commands.push(...this._left._index.evaluate()); // pushes index
+      commands.push(...this._right.evaluate()); // evaluate (which may generate an array of commands, hence the spread operator)
+      commands.push(new AssignVariableCommand(this._left)); // Bind variable.
+    } else {
+      commands.push(...this._right.evaluate());
+      commands.push(new AssignVariableCommand(this._left as string));
+    }
     return commands;
   }
 }
@@ -764,8 +774,8 @@ Handles:
   - arr[2], nums[i], etc...
 */
 export class ListAccessExpressionNode extends ExpressionNode {
-  private _list: IdentifierExpressionNode;
-  private _index: ExpressionNode;
+  public _list: IdentifierExpressionNode;
+  public _index: ExpressionNode;
   constructor(_list: IdentifierExpressionNode, _index: ExpressionNode) {
     super(_list._tok);
     this._list = _list;
