@@ -767,8 +767,7 @@ export class FuncCallExpressionNode extends ExpressionNode {
     let numArgs = this._args_list.length;
     // get function object (retreived from variables)
     commands.push(...this._func_name.evaluate());
-    // call function
-    commands.push(new CallUserFunctionCommand(numArgs));
+    // TODO: call function
 
     return commands;
   }
