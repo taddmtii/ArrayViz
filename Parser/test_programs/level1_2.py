@@ -1,5 +1,0 @@
-a = 10
-b = [4, 5, 6]
-b[1] = a
-print(b[1])
-print('Hello World!')

@@ -1,6 +1,0 @@
-val = 3
-
-if val > 5:
-   print(10)
-else:
-   print(5)

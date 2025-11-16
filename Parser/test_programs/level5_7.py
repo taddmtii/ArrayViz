@@ -1,9 +1,0 @@
-nums = [1, 2, 3]
-
-def stop():
-    return 2
-
-def step():
-    return 1
-
-print((nums + [4, 5])[1:stop():step()])

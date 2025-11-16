@@ -1,8 +1,0 @@
-nums = [1, 2, 3, 4, 5, 6]
-nums[1:2:1]
-nums[2:5]
-nums[:1:2]
-nums[:2]
-nums[2:]
-nums[:]
-nums[::]
