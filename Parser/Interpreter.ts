@@ -520,6 +520,9 @@ export class ComparisonOpCommand extends Command {
       case "!=":
         res = evaluatedLeft != evaluatedRight;
         break;
+      case "==":
+        res = evaluatedLeft === evaluatedRight;
+        break;
       default:
         res = false;
     }

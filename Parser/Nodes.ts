@@ -49,7 +49,7 @@ export type PythonValue =
   | Object
   | null;
 export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
-export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=";
+export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=" | "==";
 export type UnaryOp = "-" | "+" | "!" | "not";
 
 // -----------------------------------------------------------------------------------------------------------
@@ -230,28 +230,64 @@ export class IfStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
+
     let conditionCommands: Command[] = this._condition.evaluate();
     commands.push(...conditionCommands);
-    let thenCommands: Command[] = [];
+
+    let thenCommands: Command[] = this._thenBranch.execute();
     let elseCommands: Command[] = [];
 
-    thenCommands = this._thenBranch.execute();
     // if else branch exists...
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
     // after we evaluate those branches, we can then conidtionally jump.
     // if condition is true, execute then block. if not, jump OVER it.
-    commands.push(
-      new ConditionalJumpCommand(
-        1 + thenCommands.length + (elseCommands.length > 0 ? 1 : 0),
-      ),
-    );
+    commands.push(new ConditionalJumpCommand(2 + thenCommands.length));
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
     // then branch now run, jump over else branch.
     if (elseCommands.length > 0) {
-      commands.push(new JumpCommand(elseCommands.length));
+      commands.push(new JumpCommand(elseCommands.length + 1));
+      commands.push(...elseCommands);
+    }
+    return commands;
+  }
+}
+
+export class ElifStatementNode extends StatementNode {
+  private _condition: ExpressionNode;
+  private _thenBranch: BlockStatementNode | null;
+  private _elseBranch: BlockStatementNode | null;
+  constructor(
+    _condition: ExpressionNode,
+    _thenBranch: BlockStatementNode,
+    _elseBranch: BlockStatementNode,
+    _tok: moo.Token,
+  ) {
+    super(_tok);
+    this._condition = _condition;
+    this._thenBranch = _thenBranch;
+    this._elseBranch = _elseBranch;
+  }
+  execute(): Command[] {
+    const commands: Command[] = [];
+    commands.push(new HighlightStatementCommand(this));
+
+    let conditionCommands: Command[] = this._condition.evaluate();
+    commands.push(...conditionCommands);
+
+    let thenCommands: Command[] = this._thenBranch!.execute();
+    let elseCommands: Command[] = [];
+
+    if (this._elseBranch) {
+      elseCommands = this._elseBranch.execute();
+    }
+    commands.push(new ConditionalJumpCommand(2 + thenCommands.length));
+    commands.push(...thenCommands);
+
+    if (elseCommands.length > 0) {
+      commands.push(new JumpCommand(elseCommands.length + 1));
       commands.push(...elseCommands);
     }
     return commands;
@@ -387,49 +423,6 @@ export class FuncDefStatementNode extends StatementNode {
     commands.push(new PushValueCommand(functionObj));
     commands.push(new AssignVariableCommand(this._name._tok.text));
     // commands.push(new JumpCommand(blockCommands.length));
-    return commands;
-  }
-}
-
-export class ElifStatementNode extends StatementNode {
-  private _condition: ExpressionNode;
-  private _thenBranch: BlockStatementNode | null;
-  private _elseBranch: BlockStatementNode | null;
-  constructor(
-    _condition: ExpressionNode,
-    _thenBranch: BlockStatementNode,
-    _elseBranch: BlockStatementNode,
-    _tok: moo.Token,
-  ) {
-    super(_tok);
-    this._condition = _condition;
-    this._thenBranch = _thenBranch;
-    this._elseBranch = _elseBranch;
-  }
-  execute(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightStatementCommand(this));
-    let conditionCommands: Command[] = this._condition.evaluate();
-    commands.push(...conditionCommands);
-    let thenCommands: Command[] = [];
-    let elseCommands: Command[] = [];
-    if (this._thenBranch) {
-      thenCommands = this._thenBranch.execute();
-    }
-    if (this._elseBranch) {
-      elseCommands = this._elseBranch.execute();
-    }
-    commands.push(
-      new ConditionalJumpCommand(
-        1 + thenCommands.length + (elseCommands.length > 0 ? 1 : 0),
-      ),
-    );
-    commands.push(...thenCommands);
-
-    if (elseCommands.length > 0) {
-      commands.push(new JumpCommand(elseCommands.length));
-      commands.push(...elseCommands);
-    }
     return commands;
   }
 }
