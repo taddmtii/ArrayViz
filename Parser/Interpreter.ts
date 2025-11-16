@@ -343,60 +343,6 @@ export class PopValueCommand extends Command {
   }
 }
 
-// executes a user defined function.
-export class CallUserFunctionCommand extends Command {
-  private _numArgs: number;
-
-  constructor(_numArgs: number) {
-    super();
-    this._numArgs = _numArgs;
-  }
-
-  do(_currentState: State) {
-    // pop args first in reverse order since popping from a stack.
-    const args: PythonValue[] = [];
-    for (let i = 0; i < this._numArgs; i++) {
-      args.unshift(_currentState.evaluationStack.pop()!);
-    }
-
-    // then we pop the actual function object we created...
-    const funcObject = _currentState.evaluationStack.pop()! as any;
-
-    // save the current scope of variables
-    const savedVariables = new Map(_currentState.variables);
-
-    // create new scope if variables, BIND parameters to argument values.
-    if (funcObject.params && funcObject.params._paramsList) {
-      const params = funcObject.params._paramsList;
-      // NOTE: maybe the minumum between param length and args length?
-      for (let i = 0; i < args.length; i++) {
-        const paramName = params[i]._tok.text;
-        _currentState.setVariable(paramName, args[i]);
-      }
-    }
-
-    // store the information for when we return.
-    (_currentState as any)._functionContext = {
-      savedVariables: savedVariables,
-      bodyCommands: funcObject.body,
-      returnPending: false,
-    };
-  }
-}
-
-// command resotres scope after function actually returns.
-export class RestoreScopeCommand extends Command {
-  do(_currentState: State) {
-    const context = (_currentState as any)._functionContext;
-    if (context) {
-      _currentState.variables.clear(); // clear current variables
-      context.savedVariables.forEach((value: PythonValue, key: string) => {
-        _currentState.setVariable(key, value); // restore each variable one by one from the function object we created
-      });
-    }
-  }
-}
-
 // Highlights expression that is being evaluated.
 export class HighlightExpressionCommand extends Command {
   private _expression: ExpressionNode;

@@ -36,6 +36,7 @@ import {
   IndexCommand,
   ReverseCommand,
   ContainsCommand,
+  CallUserFunctionCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -160,7 +161,7 @@ export class ReturnStatementNode extends StatementNode {
     } else {
       commands.push(new PushValueCommand(null));
     }
-    commands.push(new ExitScopeCommand(this._previousVariables));
+    // commands.push(new ExitScopeCommand(this._previousVariables));
     // commands.push(new ReturnCommand());
     return commands;
   }
@@ -385,7 +386,7 @@ export class FuncDefStatementNode extends StatementNode {
     // function pushed onto stack, and THEN be binded to a variable name.
     commands.push(new PushValueCommand(functionObj));
     commands.push(new AssignVariableCommand(this._name._tok.text));
-    commands.push(new JumpCommand(blockCommands.length));
+    // commands.push(new JumpCommand(blockCommands.length));
     return commands;
   }
 }
@@ -758,11 +759,17 @@ export class FuncCallExpressionNode extends ExpressionNode {
         commands.push(new TypeCommand());
       } else if (funcName === "input") {
         commands.push(new InputCommand());
-      } else {
-        console.log("User defined function");
-        // TODO: handle user defined functions
       }
+      return commands;
     }
+
+    // USER DEFINED Function
+    let numArgs = this._args_list.length;
+    // get function object (retreived from variables)
+    commands.push(...this._func_name.evaluate());
+    // call function
+    commands.push(new CallUserFunctionCommand(numArgs));
+
     return commands;
   }
 }
