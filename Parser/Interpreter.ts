@@ -39,6 +39,7 @@ export class State {
   private _returnStack: PythonValue[]; // stack for return values
   private _loopStack: [number, number][];
   private _outputs: PythonValue[] = [];
+  private _loopIterationState: Map<string, number> = new Map(); // tracks the iteration index per loop variable.
 
   constructor(
     _programCounter: number,
@@ -53,6 +54,7 @@ export class State {
     _returnStack: PythonValue[],
     _loopStack: [number, number][],
     _outputs: PythonValue[],
+    _loopIterationState: Map<string, number>,
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -66,6 +68,7 @@ export class State {
     this._returnStack = _returnStack;
     this._loopStack = _loopStack;
     this._outputs = _outputs;
+    this._loopIterationState = _loopIterationState;
   }
 
   public get programCounter() {
@@ -77,6 +80,10 @@ export class State {
 
   public get outputs() {
     return this._outputs;
+  }
+
+  public get loopIterationState() {
+    return this._loopIterationState;
   }
 
   public addOutput(value: PythonValue) {
@@ -204,18 +211,33 @@ export class AssignVariableCommand extends Command {
 
       if (Array.isArray(iterable) && iterable.length > 0) {
         // next item grab
-        let nextItem = iterable.shift(); // shift() grabs first item in array.
-        _currentState.setVariable(this._name, nextItem);
-        // now we push the iterable with element removed back onto the stack.
-        _currentState.evaluationStack.push(iterable);
-        // push TRUE to say that we have an item (iterable is not empty, signaling end of loop)
-        _currentState.evaluationStack.push(true);
+        // let nextItem = iterable.shift(); // shift() grabs and REMOVES first item in array.
+        const currentIndex =
+          _currentState.loopIterationState.get(this._name) || 0;
+        if (currentIndex < iterable.length) {
+          // get next item WITHOUT modifying the array
+          const nextItem = iterable[currentIndex];
+          _currentState.setVariable(this._name, nextItem);
+
+          // increment iteration index in state.
+          _currentState.loopIterationState.set(this._name, currentIndex + 1);
+
+          // push ORIGINAL iterable back
+          _currentState.evaluationStack.push(iterable);
+
+          // more items? push true.
+          _currentState.evaluationStack.push(true);
+        } else {
+          // no more items, retur false.
+          _currentState.evaluationStack.push(false);
+          // clean up iteration state after loop.
+          _currentState.loopIterationState.delete(this._name);
+        }
       } else {
-        // no more items, so push false to say iterable is EMPTY.
         _currentState.evaluationStack.push(false);
       }
     } else {
-      // NORMAL ASSIGNMENT, regular old assignment logic.
+      // NORMAL ASSIGNMENT - regular old assignment logic
       const newValue = _currentState.evaluationStack.pop()!;
       _currentState.setVariable(this._name, newValue);
     }
@@ -276,7 +298,7 @@ export class BreakCommand extends Command {
       _currentState.loopStack[_currentState.loopStack.length - 1];
     // jump to whereever we should break to. Set PC to that - 1 because main loop will increment it as part of
     // interpreter loop.
-    _currentState.programCounter = startStop[1] - 1;
+    _currentState.programCounter = startStop[1];
   }
 }
 
@@ -772,6 +794,51 @@ export class TypeCommand extends Command {
     } else {
       _currentState.evaluationStack.push(typeof value);
     }
+  }
+}
+
+// RangeCommand -> for range() function
+export class RangeCommand extends Command {
+  private _numArgs: number;
+
+  constructor(numArgs: number) {
+    super();
+    this._numArgs = numArgs;
+  }
+
+  do(_currentState: State) {
+    let start = 0;
+    let stop = 0;
+    let step = 1;
+
+    if (this._numArgs === 1) {
+      stop = Number(_currentState.evaluationStack.pop());
+    } else if (this._numArgs === 2) {
+      const stopVal = _currentState.evaluationStack.pop();
+      const startVal = _currentState.evaluationStack.pop();
+      start = Number(startVal);
+      stop = Number(stopVal);
+    } else if (this._numArgs === 3) {
+      const stepVal = _currentState.evaluationStack.pop();
+      const stopVal = _currentState.evaluationStack.pop();
+      const startVal = _currentState.evaluationStack.pop();
+      start = Number(startVal);
+      stop = Number(stopVal);
+      step = Number(stepVal);
+    }
+
+    const result: number[] = [];
+    if (step > 0) {
+      for (let i = start; i < stop; i += step) {
+        result.push(i);
+      }
+    } else if (step < 0) {
+      for (let i = start; i > stop; i += step) {
+        result.push(i);
+      }
+    }
+
+    _currentState.evaluationStack.push(result);
   }
 }
 

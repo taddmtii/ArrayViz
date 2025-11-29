@@ -37,6 +37,7 @@ import {
   ReverseCommand,
   ContainsCommand,
   CallUserFunctionCommand,
+  RangeCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -752,6 +753,9 @@ export class FuncCallExpressionNode extends ExpressionNode {
         commands.push(new TypeCommand());
       } else if (funcName === "input") {
         commands.push(new InputCommand());
+      } else if (funcName === "range") {
+        const numArgs = this._args_list ? this._args_list.length : 0;
+        commands.push(new RangeCommand(numArgs));
       }
       return commands;
     }

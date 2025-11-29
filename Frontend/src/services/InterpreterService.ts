@@ -25,6 +25,7 @@ export class InterpreterService {
       [], // returnStack
       [], // loopStack
       [], // outputs
+      new Map(),
     );
   }
 
@@ -57,6 +58,7 @@ export class InterpreterService {
         [],
         [],
         [],
+        new Map(),
       );
 
       return true;

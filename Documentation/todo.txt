@@ -1,19 +1,6 @@
 What needs to still be done:
 
 - fix input()
-- fix if/else (else is running no matter what, example:
-
-
-x = 2
-if x == 2:
-   print(2)
-elif x == 1:
-   print(3)
-else:
-   print(1)
-
-OUTPUT: 1
-
 - fix break, not breaking at all.
 - when iterating over a list, for loop eats each element from list in visualization (not sure if it also changes it in the state as well) example:
 
@@ -33,8 +20,8 @@ val :
 
 - double check nested for loops
 - general error checking
--
 - Highlight statements/expressions within the UI as commands execute/undo
 - Implement user defined functions
 - implement built in range() function
 - implement all undos for every single command
+- add type converter functirons
