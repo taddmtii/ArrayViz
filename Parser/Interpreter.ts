@@ -837,7 +837,7 @@ export class RangeCommand extends Command {
         result.push(i);
       }
     }
-
+    _currentState.setVariable("iterable", result); // show range iterable in preview.
     _currentState.evaluationStack.push(result);
   }
 }
@@ -849,10 +849,14 @@ export class InputCommand extends Command {
   }
   do(_currentState: State) {
     const promptValue = _currentState.evaluationStack.pop()!;
-    const prompt = promptValue;
-    let ans = "";
-    // ask UI for input, grab here.
-    _currentState.evaluationStack.push(ans);
+    const promptMessage = String(promptValue);
+
+    // pop up browser prompt dialog and get user input through that.
+    const userInput = prompt(promptMessage);
+
+    // if user clicks cancel, userInput will be null -> we default to empty string
+    const result = userInput !== null ? userInput : "";
+    _currentState.evaluationStack.push(result);
   }
 }
 
@@ -969,5 +973,159 @@ export class ReturnCommand extends Command {
   do(_currentState: State) {
     const value = _currentState.evaluationStack.pop()!;
     _currentState.pushReturnStack(value);
+  }
+}
+
+// TYPE CONVERTER SECTION
+// int(), str(), float(), bool(), list()
+
+export class IntCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const value = _currentState.evaluationStack.pop()!;
+    let result: number;
+
+    if (typeof value === "number") {
+      // value is already a number, just truncate (removes any fraction or decimals)
+      result = Math.trunc(value);
+    } else if (typeof value === "string") {
+      const parsed = parseInt(value, 10);
+      result = parsed;
+    } else if (typeof value === "boolean") {
+      result = value ? 1 : 0;
+    } else if (value === null) {
+      console.error("argument for int() cannot be null");
+      result = 0;
+    } else {
+      console.error("bad argument for int()");
+      result = 0;
+    }
+
+    _currentState.evaluationStack.push(result);
+  }
+}
+
+// 2. FloatCommand - float()
+export class FloatCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const value = _currentState.evaluationStack.pop()!;
+    let result: number;
+
+    if (typeof value === "number") {
+      result = value;
+    } else if (typeof value === "string") {
+      const parsed = parseFloat(value);
+      result = parsed;
+    } else if (typeof value === "boolean") {
+      result = value ? 1.0 : 0.0;
+    } else {
+      console.error(
+        "argument for float() must be a number, string, or boolean.",
+      );
+      result = 0.0;
+    }
+
+    _currentState.evaluationStack.push(result);
+  }
+}
+
+// 3. StrCommand - str()
+export class StrCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const value = _currentState.evaluationStack.pop()!;
+    let result: string;
+
+    if (typeof value === "string") {
+      result = value;
+    } else if (typeof value === "number") {
+      result = String(value);
+    } else if (typeof value === "boolean") {
+      result = value ? "True" : "False";
+    } else if (value === null) {
+      result = "None";
+    } else if (Array.isArray(value)) {
+      // list converstion to string. We can do this by mapping over the array and concatenating values as we go through elements.
+      result =
+        "[" +
+        value
+          .map((v) => {
+            if (typeof v === "string") return `'${v}'`;
+            if (v === null) return "None";
+            if (typeof v === "boolean") return v ? "True" : "False";
+            return String(v);
+          })
+          .join(", ") +
+        "]";
+    } else {
+      result = String(value);
+    }
+
+    _currentState.evaluationStack.push(result);
+  }
+}
+
+// 4. BoolCommand - bool()
+export class BoolCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const value = _currentState.evaluationStack.pop()!;
+    let result: boolean;
+
+    if (value === null || value === false) {
+      result = false;
+    } else if (typeof value === "number") {
+      result = value !== 0;
+    } else if (typeof value === "string") {
+      result = value.length > 0;
+    } else if (Array.isArray(value)) {
+      result = value.length > 0;
+    } else if (typeof value === "boolean") {
+      result = value;
+    } else {
+      result = true;
+    }
+
+    _currentState.evaluationStack.push(result);
+  }
+}
+
+// 5. ListCommand - list()
+export class ListCommand extends Command {
+  constructor() {
+    super();
+  }
+
+  do(_currentState: State) {
+    const value = _currentState.evaluationStack.pop()!;
+    let result: PythonValue[];
+
+    if (Array.isArray(value)) {
+      // create copy of array.
+      result = [...value];
+    } else if (typeof value === "string") {
+      // convert string to list of characters to create separate elements
+      result = value.split("");
+    } else if (value === null) {
+      result = [];
+    } else {
+      console.error("invalid argument for list(), not iterable.");
+      result = [];
+    }
+
+    _currentState.evaluationStack.push(result);
   }
 }

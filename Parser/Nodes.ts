@@ -38,6 +38,11 @@ import {
   ContainsCommand,
   CallUserFunctionCommand,
   RangeCommand,
+  IntCommand,
+  FloatCommand,
+  StrCommand,
+  BoolCommand,
+  ListCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -756,6 +761,16 @@ export class FuncCallExpressionNode extends ExpressionNode {
       } else if (funcName === "range") {
         const numArgs = this._args_list ? this._args_list.length : 0;
         commands.push(new RangeCommand(numArgs));
+      } else if (funcName === "int") {
+        commands.push(new IntCommand());
+      } else if (funcName === "float") {
+        commands.push(new FloatCommand());
+      } else if (funcName === "str") {
+        commands.push(new StrCommand());
+      } else if (funcName === "bool") {
+        commands.push(new BoolCommand());
+      } else if (funcName === "list") {
+        commands.push(new ListCommand());
       }
       return commands;
     }
