@@ -7,6 +7,7 @@ import {
   StatementNode,
   ExpressionNode,
   ListAccessExpressionNode,
+  UserFunction,
 } from "./Nodes";
 
 import { InterpreterService } from "../frontend/src/services/InterpreterService";
@@ -76,6 +77,10 @@ export class State {
   }
   public set programCounter(val: number) {
     this._programCounter = val;
+  }
+
+  public get returnStack() {
+    return this._returnStack;
   }
 
   public get outputs() {
@@ -162,6 +167,32 @@ export class State {
   }
   public popReturnStack() {
     return this._returnStack.pop();
+  }
+
+  // get start line and end line for current statement for highlighting purposes
+  public getCurrentStatementHighlight(): {
+    startLine: number;
+    endLine: number;
+  } | null {
+    if (!this._currentStatement) return null;
+    return {
+      startLine: this._currentStatement.startLine,
+      endLine: this._currentStatement.endLine,
+    };
+  }
+
+  // get start line, startCol, and endCol for current expression for highlighting purposes
+  public getCurrentExpressionHighlight(): {
+    line: number;
+    startCol: number;
+    endCol: number;
+  } | null {
+    if (!this._currentExpression) return null;
+    return {
+      line: this._currentExpression.lineNum,
+      startCol: this._currentExpression.startCol,
+      endCol: this._currentExpression.endCol,
+    };
   }
 }
 
@@ -1127,5 +1158,90 @@ export class ListCommand extends Command {
     }
 
     _currentState.evaluationStack.push(result);
+  }
+}
+
+export class CallUserFunctionCommand extends Command {
+  private _numArgs: number;
+
+  constructor(numArgs: number) {
+    super();
+    this._numArgs = numArgs;
+  }
+
+  do(_currentState: State) {
+    // pop func object from stack.
+    const functionObj = _currentState.evaluationStack.pop();
+
+    // make sure it is a function.
+    if (
+      !functionObj ||
+      typeof functionObj !== "object" ||
+      !("type" in functionObj) ||
+      functionObj.type !== "Function"
+    ) {
+      console.error("this object is not callable");
+      _currentState.evaluationStack.push(null);
+      return;
+    }
+
+    const func = functionObj as UserFunction;
+
+    // pop arguments in reverse order.
+    const args: PythonValue[] = [];
+    for (let i = 0; i < this._numArgs; i++) {
+      args.unshift(_currentState.evaluationStack.pop()!);
+    }
+
+    // check if argument count matches
+    if (args.length !== func.params.length) {
+      console.error("arguments are mismatched.");
+      _currentState.evaluationStack.push(null);
+      return;
+    }
+
+    // enter a new scope. save current variables.
+    const savedVariables = new Map(_currentState.variables);
+    _currentState.variables.clear();
+
+    // bind parameters -> arguments
+    for (let i = 0; i < func.params.length; i++) {
+      _currentState.setVariable(func.params[i], args[i]);
+    }
+
+    // store current PC.
+    const savedPC = _currentState.programCounter;
+
+    // execute function body commands now.
+    let returnValue: PythonValue = null;
+    for (let i = 0; i < func.body.length; i++) {
+      const cmd = func.body[i];
+      cmd.do(_currentState);
+
+      // did we hit a return statement?
+      // ReturnCommand should push a value to the returnStack
+      if (_currentState.returnStack.length > 0) {
+        returnValue = _currentState.popReturnStack()!;
+        break; // exit function early!
+      }
+    }
+
+    // restore previous scope from savedVariables.
+    _currentState.variables = savedVariables;
+    _currentState.programCounter = savedPC;
+
+    _currentState.evaluationStack.push(returnValue);
+
+    // pop return value, restore func state.
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.evaluationStack.pop(); // pop return value
+        // push args back onto evaluation stack.
+        for (const arg of args) {
+          state.evaluationStack.push(arg);
+        }
+        state.evaluationStack.push(functionObj); // push function back
+      }
+    })();
   }
 }

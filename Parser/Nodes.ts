@@ -57,6 +57,12 @@ export type PythonValue =
 export type BinaryOp = "+" | "-" | "*" | "%" | "/" | "//" | "and" | "or" | "**";
 export type ComparisonOp = "<" | ">" | "<=" | ">=" | "!=" | "==";
 export type UnaryOp = "-" | "+" | "!" | "not";
+export interface UserFunction {
+  name: string;
+  params: string[]; // names of the parameters
+  body: Command[]; // commands that make up the function body
+  type: "Function";
+}
 
 // -----------------------------------------------------------------------------------------------------------
 // COMMON ERRORS:
@@ -168,7 +174,7 @@ export class ReturnStatementNode extends StatementNode {
       commands.push(new PushValueCommand(null));
     }
     // commands.push(new ExitScopeCommand(this._previousVariables));
-    // commands.push(new ReturnCommand());
+    commands.push(new ReturnCommand());
     return commands;
   }
 }
@@ -401,6 +407,7 @@ export class FuncDefStatementNode extends StatementNode {
   private _name: IdentifierExpressionNode;
   private _formalParamList: FormalParamsListExpressionNode | null;
   private _block: BlockStatementNode;
+
   constructor(
     _name: IdentifierExpressionNode,
     _formalParamList: FormalParamsListExpressionNode,
@@ -412,23 +419,34 @@ export class FuncDefStatementNode extends StatementNode {
     this._formalParamList = _formalParamList;
     this._block = _block;
   }
+
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
+
+    // extract the parameter names from formal param list
+    const paramNames: string[] = [];
+    if (this._formalParamList && this._formalParamList._paramsList) {
+      for (const param of this._formalParamList._paramsList) {
+        paramNames.push(param._tok.text);
+      }
+    }
+
+    // get the function body commands
     const blockCommands = this._block.execute();
 
-    // Create function object with commands above to represent the body.
-    const functionObj = {
+    // create the actual function object
+    const functionObj: UserFunction = {
       name: this._name._tok.text,
-      params: this._formalParamList,
+      params: paramNames,
       body: blockCommands,
       type: "Function",
-    } as Object;
+    };
 
-    // function pushed onto stack, and THEN be binded to a variable name.
+    // push function object onto stack, then assign to a new variable
     commands.push(new PushValueCommand(functionObj));
     commands.push(new AssignVariableCommand(this._name._tok.text));
-    // commands.push(new JumpCommand(blockCommands.length));
+
     return commands;
   }
 }
@@ -544,7 +562,7 @@ export class IdentifierExpressionNode extends ExpressionNode {
 }
 
 export class FormalParamsListExpressionNode extends ExpressionNode {
-  private _paramsList: IdentifierExpressionNode[];
+  public _paramsList: IdentifierExpressionNode[];
   constructor(_paramsList: IdentifierExpressionNode[]) {
     // need to check if array is empty, probably need to do this for arg list too.
     if (
@@ -745,6 +763,8 @@ export class FuncCallExpressionNode extends ExpressionNode {
       commands.push(...this._args_list.evaluate());
     }
 
+    const numArgs = this._args_list ? this._args_list.length : 0;
+
     // Grab function name and then deal with whatever we get. Built in functions first, then user defined after.
 
     // if function name is an identifier.
@@ -752,35 +772,41 @@ export class FuncCallExpressionNode extends ExpressionNode {
       const funcName = this._func_name._tok.text;
       if (funcName === "print") {
         commands.push(new PrintCommand());
+        return commands;
       } else if (funcName === "len") {
         commands.push(new LenCommand());
+        return commands;
       } else if (funcName === "type") {
         commands.push(new TypeCommand());
+        return commands;
       } else if (funcName === "input") {
         commands.push(new InputCommand());
+        return commands;
       } else if (funcName === "range") {
-        const numArgs = this._args_list ? this._args_list.length : 0;
         commands.push(new RangeCommand(numArgs));
+        return commands;
       } else if (funcName === "int") {
         commands.push(new IntCommand());
+        return commands;
       } else if (funcName === "float") {
         commands.push(new FloatCommand());
+        return commands;
       } else if (funcName === "str") {
         commands.push(new StrCommand());
+        return commands;
       } else if (funcName === "bool") {
         commands.push(new BoolCommand());
+        return commands;
       } else if (funcName === "list") {
         commands.push(new ListCommand());
+        return commands;
       }
-      return commands;
     }
 
-    // USER DEFINED Function
-    let numArgs = this._args_list.length;
-    // get function object (retreived from variables)
+    // if it is not a built-in func, it's user-defined.
+    // retreive func obj.
     commands.push(...this._func_name.evaluate());
-    // TODO: call function
-
+    commands.push(new CallUserFunctionCommand(numArgs));
     return commands;
   }
 }

@@ -16,6 +16,12 @@ export interface SimplifiedState {
   canStepBackward: boolean;
   currentStep: number;
   totalSteps: number;
+  highlightedStatement: { startLine: number; endLine: number } | null;
+  highlightedExpression: {
+    line: number;
+    startCol: number;
+    endCol: number;
+  } | null;
 }
 
 function App() {
@@ -29,6 +35,8 @@ function App() {
     canStepBackward: false,
     currentStep: 0,
     totalSteps: 0,
+    highlightedStatement: null,
+    highlightedExpression: null,
   });
 
   const interpreterServiceReference = useRef(new InterpreterService());
@@ -80,6 +88,8 @@ function App() {
             code={code}
             onCodeChange={handleCodeChange}
             currentLine={interpreterState.currentLine}
+            highlightedStatement={interpreterState.highlightedStatement}
+            highlightedExpression={interpreterState.highlightedExpression}
           />
           <ButtonControls
             onFirst={handleFirst}

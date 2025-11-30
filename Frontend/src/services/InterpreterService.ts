@@ -117,6 +117,8 @@ export class InterpreterService {
       canStepBackward: this.currentStep > 0,
       currentStep: this.currentStep,
       totalSteps: this.commands.length,
+      highlightedStatement: this.state.getCurrentStatementHighlight(),
+      highlightedExpression: this.state.getCurrentExpressionHighlight(),
     };
     return result;
   }
