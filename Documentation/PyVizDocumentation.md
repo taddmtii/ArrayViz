@@ -321,6 +321,7 @@ The following common Python features are NOT supported in PyViz:
 - File I/O: No file reading/writing operations
 - Context Managers: No with statements
 - Async/Await: No asynchronous programming
+- Del keyword
 
 ---------------------------------------------------------------------------------------------
 

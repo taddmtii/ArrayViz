@@ -1,8 +1,9 @@
 What needs to still be done:
 
 - Implement Predict Mode
-
 - general error checking
-- Highlight statements/expressions within the UI as commands execute/undo
+- Highlight statements/expressions within the UI as commands execute/undo (basic implementation, double check this)
 - Implement user defined functions
-- implement all undos for every single command
+- implement all undos for every single command so we can step back!
+
+- look into how python handles iterables / nested for loops. Am I currently doing that?

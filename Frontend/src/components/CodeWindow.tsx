@@ -58,8 +58,9 @@ function CodeWindow({
             Number.MAX_SAFE_INTEGER, // last possible column (not sure what to put here since its a statement.)
           ),
           options: {
-            isWholeLine: true,
-            className: "statement-highlight",
+            // isWholeLine: true,
+            // className: "statement-highlight",
+            inlineClassName: "statement-highlight",
           },
         });
       }

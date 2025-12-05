@@ -10,6 +10,15 @@ import {
   UserFunction,
 } from "./Nodes";
 
+import {
+  InterpreterError,
+  RuntimeError,
+  TypeError,
+  NameError,
+  IndexError,
+  ValueError,
+  ZeroDivisionError,
+} from "./Errors";
 import { InterpreterService } from "../frontend/src/services/InterpreterService";
 
 // ---------------------------------------------------------------------------------------
@@ -41,6 +50,7 @@ export class State {
   private _loopStack: [number, number][];
   private _outputs: PythonValue[] = [];
   private _loopIterationState: Map<string, number> = new Map(); // tracks the iteration index per loop variable.
+  private _error: InterpreterError | null = null;
 
   constructor(
     _programCounter: number,
@@ -56,6 +66,7 @@ export class State {
     _loopStack: [number, number][],
     _outputs: PythonValue[],
     _loopIterationState: Map<string, number>,
+    _error: InterpreterError | null,
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -70,6 +81,7 @@ export class State {
     this._loopStack = _loopStack;
     this._outputs = _outputs;
     this._loopIterationState = _loopIterationState;
+    this._error = _error;
   }
 
   public get programCounter() {
@@ -99,6 +111,9 @@ export class State {
     this._outputs.pop();
   }
 
+  public hasVariable(name: string): boolean {
+    return this._variables.has(name);
+  }
   public get lineCount() {
     return this._lineCount;
   }
@@ -137,6 +152,13 @@ export class State {
 
   public get loopStack() {
     return this._loopStack;
+  }
+
+  public get error() {
+    return this._error;
+  }
+  public set error(err: InterpreterError | null) {
+    this._error = err;
   }
 
   public setVariable(name: string, value: PythonValue | PythonValue[]) {
@@ -209,68 +231,81 @@ export class AssignVariableCommand extends Command {
   }
 
   do(_currentState: State) {
-    // are we assigning to a list index? ex: list[1] = 3
-    if (typeof this._name !== "string") {
-      const value = _currentState.evaluationStack.pop()!;
-      const index = _currentState.evaluationStack.pop()!;
-      const list = _currentState.evaluationStack.pop()!;
-      if (typeof index !== "number") {
-        // throw error here if thats what we end up doing...
+    try {
+      // List assignment
+      if (typeof this._name !== "string") {
+        const value = _currentState.evaluationStack.pop()!;
+        const index = _currentState.evaluationStack.pop()!;
+        const list = _currentState.evaluationStack.pop()!;
+
+        if (value === undefined || index === undefined || list === undefined) {
+          throw new RuntimeError("Stack underflow during list assignment");
+        }
+
+        if (typeof index !== "number") {
+          throw new TypeError(
+            `list indices must be integers, not ${typeof index}`,
+          );
+        }
+
+        if (!Array.isArray(list)) {
+          throw new TypeError(
+            `'${typeof list}' object does not support item assignment`,
+          );
+        }
+
+        let actualIndex = index;
+        if (actualIndex < 0) {
+          actualIndex = list.length + actualIndex;
+        }
+
+        if (actualIndex < 0 || actualIndex >= list.length) {
+          throw new IndexError(`list assignment index out of range`);
+        }
+
+        list[actualIndex] = value;
         return;
       }
 
-      if (Array.isArray(list)) {
-        let actualIndex = index;
-        if (actualIndex < 0) {
-          // if we have a negative index, calculate value to start from end of list.
-          actualIndex = list.length + actualIndex;
-        }
-        list[actualIndex] = value;
-      }
-      return;
-    }
+      // For loop iteration
+      const top =
+        _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
 
-    // Normal variable assignment below.
-    const top =
-      _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
+      if (_currentState.loopStack.length > 0 && Array.isArray(top)) {
+        const iterable = _currentState.evaluationStack.pop()!;
 
-    // For loop iteration?
-    // check if loopstack is not empty AND if top of stack is an iterable (array)
-    if (_currentState.loopStack.length > 0 && Array.isArray(top)) {
-      // we can pop NOW instead of peeking because we know we are handling an array.
-      const iterable = _currentState.evaluationStack.pop()!;
+        if (Array.isArray(iterable) && iterable.length > 0) {
+          const currentIndex =
+            _currentState.loopIterationState.get(this._name) || 0;
 
-      if (Array.isArray(iterable) && iterable.length > 0) {
-        // next item grab
-        // let nextItem = iterable.shift(); // shift() grabs and REMOVES first item in array.
-        const currentIndex =
-          _currentState.loopIterationState.get(this._name) || 0;
-        if (currentIndex < iterable.length) {
-          // get next item WITHOUT modifying the array
-          const nextItem = iterable[currentIndex];
-          _currentState.setVariable(this._name, nextItem);
-
-          // increment iteration index in state.
-          _currentState.loopIterationState.set(this._name, currentIndex + 1);
-
-          // push ORIGINAL iterable back
-          _currentState.evaluationStack.push(iterable);
-
-          // more items? push true.
-          _currentState.evaluationStack.push(true);
+          if (currentIndex < iterable.length) {
+            const nextItem = iterable[currentIndex];
+            _currentState.setVariable(this._name, nextItem);
+            _currentState.loopIterationState.set(this._name, currentIndex + 1);
+            _currentState.evaluationStack.push(iterable);
+            _currentState.evaluationStack.push(true);
+          } else {
+            _currentState.evaluationStack.push(false);
+            _currentState.loopIterationState.delete(this._name);
+          }
         } else {
-          // no more items, retur false.
           _currentState.evaluationStack.push(false);
-          // clean up iteration state after loop.
-          _currentState.loopIterationState.delete(this._name);
         }
       } else {
-        _currentState.evaluationStack.push(false);
+        // normal assignment
+        const newValue = _currentState.evaluationStack.pop();
+
+        if (newValue === undefined) {
+          throw new RuntimeError("Stack underflow during variable assignment");
+        }
+
+        _currentState.setVariable(this._name, newValue);
       }
-    } else {
-      // NORMAL ASSIGNMENT - regular old assignment logic
-      const newValue = _currentState.evaluationStack.pop()!;
-      _currentState.setVariable(this._name, newValue);
+    } catch (error) {
+      if (error instanceof InterpreterError) {
+        _currentState.error = error;
+      }
+      throw error;
     }
   }
 }
@@ -284,8 +319,8 @@ export class PushValueCommand extends Command {
   }
 
   do(_currentState: State) {
-    this._undoCommand = new PopValueCommand();
     _currentState.evaluationStack.push(this._value);
+    this._undoCommand = new PopValueCommand();
   }
 }
 
@@ -324,6 +359,9 @@ export class BreakCommand extends Command {
     super();
   }
   do(_currentState: State) {
+    if (_currentState.loopStack.length === 0) {
+      throw new RuntimeError("'break' outside loop");
+    }
     // get most recent loop bounds by grabbing the top.
     let startStop: [number, number] =
       _currentState.loopStack[_currentState.loopStack.length - 1];
@@ -338,6 +376,9 @@ export class ContinueCommand extends Command {
     super();
   }
   do(_currentState: State) {
+    if (_currentState.loopStack.length === 0) {
+      throw new RuntimeError("'continue' not properly in loop");
+    }
     // get most recent loop bounds by grabbing the top.
     let startStop: [number, number] =
       _currentState.loopStack[_currentState.loopStack.length - 1];
@@ -360,7 +401,11 @@ export class ConditionalJumpCommand extends Command {
   do(_currentState: State) {
     const condition = _currentState.evaluationStack.pop()!; // true or false depending on
     const boolCondition = Boolean(condition);
-
+    if (condition === undefined) {
+      throw new RuntimeError(
+        "Problem within conditional jump (condition evaluated to undefined)",
+      );
+    }
     // shoudl we jump?
     if (boolCondition === false) {
       _currentState.programCounter += this._commandsToJump - 1; // subtract 1 because stepForward increments PC;
@@ -421,15 +466,22 @@ export class HighlightExpressionCommand extends Command {
 
 // Should grab current value of variable.
 export class RetrieveValueCommand extends Command {
-  private _varName: string; // variable name whose value we want to retrieve
+  private _varName: string;
   constructor(_varName: string) {
     super();
     this._varName = _varName;
   }
   do(_currentState: State) {
-    const value = _currentState.getVariable(this._varName);
-    this._undoCommand = new PopValueCommand();
-    _currentState.evaluationStack.push(value);
+    try {
+      const value = _currentState.getVariable(this._varName);
+      this._undoCommand = new PopValueCommand();
+      _currentState.evaluationStack.push(value);
+    } catch (error) {
+      if (error instanceof NameError) {
+        _currentState.error = error;
+      }
+      throw error;
+    }
   }
 }
 
@@ -518,6 +570,9 @@ export class BinaryOpCommand extends Command {
           res = evaluatedLeft - evaluatedRight;
           break;
         case "%":
+          if (evaluatedRight === 0) {
+            throw new ZeroDivisionError("integer division or modulo by zero");
+          }
           res = evaluatedLeft % evaluatedRight;
           break;
         case "*":
@@ -527,9 +582,15 @@ export class BinaryOpCommand extends Command {
           res = evaluatedLeft ** evaluatedRight;
           break;
         case "/":
+          if (evaluatedRight === 0) {
+            throw new ZeroDivisionError("integer division or modulo by zero");
+          }
           res = evaluatedLeft / evaluatedRight;
           break;
         case "//":
+          if (evaluatedRight === 0) {
+            throw new ZeroDivisionError("integer division or modulo by zero");
+          }
           res = Math.floor(evaluatedLeft / evaluatedRight);
           break;
         case "and":
@@ -541,6 +602,14 @@ export class BinaryOpCommand extends Command {
       }
     }
     _currentState.evaluationStack.push(res);
+
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.evaluationStack.pop(); // pop the result.
+        state.evaluationStack.push(evaluatedLeft); // restore the left
+        state.evaluationStack.push(evaluatedRight); // restore the right
+      }
+    })();
   }
 }
 
@@ -580,6 +649,14 @@ export class ComparisonOpCommand extends Command {
         res = false;
     }
     _currentState.evaluationStack.push(res);
+
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.evaluationStack.pop();
+        state.evaluationStack.push(evaluatedLeft);
+        state.evaluationStack.push(evaluatedRight);
+      }
+    })();
   }
 }
 
@@ -595,9 +672,19 @@ export class UnaryOpCommand extends Command {
 
     switch (this._operator) {
       case "-":
+        if (typeof operand !== "number") {
+          throw new TypeError(
+            `bad operand type for unary -: '${typeof operand}'`,
+          );
+        }
         res = -operand;
         break;
       case "+":
+        if (typeof operand !== "number") {
+          throw new TypeError(
+            `bad operand type for unary +: '${typeof operand}'`,
+          );
+        }
         res = operand;
         break;
       case "!":
@@ -608,6 +695,13 @@ export class UnaryOpCommand extends Command {
         break;
     }
     _currentState.evaluationStack.push(res);
+
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.evaluationStack.pop();
+        state.evaluationStack.push(operand);
+      }
+    })();
   }
 }
 
