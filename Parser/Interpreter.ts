@@ -51,6 +51,7 @@ export class State {
   private _outputs: PythonValue[] = [];
   private _loopIterationState: Map<string, number> = new Map(); // tracks the iteration index per loop variable.
   private _error: InterpreterError | null = null;
+  private _functionDefinitions: Map<string, UserFunction> = new Map();
 
   constructor(
     _programCounter: number,
@@ -67,6 +68,7 @@ export class State {
     _outputs: PythonValue[],
     _loopIterationState: Map<string, number>,
     _error: InterpreterError | null,
+    _functionDefinitions: Map<string, UserFunction> = new Map(),
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -82,6 +84,19 @@ export class State {
     this._outputs = _outputs;
     this._loopIterationState = _loopIterationState;
     this._error = _error;
+    this._functionDefinitions = _functionDefinitions;
+  }
+
+  public get functionDefinitions() {
+    return this._functionDefinitions;
+  }
+
+  public setFunction(name: string, func: UserFunction) {
+    this._functionDefinitions.set(name, func);
+  }
+
+  public getFunction(name: string): UserFunction | undefined {
+    return this._functionDefinitions.get(name);
   }
 
   public get programCounter() {
@@ -148,6 +163,10 @@ export class State {
   }
   public get variables() {
     return this._variables;
+  }
+
+  public set variables(vars: Map<string, PythonValue | PythonValue[]>) {
+    this._variables = vars;
   }
 
   public get loopStack() {
@@ -1256,86 +1275,77 @@ export class ListCommand extends Command {
 }
 
 export class CallUserFunctionCommand extends Command {
+  private _funcName: string;
   private _numArgs: number;
 
-  constructor(numArgs: number) {
+  constructor(funcName: string, numArgs: number) {
     super();
+    this._funcName = funcName;
     this._numArgs = numArgs;
   }
 
   do(_currentState: State) {
     // pop func object from stack.
-    const functionObj = _currentState.evaluationStack.pop();
-
-    // make sure it is a function.
-    if (
-      !functionObj ||
-      typeof functionObj !== "object" ||
-      !("type" in functionObj) ||
-      functionObj.type !== "Function"
-    ) {
-      console.error("this object is not callable");
-      _currentState.evaluationStack.push(null);
-      return;
+    const func = _currentState.getFunction(this._funcName);
+    // see if getFunction returns undefined.
+    if (!func) {
+      throw new NameError(`name '${this._funcName}' is not defined`);
     }
-
-    const func = functionObj as UserFunction;
-
-    // pop arguments in reverse order.
+    // pop arguments in reverse order
     const args: PythonValue[] = [];
     for (let i = 0; i < this._numArgs; i++) {
       args.unshift(_currentState.evaluationStack.pop()!);
     }
-
-    // check if argument count matches
+    // does the argument count match?
     if (args.length !== func.params.length) {
-      console.error("arguments are mismatched.");
-      _currentState.evaluationStack.push(null);
-      return;
+      throw new TypeError(
+        `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given`,
+      );
     }
 
-    // enter a new scope. save current variables.
+    // save current variables (enter new scope)
     const savedVariables = new Map(_currentState.variables);
     _currentState.variables.clear();
 
-    // bind parameters -> arguments
+    // bind the parameters to the arguments
     for (let i = 0; i < func.params.length; i++) {
       _currentState.setVariable(func.params[i], args[i]);
     }
 
-    // store current PC.
+    // store current PC
     const savedPC = _currentState.programCounter;
 
-    // execute function body commands now.
+    // EXECUTE FUNCTION BODY HERE
     let returnValue: PythonValue = null;
     for (let i = 0; i < func.body.length; i++) {
       const cmd = func.body[i];
       cmd.do(_currentState);
 
-      // did we hit a return statement?
-      // ReturnCommand should push a value to the returnStack
+      // check if we hit a return statement each iteration.
       if (_currentState.returnStack.length > 0) {
         returnValue = _currentState.popReturnStack()!;
-        break; // exit function early!
+        break;
       }
     }
-
-    // restore previous scope from savedVariables.
+    // function done, restore previous scope
     _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
 
+    // push return value onto evaluation stack
     _currentState.evaluationStack.push(returnValue);
+  }
+}
 
-    // pop return value, restore func state.
-    this._undoCommand = new (class extends Command {
-      do(state: State) {
-        state.evaluationStack.pop(); // pop return value
-        // push args back onto evaluation stack.
-        for (const arg of args) {
-          state.evaluationStack.push(arg);
-        }
-        state.evaluationStack.push(functionObj); // push function back
-      }
-    })();
+// registers the function in the state.
+export class DefineFunctionCommand extends Command {
+  private _functionObj: UserFunction;
+
+  constructor(functionObj: UserFunction) {
+    super();
+    this._functionObj = functionObj;
+  }
+
+  do(_currentState: State) {
+    _currentState.setFunction(this._functionObj.name, this._functionObj);
   }
 }

@@ -43,6 +43,7 @@ import {
   StrCommand,
   BoolCommand,
   ListCommand,
+  DefineFunctionCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -424,18 +425,18 @@ export class FuncDefStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
 
-    // extract the parameter names from formal param list
+    // extract the parameter names
     const paramNames: string[] = [];
     if (this._formalParamList && this._formalParamList._paramsList) {
       for (const param of this._formalParamList._paramsList) {
         paramNames.push(param._tok.text);
       }
     }
-
-    // get the function body commands
+    // console.log("Function params:", paramNames);
+    // get function body commands
     const blockCommands = this._block.execute();
 
-    // create the actual function object
+    // create the function object
     const functionObj: UserFunction = {
       name: this._name._tok.text,
       params: paramNames,
@@ -443,9 +444,8 @@ export class FuncDefStatementNode extends StatementNode {
       type: "Function",
     };
 
-    // push function object onto stack, then assign to a new variable
-    commands.push(new PushValueCommand(functionObj));
-    commands.push(new AssignVariableCommand(this._name._tok.text));
+    // define the function in state
+    commands.push(new DefineFunctionCommand(functionObj));
 
     return commands;
   }
@@ -804,10 +804,11 @@ export class FuncCallExpressionNode extends ExpressionNode {
     }
 
     // if it is not a built-in func, it's user-defined.
-    // retreive func obj.
-    commands.push(...this._func_name.evaluate());
-    commands.push(new CallUserFunctionCommand(numArgs));
-    return commands;
+    if (this._func_name instanceof IdentifierExpressionNode) {
+      const funcName = this._func_name._tok.text;
+      commands.push(new CallUserFunctionCommand(funcName, numArgs));
+      return commands;
+    }
   }
 }
 

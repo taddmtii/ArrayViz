@@ -164,7 +164,7 @@ for_loop -> %FOR %IDENTIFIER %IN expression %COLON block {% d => (new ForStateme
 
 while_loop -> %WHILE expression %COLON block {% d => (new WhileStatementNode(d[1], d[3], d[0])) %}
 
-func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), d[3], d[7], d[0])) %}
+func_def -> %DEF %IDENTIFIER %LPAREN (formal_params_list):? %RPAREN (%ARROW expression):? %COLON block {% d => (new FuncDefStatementNode(new IdentifierExpressionNode(d[1]), d[3] ? d[3][0] : null, d[7], d[0])) %}
 
 formal_params_list -> %IDENTIFIER (%COMMA %IDENTIFIER):*  {% d => new FormalParamsListExpressionNode([new IdentifierExpressionNode(d[0]), ...d[1].map(x => new IdentifierExpressionNode(x[1]))]) %}
 
