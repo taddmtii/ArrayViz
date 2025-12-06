@@ -250,21 +250,25 @@ export class IfStatementNode extends StatementNode {
 
     let thenCommands: Command[] = this._thenBranch.execute();
     let elseCommands: Command[] = [];
-
-    // if else branch exists...
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
-    // after we evaluate those branches, we can then conidtionally jump.
-    // if condition is true, execute then block. if not, jump OVER it.
-    commands.push(new ConditionalJumpCommand(2 + thenCommands.length));
+    if (elseCommands.length > 0) {
+      // has an else: jump over then branch + the jump command after it
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
+    } else {
+      // no else: just jump over the then branch
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
+    }
+
     commands.push(...thenCommands); // have to spread these since we are pushing multiple.
 
-    // then branch now run, jump over else branch.
     if (elseCommands.length > 0) {
+      // has an else: jump over then branch + the jump command after it
       commands.push(new JumpCommand(elseCommands.length + 1));
       commands.push(...elseCommands);
     }
+
     return commands;
   }
 }
@@ -297,13 +301,24 @@ export class ElifStatementNode extends StatementNode {
     if (this._elseBranch) {
       elseCommands = this._elseBranch.execute();
     }
-    commands.push(new ConditionalJumpCommand(2 + thenCommands.length));
+
+    // if condition is false, jump over then branch
+    if (elseCommands.length > 0) {
+      // has more elif/else: jump over then branch + the jump command after it
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
+    } else {
+      // no more elif/else: just jump over then branch
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
+    }
+
     commands.push(...thenCommands);
 
+    // if we executed then branch, jump over remaining elif/else
     if (elseCommands.length > 0) {
       commands.push(new JumpCommand(elseCommands.length + 1));
       commands.push(...elseCommands);
     }
+
     return commands;
   }
 }
@@ -462,7 +477,12 @@ export class ExpressionStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     commands.push(...this._expression.evaluate());
-    commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
+    // commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
+    // only pop for func call expressions, let
+    // if (this._expression instanceof FuncCallExpressionNode) {
+    //   commands.push(new PopValueCommand());
+    // }
+
     return commands;
   }
 }

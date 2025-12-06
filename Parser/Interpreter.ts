@@ -420,6 +420,10 @@ export class ConditionalJumpCommand extends Command {
   do(_currentState: State) {
     const condition = _currentState.evaluationStack.pop()!; // true or false depending on
     const boolCondition = Boolean(condition);
+    console.log(
+      `ConditionalJump: condition=${condition}, bool=${boolCondition}, jump=${this._commandsToJump}`,
+    );
+
     if (condition === undefined) {
       throw new RuntimeError(
         "Problem within conditional jump (condition evaluated to undefined)",
@@ -427,7 +431,10 @@ export class ConditionalJumpCommand extends Command {
     }
     // shoudl we jump?
     if (boolCondition === false) {
+      console.log(`Jumping forward ${this._commandsToJump - 1} commands`);
       _currentState.programCounter += this._commandsToJump - 1; // subtract 1 because stepForward increments PC;
+    } else {
+      console.log(`Not jumping, executing then branch`); // DEBUG
     }
     // PC should be incremented normally.
   }
@@ -615,10 +622,10 @@ export class BinaryOpCommand extends Command {
           res = Math.floor(evaluatedLeft / evaluatedRight);
           break;
         case "and":
-          res = evaluatedLeft && evaluatedRight;
+          res = Boolean(evaluatedLeft && evaluatedRight);
           break;
         case "or":
-          res = evaluatedRight || evaluatedRight;
+          res = Boolean(evaluatedRight || evaluatedRight);
           break;
       }
     }
@@ -670,6 +677,9 @@ export class ComparisonOpCommand extends Command {
       default:
         res = false;
     }
+    console.log(
+      `Comparison: ${evaluatedLeft} ${this._op} ${evaluatedRight} = ${res}`,
+    );
     _currentState.evaluationStack.push(res);
 
     this._undoCommand = new (class extends Command {
@@ -1013,16 +1023,25 @@ export class IndexAccessCommand extends Command {
   do(_currentState: State) {
     const index = _currentState.evaluationStack.pop();
     const list = _currentState.evaluationStack.pop();
-    let newindex: number = 0;
-    if (typeof index === "number") {
-      newindex = Number(index);
-    } else if (typeof index === "number") {
-      newindex = index;
+
+    if (typeof index !== "number") {
+      throw new TypeError(`index must be a number`);
     }
-    // at the end of the day, we need to verify these types if there was some problem in the popped stack values.
+
+    let actualIndex = index;
     if (Array.isArray(list) || typeof list === "string") {
-      this._undoCommand = new PopValueCommand(); // placeholder
-      _currentState.evaluationStack.push(list[newindex]);
+      // handle negative indices / calculate offset
+      if (actualIndex < 0) {
+        actualIndex = list.length + actualIndex;
+      }
+
+      // check bounds
+      if (actualIndex < 0 || actualIndex >= list.length) {
+        throw new IndexError(`list index out of range`);
+      }
+
+      this._undoCommand = new PopValueCommand();
+      _currentState.evaluationStack.push(list[actualIndex]);
     }
   }
 }
@@ -1299,6 +1318,13 @@ export class CallUserFunctionCommand extends Command {
       throw new NameError(`name '${this._funcName}' is not defined`);
     }
 
+    console.log(
+      `Function ${this._funcName} body has ${func.body.length} commands:`,
+    );
+    func.body.forEach((cmd, i) => {
+      console.log(`  ${i}: ${cmd.constructor.name}`);
+    });
+
     // pop arguments in reverse order
     const args: PythonValue[] = [];
     for (let i = 0; i < this._numArgs; i++) {
@@ -1326,11 +1352,13 @@ export class CallUserFunctionCommand extends Command {
     // clear evaluation stack for clean function execution
     _currentState.evaluationStack.length = 0;
     _currentState.variables = newScope;
+    _currentState.programCounter = 0;
 
     // execute function body
     let returnValue: PythonValue = null;
-    for (let i = 0; i < func.body.length; i++) {
-      const cmd = func.body[i];
+    while (_currentState.programCounter < func.body.length) {
+      const cmd = func.body[_currentState.programCounter];
+      _currentState.programCounter++;
       cmd.do(_currentState);
 
       if (_currentState.returnStack.length > 0) {

@@ -2,6 +2,7 @@
 // http://github.com/Hardmath123/nearley
 import * as moo from "moo";
 import IndentationLexer from "moo-indentation-lexer";
+
 import {
   ProgramNode,
   StatementNode,
@@ -39,7 +40,6 @@ import {
 function id(x) {
   return x[0];
 }
-
 const lexer = new IndentationLexer({
   indentationType: "WS",
   newlineType: "NL",

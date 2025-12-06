@@ -2,6 +2,7 @@
 // http://github.com/Hardmath123/nearley
 import * as moo from "moo";
 import IndentationLexer from "moo-indentation-lexer";
+
 import {
   ProgramNode,
   StatementNode,
@@ -33,12 +34,12 @@ import {
   BooleanLiteralExpressionNode,
   StringLiteralExpressionNode,
   IdentifierExpressionNode,
+  FStringLiteralExpressionNode,
 } from "./Nodes";
 
 function id(x) {
   return x[0];
 }
-
 const lexer = new IndentationLexer({
   indentationType: "WS",
   newlineType: "NL",
@@ -89,6 +90,8 @@ const lexer = new IndentationLexer({
 
     // also account for escape single and double quotes within string
     // also add f-strings
+    F_STRING_SINGLE: /f'(?:[^'\\]|\\[\s\S])*'/,
+    F_STRING_DOUBLE: /f"(?:[^"\\]|\\[\s\S])*"/,
     STRING_SINGLE: /'(?:[^'\\]|\\.)*'/, // matches anything but single quotes and backslashes.
     STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
     STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/, // come back to this, triple double and single + allow for new lines
@@ -796,6 +799,32 @@ var grammar = {
     {
       name: "atom",
       symbols: [
+        lexer.has("IDENTIFIER") ? { type: "IDENTIFIER" } : IDENTIFIER,
+        lexer.has("STRING_SINGLE") ? { type: "STRING_SINGLE" } : STRING_SINGLE,
+      ],
+      postprocess: (d) => {
+        if (d[0].text === "f") {
+          return new FStringLiteralExpressionNode(d[1]);
+        }
+        return new StringLiteralExpressionNode(d[1]);
+      },
+    },
+    {
+      name: "atom",
+      symbols: [
+        lexer.has("IDENTIFIER") ? { type: "IDENTIFIER" } : IDENTIFIER,
+        lexer.has("STRING_DOUBLE") ? { type: "STRING_DOUBLE" } : STRING_DOUBLE,
+      ],
+      postprocess: (d) => {
+        if (d[0].text === "f") {
+          return new FStringLiteralExpressionNode(d[1]);
+        }
+        return new StringLiteralExpressionNode(d[1]);
+      },
+    },
+    {
+      name: "atom",
+      symbols: [
         lexer.has("STRING_SINGLE") ? { type: "STRING_SINGLE" } : STRING_SINGLE,
       ],
       postprocess: (d) => new StringLiteralExpressionNode(d[0]),
@@ -878,5 +907,4 @@ var grammar = {
   ],
   ParserStart: "program",
 };
-
 export default grammar;
