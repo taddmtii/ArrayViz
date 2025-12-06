@@ -566,7 +566,9 @@ export class BinaryOpCommand extends Command {
   do(_currentState: State) {
     const evaluatedRight = _currentState.evaluationStack.pop()!; // always pop right first!!
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-
+    console.log(
+      `BinaryOp ${this._op}: left=${evaluatedLeft}, right=${evaluatedRight}`,
+    ); // DEBUG
     let res: PythonValue = 0;
 
     if (
@@ -621,6 +623,7 @@ export class BinaryOpCommand extends Command {
       }
     }
     _currentState.evaluationStack.push(res);
+    console.log(`BinaryOp result: ${res}`);
 
     this._undoCommand = new (class extends Command {
       do(state: State) {
@@ -1115,7 +1118,11 @@ export class ReturnCommand extends Command {
     super();
   }
   do(_currentState: State) {
+    console.log("ReturnCommand - eval stack before pop:", [
+      ..._currentState.evaluationStack,
+    ]);
     const value = _currentState.evaluationStack.pop()!;
+    console.log("ReturnCommand - popped value:", value);
     _currentState.pushReturnStack(value);
   }
 }
@@ -1291,11 +1298,13 @@ export class CallUserFunctionCommand extends Command {
     if (!func) {
       throw new NameError(`name '${this._funcName}' is not defined`);
     }
+
     // pop arguments in reverse order
     const args: PythonValue[] = [];
     for (let i = 0; i < this._numArgs; i++) {
       args.unshift(_currentState.evaluationStack.pop()!);
     }
+    console.log(`Calling ${this._funcName} with args:`, args); // DEBUG
     // does the argument count match?
     if (args.length !== func.params.length) {
       throw new TypeError(
@@ -1303,35 +1312,40 @@ export class CallUserFunctionCommand extends Command {
       );
     }
 
-    // save current variables (enter new scope)
+    // save current state
     const savedVariables = new Map(_currentState.variables);
-    _currentState.variables.clear();
-
-    // bind the parameters to the arguments
-    for (let i = 0; i < func.params.length; i++) {
-      _currentState.setVariable(func.params[i], args[i]);
-    }
-
-    // store current PC
+    const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
 
-    // EXECUTE FUNCTION BODY HERE
+    // create new scope with parent variables
+    const newScope = new Map(savedVariables);
+    for (let i = 0; i < func.params.length; i++) {
+      newScope.set(func.params[i], args[i]);
+    }
+
+    // clear evaluation stack for clean function execution
+    _currentState.evaluationStack.length = 0;
+    _currentState.variables = newScope;
+
+    // execute function body
     let returnValue: PythonValue = null;
     for (let i = 0; i < func.body.length; i++) {
       const cmd = func.body[i];
       cmd.do(_currentState);
 
-      // check if we hit a return statement each iteration.
       if (_currentState.returnStack.length > 0) {
         returnValue = _currentState.popReturnStack()!;
         break;
       }
     }
-    // function done, restore previous scope
+
+    // restore previous state (restore the global evalutation stack, variabels and program counter)
+    _currentState.evaluationStack.length = 0;
+    _currentState.evaluationStack.push(...savedEvaluationStack);
     _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
 
-    // push return value onto evaluation stack
+    // Push return value
     _currentState.evaluationStack.push(returnValue);
   }
 }
@@ -1347,5 +1361,37 @@ export class DefineFunctionCommand extends Command {
 
   do(_currentState: State) {
     _currentState.setFunction(this._functionObj.name, this._functionObj);
+  }
+}
+
+// finds {variable} patterns and replaces them wiht the actual variable values.
+export class InterpolateFStringCommand extends Command {
+  private _template: string;
+
+  constructor(template: string) {
+    super();
+    this._template = template;
+  }
+
+  do(_currentState: State) {
+    // find all {variable} patterns
+    const pattern = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+
+    let result = this._template;
+    let match;
+
+    while ((match = pattern.exec(this._template)) !== null) {
+      const varName = match[1];
+      const value = _currentState.getVariable(varName);
+
+      if (value === null) {
+        throw new NameError(`name '${varName}' is not defined`);
+      }
+
+      // replace {varName} with the actual value (string representation since we are interpolating)
+      result = result.replace(`{${varName}}`, String(value));
+    }
+
+    _currentState.evaluationStack.push(result);
   }
 }

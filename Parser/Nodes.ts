@@ -44,6 +44,7 @@ import {
   BoolCommand,
   ListCommand,
   DefineFunctionCommand,
+  InterpolateFStringCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -461,7 +462,7 @@ export class ExpressionStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     commands.push(...this._expression.evaluate());
-    // commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
+    commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
     return commands;
   }
 }
@@ -1010,6 +1011,31 @@ export class EvaluatedExpressionNode extends ExpressionNode {
     const commands: Command[] = [];
     // commands.push(new PushValueCommand(this._value));
     // TODO: figure out what to do with this node.
+    return commands;
+  }
+}
+
+export class FStringLiteralExpressionNode extends ExpressionNode {
+  private _value: moo.Token;
+  constructor(_value: moo.Token) {
+    super(_value);
+    this._value = _value;
+  }
+
+  evaluate(): Command[] {
+    const commands: Command[] = [];
+    commands.push(new HighlightExpressionCommand(this));
+
+    let text = this._value.text;
+
+    // remove f prefix and quotes
+    if (text.startsWith("f'") || text.startsWith('f"')) {
+      text = text.slice(2, -1); // remove f' and trailing quote
+    }
+
+    // parse and replace {variable} with actual values
+    commands.push(new InterpolateFStringCommand(text));
+
     return commands;
   }
 }

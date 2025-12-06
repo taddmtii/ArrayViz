@@ -33,7 +33,8 @@ const { ProgramNode,
         ListLiteralExpressionNode,
         BooleanLiteralExpressionNode,
         StringLiteralExpressionNode,
-        IdentifierExpressionNode
+        IdentifierExpressionNode,
+        FStringLiteralExpressionNode
         } = require('./Nodes.js');
 const lexer = new IndentationLexer({
     indentationType: 'WS',
@@ -85,6 +86,8 @@ const lexer = new IndentationLexer({
 
     // also account for escape single and double quotes within string
     // also add f-strings
+    F_STRING_SINGLE: /f'(?:[^'\\]|\\[\s\S])*'/,
+    F_STRING_DOUBLE: /f"(?:[^"\\]|\\[\s\S])*"/,
     STRING_SINGLE: /'(?:[^'\\]|\\.)*'/, // matches anything but single quotes and backslashes.
     STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
     STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/, // come back to this, triple double and single + allow for new lines
@@ -250,6 +253,18 @@ list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %
             | primary %LSQBRACK %COLON %COLON:? %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, null, null) %} # nums[:] || nums[::]
 
 atom -> number {% d => d[0] %}
+        | %IDENTIFIER %STRING_SINGLE {% d => {
+          if (d[0].text === 'f') {
+            return new FStringLiteralExpressionNode(d[1]);
+          }
+          return new StringLiteralExpressionNode(d[1]);
+        } %}
+       | %IDENTIFIER %STRING_DOUBLE {% d => {
+          if (d[0].text === 'f') {
+            return new FStringLiteralExpressionNode(d[1]);
+          }
+          return new StringLiteralExpressionNode(d[1]);
+        } %}
       | %STRING_SINGLE {% d => (new StringLiteralExpressionNode(d[0])) %}
       | %STRING_DOUBLE {% d => (new StringLiteralExpressionNode(d[0])) %}
       | %IDENTIFIER {% d => (new IdentifierExpressionNode(d[0])) %}

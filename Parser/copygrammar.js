@@ -2,7 +2,6 @@
 // http://github.com/Hardmath123/nearley
 import * as moo from "moo";
 import IndentationLexer from "moo-indentation-lexer";
-
 import {
   ProgramNode,
   StatementNode,
@@ -377,7 +376,7 @@ var grammar = {
       postprocess: (d) =>
         new FuncDefStatementNode(
           new IdentifierExpressionNode(d[1]),
-          d[3],
+          d[3] ? d[3][0] : null,
           d[7],
           d[0],
         ),
@@ -879,4 +878,5 @@ var grammar = {
   ],
   ParserStart: "program",
 };
+
 export default grammar;

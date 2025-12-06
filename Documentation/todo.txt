@@ -2,8 +2,15 @@ What needs to still be done:
 
 - Implement Predict Mode
 - general error checking
-- Highlight statements/expressions within the UI as commands execute/undo (basic implementation, double check this)
-- Implement user defined functions
+- Highlight statements/expressions within the UI as commands execute/undo. Highlights need to disappear when code is deleted/not being stepped through.
 - implement all undos for every single command so we can step back!
+- Continue looking into potential bugs with range()
+- variable interpolation in strings (f string)
+- debug factorial func / return commands. FIRST RETURN that shows up always returns there instead of skipping.
 
-- look into how python handles iterables / nested for loops. Am I currently doing that?
+    def fact(n):
+        if n == 0:
+            return 1 // returns 1 insetad of skipping, maybe we do not jump properly.
+        return n * fact(n - 1)
+
+    print(fact(5))
