@@ -493,9 +493,22 @@ export class BlockStatementNode extends StatementNode {
     super(_tok);
     this._statementList = _statementList;
   }
+  // execute(): Command[] {
+  //   const commands: Command[] = [];
+  //   for (const statement of this._statementList) {
+  //     commands.push(...statement.execute());
+  //   }
+  //   return commands;
+  // }
   execute(): Command[] {
     const commands: Command[] = [];
-    for (const statement of this._statementList) {
+    for (let i = 0; i < this._statementList.length; i++) {
+      const statement = this._statementList[i];
+      if (statement === null) {
+        console.error(`Statement at index ${i} is NULL!`);
+        console.error("Statement list:", this._statementList);
+        continue; // Skip null statements
+      }
       commands.push(...statement.execute());
     }
     return commands;
@@ -861,11 +874,11 @@ export class ListAccessExpressionNode extends ExpressionNode {
 
  */
 export class MethodCallExpressionNode extends ExpressionNode {
-  private _list: ListLiteralExpressionNode;
+  private _list: ExpressionNode;
   private _methodName: IdentifierExpressionNode;
   private _argsList: ArgListExpressionNode;
   constructor(
-    _list: ListLiteralExpressionNode,
+    _list: ExpressionNode,
     _methodName: IdentifierExpressionNode,
     _argsList: ArgListExpressionNode,
   ) {
@@ -1047,12 +1060,12 @@ export class FStringLiteralExpressionNode extends ExpressionNode {
     commands.push(new HighlightExpressionCommand(this));
 
     let text = this._value.text;
-
-    // remove f prefix and quotes
-    if (text.startsWith("f'") || text.startsWith('f"')) {
-      text = text.slice(2, -1); // remove f' and trailing quote
+    if (
+      (text.startsWith('"') && text.endsWith('"')) ||
+      (text.startsWith("'") && text.endsWith("'"))
+    ) {
+      text = text.slice(1, -1);
     }
-
     // parse and replace {variable} with actual values
     commands.push(new InterpolateFStringCommand(text));
 

@@ -3,66 +3,22 @@ What needs to still be done:
 - Implement Predict Mode
 - general error checking
 - Highlight statements/expressions within the UI as commands execute/undo. Highlights need to disappear when code is deleted/not being stepped through.
-- implement all undos for every single command so we can step back!
+- implement all undos for every single command so we can step back
+- Create preset options in the UI for auto populated code for the following sorts and searches:
+  - Bubble Sort
+  - Insertion Sort
+  - Selection Sort
+  - Quick Sort
+  - Merge Sort
+  - Heap Sort
+  - Binary Search
+  - Linear Search
 
-- #Test list slicing
+- fix list slicing
+#Test list slicing
 numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 print(numbers[2:5])    # [2, 3, 4]
 print(numbers[:3])     # [0, 1, 2]
-# # print(numbers[7:])     # [7, 8, 9]
-# print(numbers[::2])    # [0, 2, 4, 6, 8]
+print(numbers[7:])     # [7, 8, 9]
+print(numbers[::2])    # [0, 2, 4, 6, 8]
 print(numbers[1:7:2])  # [1, 3, 5]
-
-FIX lines 2 and 3 there, causing parser errors.
-
-- # Test and/or/not
-a = True
-b = False
-print(a and b)  # False
-print(a or b)   # True
-print(not a)    # False
-print(not b)    # True
-
-x = 10
-print(x > 5 and x < 15)  # True
-print(x < 5 or x > 15)   # False
-
-and / or operations print 0 instead of true or false.
-
-- # Test building a list
-squares = []
-for i in range(5):
-    squares.append(i * i)
-print(squares)  # [0, 1, 4, 9, 16]
-
-causes these erors:
-
-
-InterpreterService.ts:46 (30) [HighlightStatementCommand, HighlightExpressionCommand, CreateListCommand, AssignVariableCommand, HighlightStatementCommand, HighlightExpressionCommand, HighlightExpressionCommand, PushValueCommand, RangeCommand, PushLoopBoundsCommand, AssignVariableCommand, ConditionalJumpCommand, HighlightStatementCommand, HighlightExpressionCommand, HighlightExpressionCommand, RetrieveValueCommand, HighlightExpressionCommand, HighlightExpressionCommand, RetrieveValueCommand, HighlightExpressionCommand, RetrieveValueCommand, BinaryOpCommand, AppendCommand, JumpCommand, PopLoopBoundsCommand, HighlightStatementCommand, HighlightExpressionCommand, HighlightExpressionCommand, RetrieveValueCommand, PrintCommand]
-Interpreter.ts:543 Statement Highlighted!
-Interpreter.ts:489 Highlight in UI: [EXPR] ListLiteralExpressionNode: "[" at line 2
-Interpreter.ts:543 Statement Highlighted!
-Interpreter.ts:489 Highlight in UI: [EXPR] FuncCallExpressionNode: "range" at line 3
-Interpreter.ts:489 Highlight in UI: [EXPR] NumberLiteralExpressionNode: "5" at line 3
-Interpreter.ts:423 ConditionalJump: condition=true, bool=true, jump=13
-Interpreter.ts:437 Not jumping, executing then branch
-Interpreter.ts:543 Statement Highlighted!
-Interpreter.ts:489 Highlight in UI: [EXPR] MethodCallExpressionNode: "squares" at line 4
-Interpreter.ts:489 Highlight in UI: [EXPR] IdentifierExpressionNode: "squares" at line 4
-Interpreter.ts:489 Highlight in UI: [EXPR] BinaryExpressionNode: "*" at line 4
-2Interpreter.ts:489 Highlight in UI: [EXPR] IdentifierExpressionNode: "i" at line 4
-Interpreter.ts:576 BinaryOp *: left=0, right=0
-Interpreter.ts:633 BinaryOp result: 0
-Interpreter.ts:423 ConditionalJump: condition=0,1,2,3,4, bool=true, jump=13
-Interpreter.ts:437 Not jumping, executing then branch
-Interpreter.ts:543 Statement Highlighted!
-Interpreter.ts:489 Highlight in UI: [EXPR] MethodCallExpressionNode: "squares" at line 4
-Interpreter.ts:489 Highlight in UI: [EXPR] IdentifierExpressionNode: "squares" at line 4
-Interpreter.ts:489 Highlight in UI: [EXPR] BinaryExpressionNode: "*" at line 4
-2Interpreter.ts:489 Highlight in UI: [EXPR] IdentifierExpressionNode: "i" at line 4
-Interpreter.ts:576 BinaryOp *: left=null, right=null
-Interpreter.ts:633 BinaryOp result: 0
-Interpreter.ts:423 ConditionalJump: condition=undefined, bool=false, jump=13
-Interpreter.ts:428 Uncaught RuntimeError: Problem within conditional jump (condition evaluated to undefined)
-    at ConditionalJumpCommand.do (Interpreter.ts:428:13)
-    at InterpreterService.stepForward (

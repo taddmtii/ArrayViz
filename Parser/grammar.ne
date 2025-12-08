@@ -250,6 +250,7 @@ list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %
             | primary %LSQBRACK %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, d[3], d[5]) %} # nums[:1:2]
             | primary %LSQBRACK %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, d[3], null) %} # nums[:2]
             | primary %LSQBRACK expression %COLON %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], null, null) %} # nums[2:]
+            | primary %LSQBRACK %COLON %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, null, d[4]) %} # nums[::2]
             | primary %LSQBRACK %COLON %COLON:? %RSQBRACK {% d => new ListSliceExpressionNode(d[0], null, null, null) %} # nums[:] || nums[::]
 
 atom -> number {% d => d[0] %}

@@ -52,6 +52,20 @@ def greeting(name) -> str:
     return "Hello, " + name
 ```
 
+## Output
+
+### f-strings
+
+PyViz allows you to embed variable names inside string literals, using curly braces `{}`.
+
+***PyViz does not currently support embedding expressions inside f-strings directly, they must first be stored in a variable***
+
+```python
+name = "Alice"
+age = 30
+print(f"Hello, {name}. You are {age} years old.")
+```
+
 ## Operators
 
 There are three types of operators in PyViz:
