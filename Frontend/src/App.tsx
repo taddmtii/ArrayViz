@@ -6,7 +6,7 @@ import VariablesWindow from "./components/VariablesWindow";
 import OutputWindow from "./components/OutputWindow";
 import { useRef, useState } from "react";
 import { InterpreterService } from "./services/InterpreterService";
-import { type PythonValue } from "../../Parser/Nodes";
+import { type PythonValue, type UserFunction } from "../../Parser/Nodes";
 
 export interface SimplifiedState {
   variables: Record<string, PythonValue>;
@@ -22,6 +22,7 @@ export interface SimplifiedState {
     startCol: number;
     endCol: number;
   } | null;
+  functionDefinitions: Map<string, UserFunction>;
 }
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
     totalSteps: 0,
     highlightedStatement: null,
     highlightedExpression: null,
+    functionDefinitions: new Map<string, UserFunction>(),
   });
 
   const interpreterServiceReference = useRef(new InterpreterService());
@@ -104,7 +106,10 @@ function App() {
 
         <div className="flex flex-col w-[40vw] h-[85vh] gap-2">
           <div className="h-2/3">
-            <VariablesWindow variables={interpreterState.variables} />
+            <VariablesWindow
+              variables={interpreterState.variables}
+              functionDefinitions={interpreterState.functionDefinitions}
+            />
           </div>
           <div className="h-1/3">
             <OutputWindow outputs={interpreterState.outputs} />

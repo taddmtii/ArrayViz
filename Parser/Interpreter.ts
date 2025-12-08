@@ -569,6 +569,9 @@ export class RetrieveValueCommand extends Command {
   }
   do(_currentState: State) {
     try {
+      if (!_currentState.hasVariable(this._varName)) {
+        throw new NameError(`name '${this._varName}' is not defined`);
+      }
       const value = _currentState.getVariable(this._varName);
       this._undoCommand = new PopValueCommand();
       _currentState.evaluationStack.push(value);
@@ -1289,6 +1292,12 @@ export class ListSliceCommand extends Command {
       _currentState.evaluationStack.push(result);
     } else if (typeof list === "string") {
       let result: string = "";
+      let endIndex: number;
+      if (end === null) {
+        endIndex = stepIndex > 0 ? list.length : -1;
+      } else {
+        endIndex = Number(end);
+      }
 
       if (startIndex < 0) {
         startIndex = list.length + startIndex;

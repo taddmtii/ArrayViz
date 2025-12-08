@@ -119,6 +119,7 @@ export class InterpreterService {
       totalSteps: this.commands.length,
       highlightedStatement: this.state.getCurrentStatementHighlight(),
       highlightedExpression: this.state.getCurrentExpressionHighlight(),
+      functionDefinitions: this.state.functionDefinitions,
     };
     return result;
   }
