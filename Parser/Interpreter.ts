@@ -258,17 +258,19 @@ export class AssignVariableCommand extends Command {
         const list = _currentState.evaluationStack.pop()!;
 
         if (value === undefined || index === undefined || list === undefined) {
-          throw new RuntimeError("Stack underflow during list assignment");
+          _currentState.error = new RuntimeError(
+            "Stack underflow during list assignment",
+          );
         }
 
         if (typeof index !== "number") {
-          throw new TypeError(
+          _currentState.error = new TypeError(
             `list indices must be integers, not ${typeof index}`,
           );
         }
 
         if (!Array.isArray(list)) {
-          throw new TypeError(
+          _currentState.error = new TypeError(
             `'${typeof list}' object does not support item assignment`,
           );
         }
@@ -279,7 +281,9 @@ export class AssignVariableCommand extends Command {
         }
 
         if (actualIndex < 0 || actualIndex >= list.length) {
-          throw new IndexError(`list assignment index out of range`);
+          _currentState.error = new IndexError(
+            `list assignment index out of range`,
+          );
         }
         const name = this._name;
         const oldValue = list[actualIndex];
@@ -348,7 +352,9 @@ export class AssignVariableCommand extends Command {
         const newValue = _currentState.evaluationStack.pop();
 
         if (newValue === undefined) {
-          throw new RuntimeError("Stack underflow during variable assignment");
+          _currentState.error = new RuntimeError(
+            "Stack underflow during variable assignment",
+          );
         }
         const oldValue = _currentState.getVariable(this._name);
         const hadVariable = _currentState.hasVariable(this._name);
@@ -425,7 +431,7 @@ export class BreakCommand extends Command {
   }
   do(_currentState: State) {
     if (_currentState.loopStack.length === 0) {
-      throw new RuntimeError("'break' outside loop");
+      _currentState.error = new RuntimeError("'break' outside loop");
     }
     // store oldPC for undo so we can go back to it.
     const oldPC = _currentState.programCounter;
@@ -450,7 +456,7 @@ export class ContinueCommand extends Command {
   }
   do(_currentState: State) {
     if (_currentState.loopStack.length === 0) {
-      throw new RuntimeError("'continue' not properly in loop");
+      _currentState.error = new RuntimeError("'continue' not properly in loop");
     }
     const oldPC = _currentState.programCounter;
     // get most recent loop bounds by grabbing the top.
@@ -486,7 +492,7 @@ export class ConditionalJumpCommand extends Command {
     );
 
     if (condition === undefined) {
-      throw new RuntimeError(
+      _currentState.error = new RuntimeError(
         "Problem within conditional jump (condition evaluated to undefined)",
       );
     }
@@ -570,7 +576,9 @@ export class RetrieveValueCommand extends Command {
   do(_currentState: State) {
     try {
       if (!_currentState.hasVariable(this._varName)) {
-        throw new NameError(`name '${this._varName}' is not defined`);
+        _currentState.error = new NameError(
+          `name '${this._varName}' is not defined`,
+        );
       }
       const value = _currentState.getVariable(this._varName);
       this._undoCommand = new PopValueCommand();
@@ -674,7 +682,9 @@ export class BinaryOpCommand extends Command {
           break;
         case "%":
           if (evaluatedRight === 0) {
-            throw new ZeroDivisionError("integer division or modulo by zero");
+            _currentState.error = new ZeroDivisionError(
+              "integer division or modulo by zero",
+            );
           }
           res = evaluatedLeft % evaluatedRight;
           break;
@@ -686,13 +696,17 @@ export class BinaryOpCommand extends Command {
           break;
         case "/":
           if (evaluatedRight === 0) {
-            throw new ZeroDivisionError("integer division or modulo by zero");
+            _currentState.error = new ZeroDivisionError(
+              "integer division or modulo by zero",
+            );
           }
           res = evaluatedLeft / evaluatedRight;
           break;
         case "//":
           if (evaluatedRight === 0) {
-            throw new ZeroDivisionError("integer division or modulo by zero");
+            _currentState.error = new ZeroDivisionError(
+              "integer division or modulo by zero",
+            );
           }
           res = Math.floor(evaluatedLeft / evaluatedRight);
           break;
@@ -774,16 +788,16 @@ export class UnaryOpCommand extends Command {
     switch (this._operator) {
       case "-":
         if (typeof operand !== "number") {
-          throw new TypeError(
-            `bad operand type for unary -: '${typeof operand}'`,
+          _currentState.error = new TypeError(
+            `bad operand type for unary minus : '${typeof operand}'`,
           );
         }
         res = -operand;
         break;
       case "+":
         if (typeof operand !== "number") {
-          throw new TypeError(
-            `bad operand type for unary +: '${typeof operand}'`,
+          _currentState.error = new TypeError(
+            `bad operand type for unary plus : '${typeof operand}'`,
           );
         }
         res = operand;
@@ -1220,7 +1234,7 @@ export class IndexAccessCommand extends Command {
     const list = _currentState.evaluationStack.pop();
 
     if (typeof index !== "number") {
-      throw new TypeError(`index must be a number`);
+      _currentState.error = new TypeError(`index must be a number`);
     }
 
     let actualIndex = index;
@@ -1232,7 +1246,7 @@ export class IndexAccessCommand extends Command {
 
       // check bounds
       if (actualIndex < 0 || actualIndex >= list.length) {
-        throw new IndexError(`list index out of range`);
+        _currentState.error = new IndexError(`list index out of range`);
       }
 
       _currentState.evaluationStack.push(list[actualIndex]);
@@ -1589,7 +1603,9 @@ export class CallUserFunctionCommand extends Command {
     const func = _currentState.getFunction(this._funcName);
     // see if getFunction returns undefined.
     if (!func) {
-      throw new NameError(`name '${this._funcName}' is not defined`);
+      _currentState.error = new NameError(
+        `name '${this._funcName}' is not defined`,
+      );
     }
 
     console.log(
@@ -1607,7 +1623,7 @@ export class CallUserFunctionCommand extends Command {
     console.log(`Calling ${this._funcName} with args:`, args); // DEBUG
     // does the argument count match?
     if (args.length !== func.params.length) {
-      throw new TypeError(
+      _currentState.error = new TypeError(
         `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given`,
       );
     }
@@ -1714,7 +1730,9 @@ export class InterpolateFStringCommand extends Command {
         // look up variable in state, throw error if not found.
         const value = _currentState.getVariable(trimmed);
         if (value === null && !_currentState.hasVariable(trimmed)) {
-          throw new NameError(`name '${trimmed}' is not defined`);
+          _currentState.error = new NameError(
+            `name '${trimmed}' is not defined`,
+          );
         }
 
         let strValue: string;

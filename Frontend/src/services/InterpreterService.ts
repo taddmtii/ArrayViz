@@ -1,7 +1,7 @@
 // const grammar = require("../../../Parser/grammar.js");
 import { default as grammar } from "../../../Parser/grammar";
 import nearley from "nearley";
-
+import { InterpreterError } from "../../../Parser/Errors";
 import { State, Command } from "../../../Parser/Interpreter";
 import { ProgramNode } from "../../../Parser/Nodes";
 import type { SimplifiedState } from "../App";
@@ -59,6 +59,7 @@ export class InterpreterService {
         [],
         [],
         new Map(),
+        null,
       );
 
       return true;
@@ -73,7 +74,9 @@ export class InterpreterService {
     if (this.state.programCounter >= this.commands.length) {
       return false; // no more steps
     }
-
+    if (this.state.error) {
+      return false;
+    }
     // get current command based on current step.
     const command = this.commands[this.state.programCounter];
 
@@ -84,12 +87,15 @@ export class InterpreterService {
     //   this.outputs.push(String(value));
     // }
 
-    command.do(this.state);
-    // this.currentStep++;
-    this.state.programCounter++;
-    this.currentStep = this.state.programCounter;
-
-    return true;
+    try {
+      command.do(this.state);
+      this.state.programCounter++;
+      this.currentStep = this.state.programCounter;
+      return true;
+    } catch (error) {
+      // this should just freeze execution
+      return false;
+    }
   }
 
   stepBack(): boolean {
@@ -120,6 +126,7 @@ export class InterpreterService {
       highlightedStatement: this.state.getCurrentStatementHighlight(),
       highlightedExpression: this.state.getCurrentExpressionHighlight(),
       functionDefinitions: this.state.functionDefinitions,
+      error: this.state.error,
     };
     return result;
   }

@@ -7,6 +7,7 @@ import OutputWindow from "./components/OutputWindow";
 import { useRef, useState } from "react";
 import { InterpreterService } from "./services/InterpreterService";
 import { type PythonValue, type UserFunction } from "../../Parser/Nodes";
+import type { InterpreterError } from "../../Parser/Errors";
 
 export interface SimplifiedState {
   variables: Record<string, PythonValue>;
@@ -23,10 +24,11 @@ export interface SimplifiedState {
     endCol: number;
   } | null;
   functionDefinitions: Map<string, UserFunction>;
+  error: InterpreterError | null;
 }
 
 function App() {
-  const [page, setPage] = useState("view");
+  const [page, setPage] = useState<"view" | "predict">("view");
   const [code, setCode] = useState("");
   const [interpreterState, setInterpreterState] = useState<SimplifiedState>({
     variables: {},
@@ -39,7 +41,26 @@ function App() {
     highlightedStatement: null,
     highlightedExpression: null,
     functionDefinitions: new Map<string, UserFunction>(),
+    error: null,
   });
+
+  // handles when we want to clear errors and restart execution.
+  function handleReset() {
+    interpreterServiceReference.current = new InterpreterService();
+    setInterpreterState({
+      variables: {},
+      currentLine: 1,
+      outputs: [],
+      canStepForward: false,
+      canStepBackward: false,
+      currentStep: 0,
+      totalSteps: 0,
+      highlightedStatement: null,
+      highlightedExpression: null,
+      functionDefinitions: new Map<string, UserFunction>(),
+      error: null,
+    });
+  }
 
   const interpreterServiceReference = useRef(new InterpreterService());
 
@@ -99,8 +120,10 @@ function App() {
             onNext={handleStepForward}
             onLast={handleLast}
             onRun={handleRun}
+            onReset={handleReset}
             canStepForward={interpreterState.canStepForward}
             canStepBackward={interpreterState.canStepBackward}
+            hasError={!!interpreterState.error}
           />
         </div>
 
@@ -112,7 +135,10 @@ function App() {
             />
           </div>
           <div className="h-1/3">
-            <OutputWindow outputs={interpreterState.outputs} />
+            <OutputWindow
+              outputs={interpreterState.outputs}
+              error={interpreterState.error}
+            />
           </div>
         </div>
         {/*)}*/}

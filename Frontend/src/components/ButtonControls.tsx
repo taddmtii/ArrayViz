@@ -4,8 +4,10 @@ interface ButtonControlsProps {
   onNext: () => void;
   onLast: () => void;
   onRun: () => void;
+  onReset: () => void;
   canStepForward: boolean;
   canStepBackward: boolean;
+  hasError: boolean;
 }
 
 function ButtonControls({
@@ -14,45 +16,53 @@ function ButtonControls({
   onNext,
   onLast,
   onRun,
+  onReset,
   canStepForward,
   canStepBackward,
+  hasError,
 }: ButtonControlsProps) {
   return (
     <>
       <div className="flex justify-center gap-6 p-4">
         <button
           onClick={onFirst}
-          disabled={!canStepBackward}
+          disabled={!canStepBackward || hasError}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &lt;&lt;First
         </button>
         <button
           onClick={onPrev}
-          disabled={!canStepBackward}
+          disabled={!canStepBackward || hasError}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &lt;Prev
         </button>
         <button
           onClick={onNext}
-          disabled={!canStepForward}
+          disabled={!canStepForward || hasError}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &gt;Next
         </button>
         <button
           onClick={onLast}
-          disabled={!canStepForward}
+          disabled={!canStepForward || hasError}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &gt;&gt;Last
         </button>
         <button
-          onClick={onRun}
+          onClick={onRun || hasError}
           className="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 cursor-pointer rounded"
         >
           Run
+        </button>
+        <button
+          onClick={onReset}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold"
+        >
+          Reset
         </button>
       </div>
     </>

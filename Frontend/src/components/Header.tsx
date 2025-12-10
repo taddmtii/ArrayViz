@@ -1,9 +1,10 @@
 type HeaderProps = {
-  page: string;
-  setPage: (page: string) => void;
+  page: "view" | "predict";
+  setPage: (mode: "view" | "predict") => void;
 };
 
 function Header({ page, setPage }: HeaderProps) {
+  let isSelected = page === "view" ? "view" : "predict";
   return (
     <>
       {/* Main container */}
@@ -15,13 +16,13 @@ function Header({ page, setPage }: HeaderProps) {
         {/* Controls */}
         <div className="flex gap-6 mr-4">
           <button
-            className="btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 cursor-pointer rounded"
+            className={`btn ${isSelected === "view" ? "bg-blue-500" : "bg-[#242424] hover:bg-[#343434]"} text-white font-bold py-2 px-4 cursor-pointer rounded`}
             onClick={() => setPage("view")}
           >
             View
           </button>
           <button
-            className="btn btn bg-[#242424] hover:bg-[#343434]  text-white font-bold py-2 px-4 cursor-pointer rounded "
+            className={`btn ${isSelected === "predict" ? "bg-blue-500" : "bg-[#242424] hover:bg-[#343434]"} text-white font-bold py-2 px-4 cursor-pointer rounded`}
             onClick={() => setPage("predict")}
           >
             Predict
