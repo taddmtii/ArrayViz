@@ -26,14 +26,14 @@ function ButtonControls({
       <div className="flex justify-center gap-6 p-4">
         <button
           onClick={onFirst}
-          disabled={!canStepBackward || hasError}
+          disabled={!canStepBackward}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &lt;&lt;First
         </button>
         <button
           onClick={onPrev}
-          disabled={!canStepBackward || hasError}
+          disabled={!canStepBackward}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &lt;Prev
@@ -60,7 +60,7 @@ function ButtonControls({
         </button>
         <button
           onClick={onReset}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold"
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold cursor-pointer"
         >
           Reset
         </button>

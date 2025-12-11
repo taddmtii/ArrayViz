@@ -4,7 +4,7 @@ type HeaderProps = {
 };
 
 function Header({ page, setPage }: HeaderProps) {
-  let isSelected = page === "view" ? "view" : "predict";
+  const isSelected = page === "view" ? "view" : "predict";
   return (
     <>
       {/* Main container */}

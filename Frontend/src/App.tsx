@@ -30,6 +30,7 @@ export interface SimplifiedState {
 function App() {
   const [page, setPage] = useState<"view" | "predict">("view");
   const [code, setCode] = useState("");
+
   const [interpreterState, setInterpreterState] = useState<SimplifiedState>({
     variables: {},
     currentLine: 1,
@@ -67,6 +68,7 @@ function App() {
   // set code state when code changes.
   function handleCodeChange(code: string) {
     setCode(code);
+    // setPredictions({});
   }
 
   // parses current code, updates state after code ran.
@@ -87,6 +89,29 @@ function App() {
     updateState();
   }
 
+  function formatValue(value: PythonValue): string {
+    if (Array.isArray(value)) {
+      return `[${value
+        .map((v) =>
+          typeof v === "string"
+            ? `'${v}'`
+            : v === null
+              ? "None"
+              : typeof v === "boolean"
+                ? v
+                  ? "True"
+                  : "False"
+                : String(v),
+        )
+        .join(", ")}]`;
+    }
+
+    if (typeof value === "string") return `"${value}"`;
+    if (value === null) return "None";
+    if (typeof value === "boolean") return value ? "True" : "False";
+    return String(value);
+  }
+
   function handleStepBackward() {
     interpreterServiceReference.current.stepBack();
     updateState();
@@ -105,6 +130,11 @@ function App() {
   return (
     <>
       <Header page={page} setPage={setPage} />
+      <div className="bg-[#252525] border-x border-gray-700 p-3 text-center">
+        <span className="text-white font-mono text-lg">
+          Step {interpreterState.currentStep} / {interpreterState.totalSteps}
+        </span>
+      </div>
       <div className="flex p-6 gap-4">
         <div className="flex flex-col w-[60vw] h-[80vh] gap-2">
           <CodeWindow
@@ -132,6 +162,7 @@ function App() {
             <VariablesWindow
               variables={interpreterState.variables}
               functionDefinitions={interpreterState.functionDefinitions}
+              mode={page}
             />
           </div>
           <div className="h-1/3">

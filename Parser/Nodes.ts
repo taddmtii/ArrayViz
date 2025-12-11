@@ -477,11 +477,28 @@ export class ExpressionStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
     commands.push(...this._expression.evaluate());
-    // commands.push(new PopValueCommand()); // do we really need to store the result since the expression is part of the statement, would that not be handled separately?
-    // only pop for func call expressions, let
-    // if (this._expression instanceof FuncCallExpressionNode) {
-    //   commands.push(new PopValueCommand());
-    // }
+    if (this._expression instanceof FuncCallExpressionNode) {
+      const funcName = this._expression._func_name;
+      if (funcName instanceof IdentifierExpressionNode) {
+        const name = funcName._tok.text;
+        // Don't pop for built-in functions that consume their values
+        const builtIns = [
+          "print",
+          "len",
+          "type",
+          "input",
+          "range",
+          "int",
+          "float",
+          "str",
+          "bool",
+          "list",
+        ];
+        if (!builtIns.includes(name)) {
+          commands.push(new PopValueCommand());
+        }
+      }
+    }
 
     return commands;
   }
@@ -783,7 +800,7 @@ export class UnaryExpressionNode extends ExpressionNode {
 }
 
 export class FuncCallExpressionNode extends ExpressionNode {
-  private _func_name: ExpressionNode;
+  public _func_name: ExpressionNode;
   private _args_list: ArgListExpressionNode;
   constructor(_func_name: ExpressionNode, _args_list: ArgListExpressionNode) {
     super(_func_name._tok);

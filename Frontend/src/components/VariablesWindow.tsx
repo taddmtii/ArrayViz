@@ -1,14 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PythonValue, UserFunction } from "../../../Parser/Nodes";
 
 interface VariablesWindowProps {
   variables: Record<string, PythonValue>;
   functionDefinitions?: Map<string, UserFunction>;
+  mode: "view" | "predict";
 }
 
 function VariablesWindow({
   variables,
   functionDefinitions,
+  mode,
 }: VariablesWindowProps) {
   // separate variables into primitives (for Frames) and objects (for Objects)
   const frames: Record<string, PythonValue> = {};
@@ -101,23 +103,17 @@ function VariablesWindow({
               ) : (
                 <div className="space-y-1">
                   {/*iterate over all the variables and display their values hesre*/}
-                  {Object.entries(frames).map(([name, value]) => (
-                    <div key={name} className="flex gap-2">
-                      <span className="text-blue-400">{name}</span>
-                      <span className="text-gray-500">:</span>
-                      <span className="text-green-400">
-                        {formattedValue(value)}
-                      </span>
-                    </div>
-                  ))}
-                  {/*Go over all of the references and handle them slightly different (draw arrow instead of displaying value)*/}
-                  {Object.entries(references).map(([name, objId]) => (
-                    <div key={name} className="flex gap-2">
-                      <span className="text-blue-400">{name}</span>
-                      <span className="text-gray-500">:</span>
-                      <span className="text-blue-400 font-bold">→</span>
-                    </div>
-                  ))}
+                  {Object.entries(frames).map(([name, value]) => {
+                    return (
+                      <div key={name} className="flex gap-2 items-center">
+                        <span className="text-blue-400">{name}</span>
+                        <span className="text-gray-500">:</span>
+                        <span className="text-green-400">
+                          {formattedValue(value)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
