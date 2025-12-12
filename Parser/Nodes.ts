@@ -142,13 +142,19 @@ export class AssignmentStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this)); // Highlight
     if (this._left instanceof ListAccessExpressionNode) {
-      commands.push(...this._left._list.evaluate()); // pushes list
-      commands.push(...this._left._index.evaluate()); // pushes index
-      commands.push(...this._right.evaluate()); // evaluate (which may generate an array of commands, hence the spread operator)
-      commands.push(new AssignVariableCommand(this._left)); // Bind variable.
+      const subCommands = [
+        ...this._left._list.evaluate(),
+        ...this._left._index.evaluate(),
+        ...this._right.evaluate(),
+        new AssignVariableCommand(this._left),
+      ];
+      commands.push(new MacroCommand(subCommands));
     } else {
-      commands.push(...this._right.evaluate());
-      commands.push(new AssignVariableCommand(this._left as string));
+      const subCommands = [
+        ...this._right.evaluate(),
+        new AssignVariableCommand(this._left as string),
+      ];
+      commands.push(new MacroCommand(subCommands));
     }
     return commands;
   }
@@ -482,7 +488,7 @@ export class ExpressionStatementNode extends StatementNode {
       const funcName = this._expression._func_name;
       if (funcName instanceof IdentifierExpressionNode) {
         const name = funcName._tok.text;
-        // Don't pop for built-in functions that consume their values
+        // don't pop for built-in functions that consume their values
         const builtIns = [
           "print",
           "len",
@@ -612,10 +618,12 @@ export class IdentifierExpressionNode extends ExpressionNode {
     this._tok = _tok;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this)); // highlight, no need for replace.
-    commands.push(new RetrieveValueCommand(this._tok.text));
-    return commands;
+    return [
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        new RetrieveValueCommand(this._tok.text),
+      ]),
+    ];
   }
 }
 
@@ -754,12 +762,14 @@ export class ComparisonExpressionNode extends ExpressionNode {
     this._right = _right;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(...this._left.evaluate());
-    commands.push(...this._right.evaluate());
-    commands.push(new ComparisonOpCommand(this._operator));
-    return commands;
+    return [
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        ...this._left.evaluate(),
+        ...this._right.evaluate(),
+        new ComparisonOpCommand(this._operator),
+      ]),
+    ];
   }
 }
 
@@ -780,12 +790,12 @@ export class BinaryExpressionNode extends ExpressionNode {
     this._right = _right;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(...this._left.evaluate());
-    commands.push(...this._right.evaluate());
-    commands.push(new BinaryOpCommand(this._operator));
-    return commands;
+    const subCommands: Command[] = [];
+    subCommands.push(new HighlightExpressionCommand(this));
+    subCommands.push(...this._left.evaluate());
+    subCommands.push(...this._right.evaluate());
+    subCommands.push(new BinaryOpCommand(this._operator));
+    return [new MacroCommand(subCommands)];
   }
 }
 
@@ -798,11 +808,11 @@ export class UnaryExpressionNode extends ExpressionNode {
     this._operand = _operand;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(...this._operand.evaluate());
-    commands.push(new UnaryOpCommand(this._operator));
-    return commands;
+    const subCommands: Command[] = [];
+    subCommands.push(new HighlightExpressionCommand(this));
+    subCommands.push(...this._operand.evaluate());
+    subCommands.push(new UnaryOpCommand(this._operator));
+    return [new MacroCommand(subCommands)];
   }
 }
 
@@ -885,12 +895,12 @@ export class ListAccessExpressionNode extends ExpressionNode {
     this._index = _index;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(...this._list.evaluate());
-    commands.push(...this._index.evaluate());
-    commands.push(new IndexAccessCommand());
-    return commands;
+    const subCommands: Command[] = [];
+    subCommands.push(new HighlightExpressionCommand(this));
+    subCommands.push(...this._list.evaluate());
+    subCommands.push(...this._index.evaluate());
+    subCommands.push(new IndexAccessCommand());
+    return [new MacroCommand(subCommands)];
   }
 }
 
@@ -1025,10 +1035,12 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
     this._value = Boolean(_value);
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(new PushValueCommand(Boolean(this._value)));
-    return commands;
+    return [
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        new PushValueCommand(Boolean(this._value)),
+      ]),
+    ];
   }
 }
 
@@ -1039,8 +1051,8 @@ export class StringLiteralExpressionNode extends ExpressionNode {
     this._value = _value;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this)); // highlight
+    // const commands: Command[] = [];
+    // commands.push(new HighlightExpressionCommand(this)); // highlight
     let text = this._value.text;
     if (
       // needed to remove surrounding quotes, there was some double wrapping.
@@ -1049,9 +1061,14 @@ export class StringLiteralExpressionNode extends ExpressionNode {
     ) {
       text = text.slice(1, -1); // remove front quote and back quote to "clean" string
     }
-    commands.push(new PushValueCommand(text));
+    // commands.push(new PushValueCommand(text));
     // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
-    return commands;
+    return [
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        new PushValueCommand(text),
+      ]),
+    ];
   }
 }
 

@@ -52,6 +52,8 @@ export class State {
   private _loopIterationState: Map<string, number> = new Map(); // tracks the iteration index per loop variable.
   private _error: InterpreterError | null = null;
   private _functionDefinitions: Map<string, UserFunction> = new Map();
+  private _scopeStack: Map<string, PythonValue>[]; // stack of scopes
+  private _scopeNames: string[]; // things like Global, "add" (function) etc...
 
   constructor(
     _programCounter: number,
@@ -69,6 +71,8 @@ export class State {
     _loopIterationState: Map<string, number>,
     _error: InterpreterError | null,
     _functionDefinitions: Map<string, UserFunction> = new Map(),
+    _scopeStack = [new Map()],
+    _scopeNames = ["Global"],
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -85,6 +89,35 @@ export class State {
     this._loopIterationState = _loopIterationState;
     this._error = _error;
     this._functionDefinitions = _functionDefinitions;
+    this._scopeStack = _scopeStack;
+    this._scopeNames = _scopeNames;
+  }
+
+  public get scopeStack() {
+    return this._scopeStack;
+  }
+
+  public get scopeNames() {
+    return this._scopeNames;
+  }
+
+  // push new scope of current variables map. push scope name as well.
+  public pushScope(name: string) {
+    this._scopeStack.push(new Map(this._variables));
+    this._scopeNames.push(name);
+  }
+
+  // pop scope and scope name
+  public popScope() {
+    if (this._scopeStack.length > 1) {
+      this._scopeStack.pop();
+      this._scopeNames.pop();
+    }
+  }
+
+  // take a "peek" without popping at currentScope.
+  public get currentScope(): Map<string, PythonValue> {
+    return this._scopeStack[this._scopeStack.length - 1];
   }
 
   public get functionDefinitions() {
@@ -127,7 +160,7 @@ export class State {
   }
 
   public hasVariable(name: string): boolean {
-    return this._variables.has(name);
+    return this.currentScope.has(name);
   }
   public get lineCount() {
     return this._lineCount;
@@ -162,11 +195,11 @@ export class State {
     return this._evaluationStack;
   }
   public get variables() {
-    return this._variables;
+    return this.currentScope;
   }
 
   public set variables(vars: Map<string, PythonValue | PythonValue[]>) {
-    this._variables = vars;
+    this._scopeStack[this._scopeStack.length - 1] = vars;
   }
 
   public get loopStack() {
@@ -181,10 +214,10 @@ export class State {
   }
 
   public setVariable(name: string, value: PythonValue | PythonValue[]) {
-    this._variables.set(name, value);
+    this.currentScope.set(name, value);
   } // adds new key value into variables map.
   public getVariable(name: string): PythonValue | PythonValue[] {
-    const v = this._variables.get(name);
+    const v = this.currentScope.get(name);
     if (v === undefined) return null;
     return v;
   } // could be nullable upon lookup. null is important here.
@@ -1600,7 +1633,7 @@ export class CallUserFunctionCommand extends Command {
     // const savedPCforUndo = _currentState.programCounter;
 
     // pop func object from stack.
-    const func = _currentState.getFunction(this._funcName);
+    const func = _currentState.getFunction(this._funcName)!;
     // see if getFunction returns undefined.
     if (!func) {
       _currentState.error = new NameError(
@@ -1620,7 +1653,7 @@ export class CallUserFunctionCommand extends Command {
     for (let i = 0; i < this._numArgs; i++) {
       args.unshift(_currentState.evaluationStack.pop()!);
     }
-    console.log(`Calling ${this._funcName} with args:`, args); // DEBUG
+    console.log(`Calling ${this._funcName} with args:`, args);
     // does the argument count match?
     if (args.length !== func.params.length) {
       _currentState.error = new TypeError(
@@ -1629,19 +1662,27 @@ export class CallUserFunctionCommand extends Command {
     }
 
     // save current state
-    const savedVariables = new Map(_currentState.variables);
+    // const savedVariables = new Map(_currentState.variables);
     const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
 
     // create new scope with parent variables
-    const newScope = new Map(savedVariables);
-    for (let i = 0; i < func.params.length; i++) {
-      newScope.set(func.params[i], args[i]);
-    }
+    // const newScope = new Map(savedVariables);
+    // for (let i = 0; i < func.params.length; i++) {
+    //   newScope.set(func.params[i], args[i]);
+    // }
 
-    // clear evaluation stack for clean function execution
+    // // clear evaluation stack for clean function execution
+    // _currentState.evaluationStack.length = 0;
+    // _currentState.variables = newScope;
+    // _currentState.programCounter = 0;
+
+    //push new scope for new function. set parameteres for new scope.
+    _currentState.pushScope(this._funcName);
+    for (let i = 0; i < func.params.length; i++) {
+      _currentState.setVariable(func.params[i], args[i]);
+    }
     _currentState.evaluationStack.length = 0;
-    _currentState.variables = newScope;
     _currentState.programCounter = 0;
 
     // execute function body
@@ -1657,10 +1698,12 @@ export class CallUserFunctionCommand extends Command {
       }
     }
 
+    _currentState.popScope();
+
     // restore previous state (restore the global evalutation stack, variabels and program counter)
     _currentState.evaluationStack.length = 0;
     _currentState.evaluationStack.push(...savedEvaluationStack);
-    _currentState.variables = savedVariables;
+    // _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
 
     // Push return value
@@ -1776,12 +1819,10 @@ export class InterpolateFStringCommand extends Command {
 // used for grouping multiple sub commands as one step.
 export class MacroCommand extends Command {
   private _commands: Command[];
-  private _description: string;
 
-  constructor(commands: Command[], description: string = "Macro") {
+  constructor(commands: Command[]) {
     super();
     this._commands = commands;
-    this._description = description;
   }
 
   do(_currentState: State) {
@@ -1792,12 +1833,12 @@ export class MacroCommand extends Command {
     }
 
     // revereses all of the commands in reverse order.
-    this._undoCommand = new (class extends Command {
-      do(state: State) {
-        for (let i = commands.length - 1; i >= 0; i--) {
-          commands[i].undo(state);
-        }
-      }
-    })();
+    // this._undoCommand = new (class extends Command {
+    //   do(state: State) {
+    //     for (let i = commands.length - 1; i >= 0; i--) {
+    //       commands[i].undo(state);
+    //     }
+    //   }
+    // })();
   }
 }
