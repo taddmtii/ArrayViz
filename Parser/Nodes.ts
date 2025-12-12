@@ -45,6 +45,7 @@ import {
   ListCommand,
   DefineFunctionCommand,
   InterpolateFStringCommand,
+  MacroCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -592,8 +593,14 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     } else {
       numValue = Number(this._value); // regular integer, base 10.
     }
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(new PushValueCommand(numValue));
+    // commands.push(new HighlightExpressionCommand(this));
+    // commands.push(new PushValueCommand(numValue));
+    commands.push(
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        new PushValueCommand(numValue),
+      ]),
+    );
     return commands;
   }
 }

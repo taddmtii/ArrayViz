@@ -1772,3 +1772,32 @@ export class InterpolateFStringCommand extends Command {
     })();
   }
 }
+
+// used for grouping multiple sub commands as one step.
+export class MacroCommand extends Command {
+  private _commands: Command[];
+  private _description: string;
+
+  constructor(commands: Command[], description: string = "Macro") {
+    super();
+    this._commands = commands;
+    this._description = description;
+  }
+
+  do(_currentState: State) {
+    // go through all sub commands and run.
+    for (const cmd of this._commands) {
+      cmd.do(_currentState);
+      if (_currentState.error) break;
+    }
+
+    // revereses all of the commands in reverse order.
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        for (let i = commands.length - 1; i >= 0; i--) {
+          commands[i].undo(state);
+        }
+      }
+    })();
+  }
+}

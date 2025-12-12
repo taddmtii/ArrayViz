@@ -33,7 +33,7 @@ export class InterpreterService {
   parseCode(code: string): boolean {
     try {
       const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-      parser.feed(code);
+      parser.feed(code + "\n");
       // if parse results are 0, code did not parse.
       if (parser.results.length === 0) {
         return false;
