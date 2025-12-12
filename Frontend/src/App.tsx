@@ -77,6 +77,11 @@ function App() {
     updateState();
   }
 
+  function handlePageChange(newPage: "view" | "predict") {
+    setPage(newPage);
+    handleReset();
+  }
+
   // updates current state (snapshot) with what we have when we call the function.
   function updateState() {
     const state: SimplifiedState =
@@ -129,7 +134,7 @@ function App() {
 
   return (
     <>
-      <Header page={page} setPage={setPage} />
+      <Header page={page} setPage={handlePageChange} />
       <div className="bg-[#252525] border-x border-gray-700 p-3 text-center">
         <span className="text-white font-mono text-lg">
           Step {interpreterState.currentStep} / {interpreterState.totalSteps}
