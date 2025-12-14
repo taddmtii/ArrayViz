@@ -69,6 +69,11 @@ export class InterpreterService {
     }
   }
 
+  // for dynamic command injection (for things like function calls where the command would normally be executed internally.)
+  // injectCommands(newCommands: Command[], insertAt: number) {
+  //   this.commands.splice(insertAt, 0, ...newCommands);
+  // }
+
   stepForward(): boolean {
     // if current step execeeds commands length, we are out of bounds.
     if (this.state.programCounter >= this.commands.length) {

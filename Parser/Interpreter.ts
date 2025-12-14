@@ -1665,6 +1665,8 @@ export class CallUserFunctionCommand extends Command {
     // const savedVariables = new Map(_currentState.variables);
     const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
+    const savedStatement = _currentState.currentStatement;
+    const savedExpression = _currentState.currentExpression;
 
     // create new scope with parent variables
     // const newScope = new Map(savedVariables);
@@ -1705,6 +1707,8 @@ export class CallUserFunctionCommand extends Command {
     _currentState.evaluationStack.push(...savedEvaluationStack);
     // _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
+    _currentState.currentStatement = savedStatement;
+    _currentState.currentExpression = savedExpression;
 
     // Push return value
     _currentState.evaluationStack.push(returnValue);

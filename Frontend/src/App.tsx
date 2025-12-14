@@ -68,6 +68,7 @@ function App() {
   // set code state when code changes.
   function handleCodeChange(code: string) {
     setCode(code);
+    handleReset();
     // setPredictions({});
   }
 

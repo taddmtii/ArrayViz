@@ -139,7 +139,7 @@ function VariablesWindow({
                   >
                     <div className="text-xs text-yellow-400 mb-2">{type}</div>
                     {type === "list" ? (
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap max-w-full">
                         {Array.isArray(value) &&
                           // for every item in the list, create a box that shows the current index and the value inside the list of that index in the box.
                           value.map((item, idx) => (
