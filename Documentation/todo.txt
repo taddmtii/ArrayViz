@@ -1,9 +1,18 @@
 What needs to still be done:
 
-- Implement Predict Mode (same UI as view mode. However, when the user steps through the code, they should be able to manually click into a frame or object (specific elements in the list for instance) to "guess" what the value will be on next iteration. For now, we can have an alert that just says "Correct!" or "Incorrect! The value will be <value>".
 - In frames, I am not seeing "function frames" or local scopes whatever they are called. If we have a variable declared inside of a function, it is only just showing up in the global frame.
 
+Notes:
 
+For:
+
+x = 5
+y = 10
+z = x + y
+result = z * 2
+print(result)
+
+stepping back does not remove variables from the frames at all.
 
 
 SECOND SEMESTER GOALS:

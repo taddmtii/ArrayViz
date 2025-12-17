@@ -120,14 +120,14 @@ export class InterpreterService {
   }
 
   stepBack(): boolean {
+    console.log("stepBack() hit on step: ", this.currentStep);
     if (this.currentStep <= 0) {
       return false;
     }
-
-    this.currentStep--;
-    const command = this.commands[this.currentStep];
-    command.undo(this.state);
     this.state.programCounter--;
+    this.currentStep--;
+    const command = this.commands[this.state.programCounter];
+    command.undo(this.state);
 
     return true;
   }

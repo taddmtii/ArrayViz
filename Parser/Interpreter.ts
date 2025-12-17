@@ -458,10 +458,10 @@ export class AssignVariableCommand extends Command {
           do(state: State) {
             if (hadVariable) {
               state.setVariable(name, oldValue);
+              state.evaluationStack.push(oldValue);
             } else {
               state.variables.delete(name);
             }
-            state.evaluationStack.push(newValue);
           }
         })();
 
@@ -653,9 +653,11 @@ export class HighlightExpressionCommand extends Command {
 
   do(_currentState: State) {
     const previousExpression = _currentState.currentExpression;
-    if (previousExpression) {
-      this._undoCommand = new HighlightExpressionCommand(previousExpression);
-    }
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.currentExpression = previousExpression;
+      }
+    })();
 
     _currentState.currentExpression = this._expression;
     const exprType = this._expression.constructor.name;
@@ -714,19 +716,20 @@ export class HighlightStatementCommand extends Command {
     this._statement = _statement;
   }
   do(_currentState: State) {
-    // Create undocommand that
     const previousStatement = _currentState.currentStatement;
-    if (previousStatement) {
-      this._undoCommand = new HighlightStatementCommand(previousStatement);
-    }
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.currentStatement = previousStatement;
+      }
+    })();
+    // if (previousStatement) {
+    //   this._undoCommand = new HighlightStatementCommand(previousStatement);
+    // }
 
     _currentState.currentStatement = this._statement;
-    console.log("Statement Highlighted!");
-    // Tell UI somehow to highlight command we want it to.
   }
 }
 
-// TODO: call this everywhere too
 export class ReplaceHighlightedExpressionCommand extends Command {
   private _oldExpression: ExpressionNode;
   private _newExpression: ExpressionNode;
@@ -1903,13 +1906,13 @@ export class MacroCommand extends Command {
       if (_currentState.error) break;
     }
 
-    // revereses all of the commands in reverse order.
-    // this._undoCommand = new (class extends Command {
-    //   do(state: State) {
-    //     for (let i = commands.length - 1; i >= 0; i--) {
-    //       commands[i].undo(state);
-    //     }
-    //   }
-    // })();
+    const commands = this._commands;
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        for (let i = commands.length - 1; i >= 0; i--) {
+          commands[i].undo(state);
+        }
+      }
+    })();
   }
 }

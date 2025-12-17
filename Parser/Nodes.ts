@@ -908,7 +908,9 @@ export class ListAccessExpressionNode extends ExpressionNode {
     const subCommands: Command[] = [];
     subCommands.push(new HighlightExpressionCommand(this));
     subCommands.push(...this._list.evaluate());
+    let indexValue = this._index.evaluate();
     subCommands.push(...this._index.evaluate());
+    console.log("indexValue = ", indexValue);
     subCommands.push(new IndexAccessCommand());
     return [new MacroCommand(subCommands)];
   }
