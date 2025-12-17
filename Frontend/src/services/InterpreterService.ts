@@ -29,7 +29,10 @@ export class InterpreterService {
     );
   }
 
-  // parse and compile the code.
+  setPredictMode(enabled: boolean) {
+    this.state.isPredictMode = enabled;
+  }
+
   parseCode(code: string): boolean {
     try {
       const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
@@ -45,21 +48,30 @@ export class InterpreterService {
       this.commands = program.execute();
       console.log(this.commands);
       this.currentStep = 0;
+      const savedPredictMode = this.state.isPredictMode;
+
       this.state = new State(
-        0,
-        0,
-        null,
-        null,
-        [],
-        [],
-        new Map(),
-        1,
-        [],
-        [],
-        [],
-        [],
-        new Map(),
-        null,
+        0, // programCounter
+        0, // lineCount
+        null, // currentExpression
+        null, // currentStatement
+        [], // callStack
+        [], // history
+        new Map(), // variables
+        1, // currentLine
+        [], // evaluationStack
+        [], // returnStack
+        [], // loopStack
+        [], // outputs
+        new Map(), // loopIterationState
+        null, // error
+        new Map(), // functionDefinitions
+        [new Map()], // scopeStack
+        ["Global"], // scopeNames
+        savedPredictMode, // isPredictMode
+        false, // waitingForPrediction
+        null, // predictionVariable
+        null, // predictionCorrectValue
       );
 
       return true;
@@ -69,38 +81,42 @@ export class InterpreterService {
     }
   }
 
-  // for dynamic command injection (for things like function calls where the command would normally be executed internally.)
-  // injectCommands(newCommands: Command[], insertAt: number) {
-  //   this.commands.splice(insertAt, 0, ...newCommands);
-  // }
-
   stepForward(): boolean {
-    // if current step execeeds commands length, we are out of bounds.
     if (this.state.programCounter >= this.commands.length) {
-      return false; // no more steps
+      return false;
     }
     if (this.state.error) {
       return false;
     }
-    // get current command based on current step.
-    const command = this.commands[this.state.programCounter];
 
-    // if we are printing, need to get that value from evaluation stack and then send to outputs array.
-    // if (command.constructor.name === "PrintCommand") {
-    //   const value =
-    //     this.state.evaluationStack[this.state.evaluationStack.length - 1];
-    //   this.outputs.push(String(value));
-    // }
+    const command = this.commands[this.state.programCounter];
 
     try {
       command.do(this.state);
-      this.state.programCounter++;
-      this.currentStep = this.state.programCounter;
+
+      if (!this.state.waitingForPrediction) {
+        this.state.programCounter++;
+        this.currentStep = this.state.programCounter;
+      }
+
       return true;
     } catch (error) {
-      // this should just freeze execution
       return false;
     }
+  }
+
+  // clears all prediction related state when we submit prediction.
+  submitPrediction(variable: string, predictedValue: string): boolean {
+    if (!this.state.waitingForPrediction) return false;
+
+    this.state.waitingForPrediction = false;
+    this.state.predictionVariable = null;
+    this.state.predictionCorrectValue = null;
+
+    this.state.programCounter++;
+    this.currentStep = this.state.programCounter;
+
+    return true;
   }
 
   stepBack(): boolean {
@@ -113,9 +129,6 @@ export class InterpreterService {
     command.undo(this.state);
     this.state.programCounter--;
 
-    // if (command.constructor.name === "PrintCommand") {
-    //   this.outputs.pop();
-    // }
     return true;
   }
   // returns a modified state snapshot that we can then send to the UI with only things is cares about.
@@ -132,6 +145,9 @@ export class InterpreterService {
       highlightedExpression: this.state.getCurrentExpressionHighlight(),
       functionDefinitions: this.state.functionDefinitions,
       error: this.state.error,
+      waitingForPrediction: this.state.waitingForPrediction,
+      predictionVariable: this.state.predictionVariable,
+      predictionCorrectValue: this.state.predictionCorrectValue,
     };
     return result;
   }

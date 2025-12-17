@@ -19,7 +19,7 @@ import {
   ValueError,
   ZeroDivisionError,
 } from "./Errors";
-import { InterpreterService } from "../frontend/src/services/InterpreterService";
+// import { InterpreterService } from "../frontend/src/services/InterpreterService";
 
 // ---------------------------------------------------------------------------------------
 // COMMANDS ABC
@@ -54,6 +54,10 @@ export class State {
   private _functionDefinitions: Map<string, UserFunction> = new Map();
   private _scopeStack: Map<string, PythonValue>[]; // stack of scopes
   private _scopeNames: string[]; // things like Global, "add" (function) etc...
+  private _isPredictMode: boolean = false; // are we in predict mode?
+  private _waitingForPrediction: boolean = false; // waiting for prediction
+  private _predictionVariable: string | null = null; // which variable needs prediction
+  private _predictionCorrectValue: PythonValue | null = null; // prediction correct value SHOULD be.
 
   constructor(
     _programCounter: number,
@@ -73,6 +77,10 @@ export class State {
     _functionDefinitions: Map<string, UserFunction> = new Map(),
     _scopeStack = [new Map()],
     _scopeNames = ["Global"],
+    _isPredictMode: boolean = false,
+    _waitingForPrediction: boolean = false,
+    _predictionVariable: string | null = null,
+    _predictionCorrectValue: PythonValue | null = null,
   ) {
     this._programCounter = _programCounter;
     this._lineCount = _lineCount;
@@ -91,6 +99,38 @@ export class State {
     this._functionDefinitions = _functionDefinitions;
     this._scopeStack = _scopeStack;
     this._scopeNames = _scopeNames;
+    this._isPredictMode = _isPredictMode;
+    this._waitingForPrediction = _waitingForPrediction;
+    this._predictionVariable = _predictionVariable;
+    this._predictionCorrectValue = _predictionCorrectValue;
+  }
+
+  public get isPredictMode() {
+    return this._isPredictMode;
+  }
+  public set isPredictMode(val: boolean) {
+    this._isPredictMode = val;
+  }
+
+  public get waitingForPrediction() {
+    return this._waitingForPrediction;
+  }
+  public set waitingForPrediction(val: boolean) {
+    this._waitingForPrediction = val;
+  }
+
+  public get predictionVariable() {
+    return this._predictionVariable;
+  }
+  public set predictionVariable(val: string | null) {
+    this._predictionVariable = val;
+  }
+
+  public get predictionCorrectValue() {
+    return this._predictionCorrectValue;
+  }
+  public set predictionCorrectValue(val: PythonValue | null) {
+    this._predictionCorrectValue = val;
   }
 
   public get scopeStack() {
@@ -215,19 +255,19 @@ export class State {
 
   public setVariable(name: string, value: PythonValue | PythonValue[]) {
     this.currentScope.set(name, value);
-  } // adds new key value into variables map.
+  }
   public getVariable(name: string): PythonValue | PythonValue[] {
     const v = this.currentScope.get(name);
     if (v === undefined) return null;
     return v;
-  } // could be nullable upon lookup. null is important here.
+  }
 
   public pushCallStack(func: ExpressionNode) {
     this._callStack.push(func);
-  } // pushes element onto stack
+  }
   public popCallStack() {
     return this._callStack.pop();
-  } // gets element from top of stack
+  }
 
   public addHistoryCommand(step: Command) {
     this._history.push(step);
@@ -321,6 +361,7 @@ export class AssignVariableCommand extends Command {
         const name = this._name;
         const oldValue = list[actualIndex];
         list[actualIndex] = value;
+
         // list assignment undo
         this._undoCommand = new (class extends Command {
           do(state: State) {
@@ -330,6 +371,17 @@ export class AssignVariableCommand extends Command {
             new AssignVariableCommand(name).do(state);
           }
         })();
+
+        // CHECKING FOR PREDICTION ON LIST ASSIGNMENT
+        // complete assignment first, then pause and ask user to predict was value was already assigned.
+        if (_currentState.isPredictMode) {
+          const varName = this._name._list._tok.text;
+          _currentState.waitingForPrediction = true;
+          _currentState.predictionVariable = `${varName}[${actualIndex}]`;
+          _currentState.predictionCorrectValue = value;
+          return;
+        }
+
         return;
       }
 
@@ -362,6 +414,14 @@ export class AssignVariableCommand extends Command {
                 state.evaluationStack.push(iterable);
               }
             })();
+
+            // CHECKIBNG FOR PREDICTION ON FOR LOOP ITERATION
+            if (_currentState.isPredictMode && typeof this._name === "string") {
+              _currentState.waitingForPrediction = true;
+              _currentState.predictionVariable = this._name;
+              _currentState.predictionCorrectValue = nextItem;
+              return; // pause execution
+            }
           } else {
             _currentState.evaluationStack.push(false);
             this._undoCommand = new (class extends Command {
@@ -404,6 +464,13 @@ export class AssignVariableCommand extends Command {
             state.evaluationStack.push(newValue);
           }
         })();
+
+        if (_currentState.isPredictMode && typeof this._name === "string") {
+          _currentState.waitingForPrediction = true;
+          _currentState.predictionVariable = this._name;
+          _currentState.predictionCorrectValue = newValue!;
+          return;
+        }
       }
     } catch (error) {
       if (error instanceof InterpreterError) {
@@ -1665,8 +1732,8 @@ export class CallUserFunctionCommand extends Command {
     // const savedVariables = new Map(_currentState.variables);
     const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
-    const savedStatement = _currentState.currentStatement;
-    const savedExpression = _currentState.currentExpression;
+    // const savedStatement = _currentState.currentStatement;
+    // const savedExpression = _currentState.currentExpression;
 
     // create new scope with parent variables
     // const newScope = new Map(savedVariables);
@@ -1707,8 +1774,8 @@ export class CallUserFunctionCommand extends Command {
     _currentState.evaluationStack.push(...savedEvaluationStack);
     // _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
-    _currentState.currentStatement = savedStatement;
-    _currentState.currentExpression = savedExpression;
+    // _currentState.currentStatement = savedStatement;
+    // _currentState.currentExpression = savedExpression;
 
     // Push return value
     _currentState.evaluationStack.push(returnValue);

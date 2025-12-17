@@ -8,6 +8,7 @@ interface ButtonControlsProps {
   canStepForward: boolean;
   canStepBackward: boolean;
   hasError: boolean;
+  disableFirstLast?: boolean;
 }
 
 function ButtonControls({
@@ -20,13 +21,14 @@ function ButtonControls({
   canStepForward,
   canStepBackward,
   hasError,
+  disableFirstLast = false,
 }: ButtonControlsProps) {
   return (
     <>
       <div className="flex justify-center gap-6 p-4">
         <button
           onClick={onFirst}
-          disabled={!canStepBackward}
+          disabled={!canStepBackward || disableFirstLast}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &lt;&lt;First
@@ -47,7 +49,7 @@ function ButtonControls({
         </button>
         <button
           onClick={onLast}
-          disabled={!canStepForward || hasError}
+          disabled={!canStepForward || hasError || disableFirstLast}
           className="btn bg-[#242424] hover:bg-[#343434] text-white font-bold py-2 px-4 cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           &gt;&gt;Last

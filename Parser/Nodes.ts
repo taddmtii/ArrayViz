@@ -599,14 +599,14 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     } else {
       numValue = Number(this._value); // regular integer, base 10.
     }
-    // commands.push(new HighlightExpressionCommand(this));
-    // commands.push(new PushValueCommand(numValue));
-    commands.push(
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        new PushValueCommand(numValue),
-      ]),
-    );
+    commands.push(new HighlightExpressionCommand(this));
+    commands.push(new PushValueCommand(numValue));
+    // commands.push(
+    //   new MacroCommand([
+    //     new HighlightExpressionCommand(this),
+    //     new PushValueCommand(numValue),
+    //   ]),
+    // );
     return commands;
   }
 }
@@ -619,11 +619,15 @@ export class IdentifierExpressionNode extends ExpressionNode {
   }
   evaluate(): Command[] {
     return [
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        new RetrieveValueCommand(this._tok.text),
-      ]),
+      new HighlightExpressionCommand(this),
+      new RetrieveValueCommand(this._tok.text),
     ];
+    // return [
+    //   new MacroCommand([
+    //     new HighlightExpressionCommand(this),
+    //     new RetrieveValueCommand(this._tok.text),
+    //   ]),
+    // ];
   }
 }
 
@@ -790,12 +794,18 @@ export class BinaryExpressionNode extends ExpressionNode {
     this._right = _right;
   }
   evaluate(): Command[] {
-    const subCommands: Command[] = [];
-    subCommands.push(new HighlightExpressionCommand(this));
-    subCommands.push(...this._left.evaluate());
-    subCommands.push(...this._right.evaluate());
-    subCommands.push(new BinaryOpCommand(this._operator));
-    return [new MacroCommand(subCommands)];
+    const commands: Command[] = [];
+    commands.push(new HighlightExpressionCommand(this));
+    commands.push(...this._left.evaluate());
+    commands.push(...this._right.evaluate());
+    commands.push(new BinaryOpCommand(this._operator));
+    return commands;
+    // const subCommands: Command[] = [];
+    // subCommands.push(new HighlightExpressionCommand(this));
+    // subCommands.push(...this._left.evaluate());
+    // subCommands.push(...this._right.evaluate());
+    // subCommands.push(new BinaryOpCommand(this._operator));
+    // return [new MacroCommand(subCommands)];
   }
 }
 
