@@ -81,6 +81,11 @@ function App() {
   function handleCodeChange(code: string) {
     setCode(code);
     // handleReset();
+    setInterpreterState((prev) => ({
+      ...prev,
+      highlightedStatement: null,
+      highlightedExpression: null,
+    }));
   }
 
   // parses current code, updates state after code ran.
@@ -91,6 +96,7 @@ function App() {
 
   function handlePageChange(newPage: "view" | "predict") {
     setPage(newPage);
+    handleReset();
     interpreterServiceReference.current.setPredictMode(newPage === "predict");
   }
 

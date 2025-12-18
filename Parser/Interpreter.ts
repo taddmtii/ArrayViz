@@ -332,19 +332,19 @@ export class AssignVariableCommand extends Command {
 
         if (value === undefined || index === undefined || list === undefined) {
           _currentState.error = new RuntimeError(
-            "Stack underflow during list assignment",
+            `Stack underflow during list assignment (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
 
         if (typeof index !== "number") {
           _currentState.error = new TypeError(
-            `list indices must be integers, not ${typeof index}`,
+            `list indices must be integers, not ${typeof index} (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
 
         if (!Array.isArray(list)) {
           _currentState.error = new TypeError(
-            `'${typeof list}' object does not support item assignment`,
+            `'${typeof list}' object does not support item assignment (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
 
@@ -355,7 +355,7 @@ export class AssignVariableCommand extends Command {
 
         if (actualIndex < 0 || actualIndex >= list.length) {
           _currentState.error = new IndexError(
-            `list assignment index out of range`,
+            `list assignment index out of range (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
         const name = this._name;
@@ -446,7 +446,7 @@ export class AssignVariableCommand extends Command {
 
         if (newValue === undefined) {
           _currentState.error = new RuntimeError(
-            "Stack underflow during variable assignment",
+            `Stack underflow during variable assignment (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
         const oldValue = _currentState.getVariable(this._name);
@@ -531,7 +531,9 @@ export class BreakCommand extends Command {
   }
   do(_currentState: State) {
     if (_currentState.loopStack.length === 0) {
-      _currentState.error = new RuntimeError("'break' outside loop");
+      _currentState.error = new RuntimeError(
+        `'break' outside loop (line ${_currentState.currentStatement?.startLine || "?"})`,
+      );
     }
     // store oldPC for undo so we can go back to it.
     const oldPC = _currentState.programCounter;
@@ -556,7 +558,9 @@ export class ContinueCommand extends Command {
   }
   do(_currentState: State) {
     if (_currentState.loopStack.length === 0) {
-      _currentState.error = new RuntimeError("'continue' not properly in loop");
+      _currentState.error = new RuntimeError(
+        `'continue' not properly in loop (line ${_currentState.currentStatement?.startLine || "?"})`,
+      );
     }
     const oldPC = _currentState.programCounter;
     // get most recent loop bounds by grabbing the top.
@@ -587,23 +591,17 @@ export class ConditionalJumpCommand extends Command {
   do(_currentState: State) {
     const condition = _currentState.evaluationStack.pop()!; // true or false depending on
     const boolCondition = Boolean(condition);
-    console.log(
-      `ConditionalJump: condition=${condition}, bool=${boolCondition}, jump=${this._commandsToJump}`,
-    );
 
     if (condition === undefined) {
       _currentState.error = new RuntimeError(
-        "Problem within conditional jump (condition evaluated to undefined)",
+        `Problem within conditional jump (condition evaluated to undefined) (line ${_currentState.currentStatement?.startLine || "?"})`,
       );
     }
 
     const oldPC = _currentState.programCounter;
     // shoudl we jump?
     if (boolCondition === false) {
-      console.log(`Jumping forward ${this._commandsToJump - 1} commands`);
       _currentState.programCounter += this._commandsToJump - 1; // subtract 1 because stepForward increments PC;
-    } else {
-      console.log(`Not jumping, executing then branch`);
     }
 
     this._undoCommand = new (class extends Command {
@@ -627,9 +625,15 @@ export class JumpCommand extends Command {
     this._commandsToJump = _commandsToJump;
   }
   do(_currentState: State) {
-    this._undoCommand = new JumpCommand(_currentState.programCounter);
+    const oldPC = _currentState.programCounter;
     // jump to a new position within the command array.
     _currentState.programCounter += this._commandsToJump - 1;
+
+    this._undoCommand = new (class extends Command {
+      do(state: State) {
+        state.programCounter = oldPC;
+      }
+    })();
   }
 }
 
@@ -679,7 +683,7 @@ export class RetrieveValueCommand extends Command {
     try {
       if (!_currentState.hasVariable(this._varName)) {
         _currentState.error = new NameError(
-          `name '${this._varName}' is not defined`,
+          `name '${this._varName}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
         );
       }
       const value = _currentState.getVariable(this._varName);
@@ -757,9 +761,6 @@ export class BinaryOpCommand extends Command {
   do(_currentState: State) {
     const evaluatedRight = _currentState.evaluationStack.pop()!; // always pop right first!!
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    console.log(
-      `BinaryOp ${this._op}: left=${evaluatedLeft}, right=${evaluatedRight}`,
-    );
     let res: PythonValue = 0;
 
     if (
@@ -786,7 +787,7 @@ export class BinaryOpCommand extends Command {
         case "%":
           if (evaluatedRight === 0) {
             _currentState.error = new ZeroDivisionError(
-              "integer division or modulo by zero",
+              `integer division or modulo by zero (line ${_currentState.currentStatement?.startLine || "?"})`,
             );
           }
           res = evaluatedLeft % evaluatedRight;
@@ -800,7 +801,7 @@ export class BinaryOpCommand extends Command {
         case "/":
           if (evaluatedRight === 0) {
             _currentState.error = new ZeroDivisionError(
-              "integer division or modulo by zero",
+              `integer division or modulo by zero (line ${_currentState.currentStatement?.startLine || "?"})`,
             );
           }
           res = evaluatedLeft / evaluatedRight;
@@ -808,7 +809,7 @@ export class BinaryOpCommand extends Command {
         case "//":
           if (evaluatedRight === 0) {
             _currentState.error = new ZeroDivisionError(
-              "integer division or modulo by zero",
+              `integer division or modulo by zero (line ${_currentState.currentStatement?.startLine || "?"})`,
             );
           }
           res = Math.floor(evaluatedLeft / evaluatedRight);
@@ -816,7 +817,6 @@ export class BinaryOpCommand extends Command {
       }
     }
     _currentState.evaluationStack.push(res);
-    console.log(`BinaryOp result: ${res}`);
 
     this._undoCommand = new (class extends Command {
       do(state: State) {
@@ -892,7 +892,7 @@ export class UnaryOpCommand extends Command {
       case "-":
         if (typeof operand !== "number") {
           _currentState.error = new TypeError(
-            `bad operand type for unary minus : '${typeof operand}'`,
+            `bad operand type for unary minus : '${typeof operand}' (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
         res = -operand;
@@ -900,7 +900,7 @@ export class UnaryOpCommand extends Command {
       case "+":
         if (typeof operand !== "number") {
           _currentState.error = new TypeError(
-            `bad operand type for unary plus : '${typeof operand}'`,
+            `bad operand type for unary plus : '${typeof operand}' (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
         res = operand;
@@ -1330,14 +1330,15 @@ export class InputCommand extends Command {
 }
 
 // IndexAccessCommand -> arr[5]
-// ONLY HANDLES LISTS/ARRAYS right now, TODO: add string and list literal support.
 export class IndexAccessCommand extends Command {
   do(_currentState: State) {
     const index = _currentState.evaluationStack.pop();
     const list = _currentState.evaluationStack.pop();
 
     if (typeof index !== "number") {
-      _currentState.error = new TypeError(`index must be a number`);
+      _currentState.error = new TypeError(
+        `index must be a number (line ${_currentState.currentStatement?.startLine || "?"})`,
+      );
     }
 
     let actualIndex = index;
@@ -1349,7 +1350,9 @@ export class IndexAccessCommand extends Command {
 
       // check bounds
       if (actualIndex < 0 || actualIndex >= list.length) {
-        _currentState.error = new IndexError(`list index out of range`);
+        _currentState.error = new IndexError(
+          `list index out of range (line ${_currentState.currentStatement?.startLine || "?"})`,
+        );
       }
 
       _currentState.evaluationStack.push(list[actualIndex]);
@@ -1671,7 +1674,6 @@ export class ListCommand extends Command {
     } else if (value === null) {
       result = [];
     } else {
-      console.error("invalid argument for list(), not iterable.");
       result = [];
     }
 
@@ -1696,24 +1698,15 @@ export class CallUserFunctionCommand extends Command {
   }
 
   do(_currentState: State) {
-    // NEED TO SAVE STATE BEFORE FUNC EXECUTION TO UNDO
-    // const savedEvalStack = [..._currentState.evaluationStack];
-    // const savedReturnStack = [..._currentState.returnStack];
-    // const savedVariablesForUndo = new Map(_currentState.variables);
-    // const savedPCforUndo = _currentState.programCounter;
-
     // pop func object from stack.
     const func = _currentState.getFunction(this._funcName)!;
     // see if getFunction returns undefined.
     if (!func) {
       _currentState.error = new NameError(
-        `name '${this._funcName}' is not defined`,
+        `name '${this._funcName}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
       );
     }
 
-    console.log(
-      `Function ${this._funcName} body has ${func.body.length} commands:`,
-    );
     func.body.forEach((cmd, i) => {
       console.log(`  ${i}: ${cmd.constructor.name}`);
     });
@@ -1723,31 +1716,15 @@ export class CallUserFunctionCommand extends Command {
     for (let i = 0; i < this._numArgs; i++) {
       args.unshift(_currentState.evaluationStack.pop()!);
     }
-    console.log(`Calling ${this._funcName} with args:`, args);
     // does the argument count match?
     if (args.length !== func.params.length) {
       _currentState.error = new TypeError(
-        `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given`,
+        `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given (line ${_currentState.currentStatement?.startLine || "?"})`,
       );
     }
 
-    // save current state
-    // const savedVariables = new Map(_currentState.variables);
     const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
-    // const savedStatement = _currentState.currentStatement;
-    // const savedExpression = _currentState.currentExpression;
-
-    // create new scope with parent variables
-    // const newScope = new Map(savedVariables);
-    // for (let i = 0; i < func.params.length; i++) {
-    //   newScope.set(func.params[i], args[i]);
-    // }
-
-    // // clear evaluation stack for clean function execution
-    // _currentState.evaluationStack.length = 0;
-    // _currentState.variables = newScope;
-    // _currentState.programCounter = 0;
 
     //push new scope for new function. set parameteres for new scope.
     _currentState.pushScope(this._funcName);
@@ -1848,7 +1825,7 @@ export class InterpolateFStringCommand extends Command {
         const value = _currentState.getVariable(trimmed);
         if (value === null && !_currentState.hasVariable(trimmed)) {
           _currentState.error = new NameError(
-            `name '${trimmed}' is not defined`,
+            `name '${trimmed}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
 

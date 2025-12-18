@@ -68,7 +68,7 @@ function VariablesWindow({
     // handles arrays stored in variables.
     if (Array.isArray(value)) {
       const id = `obj${objectId++}`;
-      objects.push({ id, value, type: "list" });
+      objects.push({ id, value, type: "list", name });
       references[name] = id;
       // if value is an object or some sort or a function
     } else if (
@@ -259,7 +259,7 @@ function VariablesWindow({
               <div className="text-gray-500">No objects</div>
             ) : (
               <div className="space-y-3">
-                {objects.map(({ id, value, type }) => {
+                {objects.map(({ id, value, type, name }) => {
                   // Check if this object is being predicted
                   const objectVarName = Object.entries(references).find(
                     ([name, objId]) => objId === id,
@@ -278,7 +278,9 @@ function VariablesWindow({
                           : ""
                       }`}
                     >
-                      <div className="text-xs text-yellow-400 mb-2">{type}</div>
+                      <div className="text-xs text-yellow-400 mb-2">
+                        {type} {name && `(${name})`}
+                      </div>
                       {type === "list" ? (
                         <div className="space-y-2">
                           {isWaitingForThis &&

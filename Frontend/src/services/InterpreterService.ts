@@ -127,7 +127,11 @@ export class InterpreterService {
     this.state.programCounter--;
     this.currentStep--;
     const command = this.commands[this.state.programCounter];
-    command.undo(this.state);
+    if (command && typeof command.undo === "function") {
+      command.undo(this.state);
+    } else {
+      console.warn(`Command at step ${this.currentStep} has no undo method`);
+    }
 
     return true;
   }

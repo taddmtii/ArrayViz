@@ -2,18 +2,6 @@ What needs to still be done:
 
 - In frames, I am not seeing "function frames" or local scopes whatever they are called. If we have a variable declared inside of a function, it is only just showing up in the global frame.
 
-Notes:
-
-For:
-
-x = 5
-y = 10
-z = x + y
-result = z * 2
-print(result)
-
-stepping back does not remove variables from the frames at all.
-
 
 SECOND SEMESTER GOALS:
 - Create preset options in the UI for auto populated code for the following sorts and searches:
