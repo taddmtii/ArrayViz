@@ -517,21 +517,17 @@ export class BlockStatementNode extends StatementNode {
     super(_tok);
     this._statementList = _statementList;
   }
-  // execute(): Command[] {
-  //   const commands: Command[] = [];
-  //   for (const statement of this._statementList) {
-  //     commands.push(...statement.execute());
-  //   }
-  //   return commands;
-  // }
   execute(): Command[] {
     const commands: Command[] = [];
+
+    if (this._statementList.length > 0) {
+      commands.push(new HighlightStatementCommand(this));
+    }
+
     for (let i = 0; i < this._statementList.length; i++) {
       const statement = this._statementList[i];
       if (statement === null) {
-        console.error(`Statement at index ${i} is NULL!`);
-        console.error("Statement list:", this._statementList);
-        continue; // Skip null statements
+        continue;
       }
       commands.push(...statement.execute());
     }
@@ -985,31 +981,30 @@ export class ListSliceExpressionNode extends ExpressionNode {
     this._step = _step;
   }
   evaluate(): Command[] {
-    const commands: Command[] = [];
-    commands.push(new HighlightExpressionCommand(this));
-    commands.push(...this._list.evaluate());
+    const subCommands: Command[] = [];
+    subCommands.push(new HighlightExpressionCommand(this));
+    subCommands.push(...this._list.evaluate());
 
-    // if start exists, if stop exists, if step exists, otherwise push a null value and handle accordingly.
     if (this._start) {
-      commands.push(...this._start.evaluate());
+      subCommands.push(...this._start.evaluate());
     } else {
-      commands.push(new PushValueCommand(null));
+      subCommands.push(new PushValueCommand(null));
     }
 
     if (this._stop) {
-      commands.push(...this._stop.evaluate());
+      subCommands.push(...this._stop.evaluate());
     } else {
-      commands.push(new PushValueCommand(null));
+      subCommands.push(new PushValueCommand(null));
     }
 
     if (this._step) {
-      commands.push(...this._step.evaluate());
+      subCommands.push(...this._step.evaluate());
     } else {
-      commands.push(new PushValueCommand(null));
+      subCommands.push(new PushValueCommand(null));
     }
 
-    commands.push(new ListSliceCommand());
-    return commands;
+    subCommands.push(new ListSliceCommand());
+    return [new MacroCommand(subCommands)];
   }
 }
 
