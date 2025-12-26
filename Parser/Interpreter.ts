@@ -317,9 +317,14 @@ export class State {
 // Take value from top of evaluation stack and store it in a variable.
 export class AssignVariableCommand extends Command {
   private _name: string | ListAccessExpressionNode;
-  constructor(_name: string | ListAccessExpressionNode) {
+  private _operator: "=" | "+=" | "-=";
+  constructor(
+    _name: string | ListAccessExpressionNode,
+    _operator: "=" | "+=" | "-=" = "=",
+  ) {
     super();
     this._name = _name;
+    this._operator = _operator;
   }
 
   do(_currentState: State) {
@@ -360,7 +365,15 @@ export class AssignVariableCommand extends Command {
         }
         const name = this._name;
         const oldValue = list[actualIndex];
-        list[actualIndex] = value;
+
+        let finalValue = value;
+        if (this._operator === "+=") {
+          finalValue = (oldValue as number) + (value as number);
+        } else if (this._operator === "-=") {
+          finalValue = (oldValue as number) - (value as number);
+        }
+
+        list[actualIndex] = finalValue;
 
         // list assignment undo
         this._undoCommand = new (class extends Command {
@@ -452,7 +465,25 @@ export class AssignVariableCommand extends Command {
         const oldValue = _currentState.getVariable(this._name);
         const hadVariable = _currentState.hasVariable(this._name);
         const name = this._name;
-        _currentState.setVariable(this._name, newValue);
+
+        let finalValue = newValue;
+        if (this._operator === "+=") {
+          if (!hadVariable) {
+            _currentState.error = new NameError(
+              `name '${this._name}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
+            );
+          }
+          finalValue = (oldValue as number) + (newValue as number);
+        } else if (this._operator === "-=") {
+          if (!hadVariable) {
+            _currentState.error = new NameError(
+              `name '${this._name}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
+            );
+          }
+          finalValue = (oldValue as number) - (newValue as number);
+        }
+
+        _currentState.setVariable(this._name, finalValue);
 
         this._undoCommand = new (class extends Command {
           do(state: State) {

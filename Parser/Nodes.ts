@@ -127,15 +127,18 @@ export class AssignmentStatementNode extends StatementNode {
   private _left: string | ListAccessExpressionNode; // variable name
   private _right: ExpressionNode; // value
   public _tok: moo.Token;
+  private _operator: "=" | "+=" | "-=";
   constructor(
     _left: string | ListAccessExpressionNode,
     _right: ExpressionNode,
     _tok: moo.Token,
+    _operator: "=" | "+=" | "-=",
   ) {
     super(_tok);
     this._left = _left;
     this._right = _right;
     this._tok = _tok;
+    this._operator = _operator;
   }
 
   execute(): Command[] {
@@ -146,13 +149,13 @@ export class AssignmentStatementNode extends StatementNode {
         ...this._left._list.evaluate(),
         ...this._left._index.evaluate(),
         ...this._right.evaluate(),
-        new AssignVariableCommand(this._left),
+        new AssignVariableCommand(this._left, this._operator),
       ];
       commands.push(new MacroCommand(subCommands));
     } else {
       const subCommands = [
         ...this._right.evaluate(),
-        new AssignVariableCommand(this._left as string),
+        new AssignVariableCommand(this._left as string, this._operator),
       ];
       commands.push(new MacroCommand(subCommands));
     }

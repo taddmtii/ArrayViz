@@ -1,5 +1,6 @@
 // Generated automatically by nearley, version 2.20.1
 // http://github.com/Hardmath123/nearley
+
 import * as moo from "moo";
 import IndentationLexer from "moo-indentation-lexer";
 
@@ -771,6 +772,18 @@ var grammar = {
         lexer.has("RSQBRACK") ? { type: "RSQBRACK" } : RSQBRACK,
       ],
       postprocess: (d) => new ListSliceExpressionNode(d[0], d[2], null, null),
+    },
+    {
+      name: "list_slice",
+      symbols: [
+        "primary",
+        lexer.has("LSQBRACK") ? { type: "LSQBRACK" } : LSQBRACK,
+        lexer.has("COLON") ? { type: "COLON" } : COLON,
+        lexer.has("COLON") ? { type: "COLON" } : COLON,
+        "expression",
+        lexer.has("RSQBRACK") ? { type: "RSQBRACK" } : RSQBRACK,
+      ],
+      postprocess: (d) => new ListSliceExpressionNode(d[0], null, null, d[4]),
     },
     {
       name: "list_slice$ebnf$1",

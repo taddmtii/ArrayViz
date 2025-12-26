@@ -95,6 +95,8 @@ const lexer = new IndentationLexer({
     ARROW: "->",
 
     // ARITHMETIC
+    PLUS_ASSIGN: "+=",
+    MINUS_ASSIGN: "-=",
     PLUS: "+",
     MINUS: "-",
     POWER: "**",
@@ -155,6 +157,8 @@ compound_statement -> if_statement {% d => d[0] %}
                     | func_def  {% d => d[0] %}
 
 assignment_statement -> %IDENTIFIER %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0])) %}
+                      | %IDENTIFIER %PLUS_ASSIGN expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0], '+=')) %}
+                      | %IDENTIFIER %MINUS_ASSIGN expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0], '-=')) %}
                       | list_access %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0]._tok)) %}
 
 if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}

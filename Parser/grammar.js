@@ -41,6 +41,7 @@ import {
 function id(x) {
   return x[0];
 }
+
 const lexer = new IndentationLexer({
   indentationType: "WS",
   newlineType: "NL",
@@ -100,6 +101,8 @@ const lexer = new IndentationLexer({
     ARROW: "->",
 
     // ARITHMETIC
+    PLUS_ASSIGN: "+=",
+    MINUS_ASSIGN: "-=",
     PLUS: "+",
     MINUS: "-",
     POWER: "**",
@@ -108,6 +111,7 @@ const lexer = new IndentationLexer({
     DIV: "/",
     NEQ: "!=",
     EQ: "==",
+
     ASSIGNMENT: "=",
     LTE: "<=",
     GTE: ">=",
@@ -228,6 +232,26 @@ var grammar = {
         "expression",
       ],
       postprocess: (d) => new AssignmentStatementNode(d[0].text, d[2], d[0]),
+    },
+    {
+      name: "assignment_statement",
+      symbols: [
+        lexer.has("IDENTIFIER") ? { type: "IDENTIFIER" } : IDENTIFIER,
+        lexer.has("PLUS_ASSIGN") ? { type: "PLUS_ASSIGN" } : PLUS_ASSIGN,
+        "expression",
+      ],
+      postprocess: (d) =>
+        new AssignmentStatementNode(d[0].text, d[2], d[0], "+="),
+    },
+    {
+      name: "assignment_statement",
+      symbols: [
+        lexer.has("IDENTIFIER") ? { type: "IDENTIFIER" } : IDENTIFIER,
+        lexer.has("MINUS_ASSIGN") ? { type: "MINUS_ASSIGN" } : MINUS_ASSIGN,
+        "expression",
+      ],
+      postprocess: (d) =>
+        new AssignmentStatementNode(d[0].text, d[2], d[0], "-="),
     },
     {
       name: "assignment_statement",
