@@ -1,17 +1,9 @@
 What needs to still be done:
 
-- In frames, I am not seeing "function frames" or local scopes whatever they are called. If we have a variable declared inside of a function, it is only just showing up in the global frame.
-
-
-SECOND SEMESTER GOALS:
-- Create preset options in the UI for auto populated code for the following sorts and searches:
-  - Bubble Sort
-  - Insertion Sort
-  - Selection Sort
-  - Quick Sort
-  - Merge Sort
-  - Heap Sort
-  - Binary Search
-  - Linear Search
-
+- function and global frames
+- Prof O indexing visualization proposal
+- Create preset options in the UI for auto populated code for basic sorts and searches 
 - Expression support within f-strings
+- Better highlighting/more intuitive
+- Add class functionality
+- small QOL language features
