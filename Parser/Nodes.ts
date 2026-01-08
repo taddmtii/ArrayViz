@@ -67,16 +67,6 @@ export interface UserFunction {
   type: "Function";
 }
 
-// -----------------------------------------------------------------------------------------------------------
-// COMMON ERRORS:
-// "Cannot read properties of undefined (reading _tok)" -> accessing an undefined or null's token.
-// -----------------------------------------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------------------------------------
-// References:
-// https://craftinginterpreters.com/statements-and-state.html
-// -----------------------------------------------------------------------------------------------------------
-
 // ------------------------------------------------------------------
 // ProgramNode
 //
@@ -124,8 +114,8 @@ export abstract class StatementNode {
 }
 
 export class AssignmentStatementNode extends StatementNode {
-  private _left: string | ListAccessExpressionNode; // variable name
-  private _right: ExpressionNode; // value
+  private _left: string | ListAccessExpressionNode; 
+  private _right: ExpressionNode; 
   public _tok: moo.Token;
   private _operator: "=" | "+=" | "-=";
   constructor(
@@ -143,7 +133,7 @@ export class AssignmentStatementNode extends StatementNode {
 
   execute(): Command[] {
     const commands: Command[] = [];
-    commands.push(new HighlightStatementCommand(this)); // Highlight
+    commands.push(new HighlightStatementCommand(this)); 
     if (this._left instanceof ListAccessExpressionNode) {
       const subCommands = [
         ...this._left._list.evaluate(),
@@ -164,7 +154,7 @@ export class AssignmentStatementNode extends StatementNode {
 }
 
 export class ReturnStatementNode extends StatementNode {
-  private _value: ExpressionNode | null; // value by default should be null.
+  private _value: ExpressionNode | null; 
   private _previousVariables: Map<string, PythonValue>;
   constructor(
     _value: ExpressionNode,
@@ -178,14 +168,12 @@ export class ReturnStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
 
-    commands.push(new HighlightStatementCommand(this)); // highlight entire statement
+    commands.push(new HighlightStatementCommand(this)); 
     if (this._value) {
-      // value not null
       commands.push(...this._value.evaluate());
     } else {
       commands.push(new PushValueCommand(null));
     }
-    // commands.push(new ExitScopeCommand(this._previousVariables));
     commands.push(new ReturnCommand());
     return commands;
   }
@@ -200,9 +188,6 @@ export class BreakStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // Break statement itself should jump out of current loop and go to the next enclosing loop.
-    // I may need some additional context about how deep loops may be nested, which the parser knows but
-    // I do not here.
     commands.push(new BreakCommand());
     return commands;
   }
@@ -231,7 +216,6 @@ export class PassStatementNode extends StatementNode {
   execute(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // commands.push(new MoveLinePointerCommand(this._tok.line)); // Move line pointer to token itself (the statement)
     return commands;
   }
 }
@@ -271,7 +255,7 @@ export class IfStatementNode extends StatementNode {
       commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
     }
 
-    commands.push(...thenCommands); // have to spread these since we are pushing multiple.
+    commands.push(...thenCommands); 
 
     if (elseCommands.length > 0) {
       // has an else: jump over then branch + the jump command after it
@@ -312,7 +296,6 @@ export class ElifStatementNode extends StatementNode {
       elseCommands = this._elseBranch.execute();
     }
 
-    // if condition is false, jump over then branch
     if (elseCommands.length > 0) {
       // has more elif/else: jump over then branch + the jump command after it
       commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
@@ -349,41 +332,22 @@ export class ForStatementNode extends StatementNode {
     this._block = _block;
   }
   execute(): Command[] {
-    // Loop Structure:
-    // 1. Evaluate iterable
-    // 2. Push loop bounds
-    // 3. check if there is a next item
-    // 4. Conditionally jump based on boolean from stack that signals if the condition was true or not (in a for loops case, if there is a next item to iterate) (if false, we jump forward three commands to signal end of loop)
-    // 5. Retreive the value of next item
-    // 6. Execute body
-    // 7. Jump back to step 3.
-    // 8. once loop is finished, pop loop bounds.
-
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
-    // evaluate iterable and then push onto stack
     let iterableCommands: Command[] = this._iterable.evaluate();
     commands.push(...iterableCommands);
 
     const blockCommands = this._block.execute();
-    // + 3 accounts for commands "above" this one: the whole statement highlight, the iterable hghlight, and the push value for the iterable.
     commands.push(
       new PushLoopBoundsCommand(
         0,
         1 + iterableCommands.length + blockCommands.length,
       ),
     );
-    // Iterable now on stack, so we want to assign the loopvar to whatever it evaluated to on the stack.
-    // Then, we conidtionally jump. ( + 2 is to account for the commands below)
     commands.push(new AssignVariableCommand(this._loopVar._tok.text));
     commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
-    // execute the loop body
     commands.push(...blockCommands);
-    // jump back up to loop condition check (we get original start value and just negate it to go back)
-    // We are jumping to AssignVariableCommand to get the next item/value in the list.
     commands.push(new JumpCommand(-(blockCommands.length + 2)));
-
-    // since we are now done, we can pop loop bounds.
     commands.push(new PopLoopBoundsCommand());
     return commands;
   }
@@ -415,16 +379,12 @@ export class WhileStatementNode extends StatementNode {
     );
 
     commands.push(...conditionCommands);
-    // if condition is false, jump to end
     commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
-    // execute block commands
     commands.push(...blockCommands);
-    // jump back to condition check
     commands.push(
       new JumpCommand(-(blockCommands.length + conditionCommands.length + 1)),
     );
 
-    // finally, pop loop bounds
     commands.push(new PopLoopBoundsCommand());
     return commands;
   }
@@ -451,18 +411,14 @@ export class FuncDefStatementNode extends StatementNode {
     const commands: Command[] = [];
     commands.push(new HighlightStatementCommand(this));
 
-    // extract the parameter names
     const paramNames: string[] = [];
     if (this._formalParamList && this._formalParamList._paramsList) {
       for (const param of this._formalParamList._paramsList) {
         paramNames.push(param._tok.text);
       }
     }
-    // console.log("Function params:", paramNames);
-    // get function body commands
     const blockCommands = this._block.execute();
 
-    // create the function object
     const functionObj: UserFunction = {
       name: this._name._tok.text,
       params: paramNames,
@@ -542,10 +498,6 @@ export class BlockStatementNode extends StatementNode {
 // Expression Nodes
 // ------------------------------------------------------------------
 
-/*
-EXPRESSION NODE BASE CLASS
-
-*/
 export abstract class ExpressionNode {
   public _tok: moo.Token;
   constructor(_tok: moo.Token) {
@@ -569,12 +521,6 @@ export abstract class ExpressionNode {
   }
 }
 
-/*
-NUMBER LITERAL EXPRESSION NODE
-
-Handles:
-  - 5, 102, 68, etc...
-*/
 export class NumberLiteralExpressionNode extends ExpressionNode {
   private _value: string;
   constructor(value: string, tok: moo.Token) {
@@ -600,12 +546,6 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     }
     commands.push(new HighlightExpressionCommand(this));
     commands.push(new PushValueCommand(numValue));
-    // commands.push(
-    //   new MacroCommand([
-    //     new HighlightExpressionCommand(this),
-    //     new PushValueCommand(numValue),
-    //   ]),
-    // );
     return commands;
   }
 }
@@ -621,19 +561,12 @@ export class IdentifierExpressionNode extends ExpressionNode {
       new HighlightExpressionCommand(this),
       new RetrieveValueCommand(this._tok.text),
     ];
-    // return [
-    //   new MacroCommand([
-    //     new HighlightExpressionCommand(this),
-    //     new RetrieveValueCommand(this._tok.text),
-    //   ]),
-    // ];
   }
 }
 
 export class FormalParamsListExpressionNode extends ExpressionNode {
   public _paramsList: IdentifierExpressionNode[];
   constructor(_paramsList: IdentifierExpressionNode[]) {
-    // need to check if array is empty, probably need to do this for arg list too.
     if (
       _paramsList === null ||
       _paramsList === undefined ||
@@ -660,23 +593,7 @@ export class FormalParamsListExpressionNode extends ExpressionNode {
     }
     return commands;
   }
-  //  override public get endLine() {
-  //   return this._paramsList[this._paramsList.length - 1]._tok.line
-  // }
-  //  override public get endCol() {
-  //   let _lastTok = this._paramsList[this._paramsList.length - 1]._tok;
-  //   return _lastTok.col + (_lastTok.text.length - 1);
-  // }
 }
-
-/*
-CONDITIONAL EXPRESSION NODE
-
-Handles:
-- If-Else
-- If-Else-If
-- If-Else-If-Else
-*/
 
 export class ConditionalExpressionNode extends ExpressionNode {
   private _left: ExpressionNode;
@@ -687,7 +604,7 @@ export class ConditionalExpressionNode extends ExpressionNode {
     _condition: ExpressionNode,
     _right: ExpressionNode,
   ) {
-    super(_condition._tok); // pass conditions token.
+    super(_condition._tok); 
     this._left = _left;
     this._condition = _condition;
     this._right = _right;
@@ -741,14 +658,6 @@ export class ArgListExpressionNode extends ExpressionNode {
   }
 }
 
-/*
-COMPARISON EXPRESSION NODE
-
-Handles:
-  - 5 < 10, x > y, x >= 1, x != 0, and so on.
-
-*/
-
 export class ComparisonExpressionNode extends ExpressionNode {
   private _left: ExpressionNode;
   private _operator: ComparisonOp;
@@ -799,13 +708,7 @@ export class BinaryExpressionNode extends ExpressionNode {
     commands.push(...this._right.evaluate());
     commands.push(new BinaryOpCommand(this._operator));
     return commands;
-    // const subCommands: Command[] = [];
-    // subCommands.push(new HighlightExpressionCommand(this));
-    // subCommands.push(...this._left.evaluate());
-    // subCommands.push(...this._right.evaluate());
-    // subCommands.push(new BinaryOpCommand(this._operator));
-    // return [new MacroCommand(subCommands)];
-  }
+ }
 }
 
 export class UnaryExpressionNode extends ExpressionNode {
@@ -842,9 +745,6 @@ export class FuncCallExpressionNode extends ExpressionNode {
 
     const numArgs = this._args_list ? this._args_list.length : 0;
 
-    // Grab function name and then deal with whatever we get. Built in functions first, then user defined after.
-
-    // if function name is an identifier.
     if (this._func_name instanceof IdentifierExpressionNode) {
       const funcName = this._func_name._tok.text;
       if (funcName === "print") {
@@ -879,8 +779,7 @@ export class FuncCallExpressionNode extends ExpressionNode {
         return commands;
       }
     }
-
-    // if it is not a built-in func, it's user-defined.
+    // USER DEFINED FUNCTION
     if (this._func_name instanceof IdentifierExpressionNode) {
       const funcName = this._func_name._tok.text;
       commands.push(new CallUserFunctionCommand(funcName, numArgs));
@@ -889,12 +788,6 @@ export class FuncCallExpressionNode extends ExpressionNode {
   }
 }
 
-/*
-LIST ACCESS EXPRESSION NODE
-
-Handles:
-  - arr[2], nums[i], etc...
-*/
 export class ListAccessExpressionNode extends ExpressionNode {
   public _list: IdentifierExpressionNode;
   public _index: ExpressionNode;
@@ -909,7 +802,6 @@ export class ListAccessExpressionNode extends ExpressionNode {
     subCommands.push(...this._list.evaluate());
     let indexValue = this._index.evaluate();
     subCommands.push(...this._index.evaluate());
-    console.log("indexValue = ", indexValue);
     subCommands.push(new IndexAccessCommand());
     return [new MacroCommand(subCommands)];
   }
@@ -941,23 +833,22 @@ export class MethodCallExpressionNode extends ExpressionNode {
     if (this._argsList) {
       commands.push(...this._argsList.evaluate());
     }
-    // append, count, pop, remove, sort
     if (this._methodName instanceof IdentifierExpressionNode) {
       const methodName = this._methodName._tok.text;
       if (methodName === "append") {
         commands.push(new AppendCommand());
       } else if (methodName === "count") {
-        commands.push(new CountCommand()); // returning undefined.
+        commands.push(new CountCommand()); 
       } else if (methodName === "pop") {
-        commands.push(new PopCommand()); // printing undefined
+        commands.push(new PopCommand()); 
       } else if (methodName === "remove") {
         commands.push(new RemoveCommand());
       } else if (methodName === "sort") {
-        commands.push(new SortCommand()); // giving undefined
+        commands.push(new SortCommand()); 
       } else if (methodName === "index") {
         commands.push(new IndexCommand());
       } else if (methodName === "reverse") {
-        commands.push(new ReverseCommand()); // giving undefined
+        commands.push(new ReverseCommand()); 
       } else if (methodName === "contains") {
         commands.push(new ContainsCommand());
       }
@@ -1011,12 +902,6 @@ export class ListSliceExpressionNode extends ExpressionNode {
   }
 }
 
-/*
-LIST LITERAL EXPRESSION NODE
-
-Handles:
-  - [1, 2, 3], [1, x, y, 5, 2], [], etc...
-*/
 
 export class ListLiteralExpressionNode extends ExpressionNode {
   private _values: ArgListExpressionNode;
@@ -1027,12 +912,10 @@ export class ListLiteralExpressionNode extends ExpressionNode {
   evaluate(): Command[] {
     const commands: Command[] = [];
     commands.push(new HighlightExpressionCommand(this));
-    // if values empty, no values to push or evaluate.
     if (this._values) {
       commands.push(...this._values.evaluate());
     }
-    // count values so we know how many elements to pop off stack.
-    let count = this._values ? this._values.length : 0; // null check in case arg list is empty
+    let count = this._values ? this._values.length : 0; 
     commands.push(new CreateListCommand(count));
     return commands;
   }
@@ -1061,18 +944,13 @@ export class StringLiteralExpressionNode extends ExpressionNode {
     this._value = _value;
   }
   evaluate(): Command[] {
-    // const commands: Command[] = [];
-    // commands.push(new HighlightExpressionCommand(this)); // highlight
     let text = this._value.text;
     if (
-      // needed to remove surrounding quotes, there was some double wrapping.
       (text.startsWith('"') && text.endsWith('"')) ||
       (text.startsWith("'") && text.endsWith("'"))
     ) {
       text = text.slice(1, -1); // remove front quote and back quote to "clean" string
     }
-    // commands.push(new PushValueCommand(text));
-    // new ReplaceHighlightedExpressionCommand(this, new EvaluatedExpressionNode(this._value)) // replace
     return [
       new MacroCommand([
         new HighlightExpressionCommand(this),

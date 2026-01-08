@@ -1,4 +1,3 @@
-// ------------------------------------------------------------------
 import {
   type PythonValue,
   type BinaryOp,
@@ -19,11 +18,7 @@ import {
   ValueError,
   ZeroDivisionError,
 } from "./Errors";
-// import { InterpreterService } from "../frontend/src/services/InterpreterService";
 
-// ---------------------------------------------------------------------------------------
-// COMMANDS ABC
-// ---------------------------------------------------------------------------------------
 export abstract class Command {
   protected _undoCommand: Command | null = null;
   abstract do(_currentState: State): void;
@@ -31,10 +26,6 @@ export abstract class Command {
     this._undoCommand?.do(_currentState);
   }
 }
-
-// ---------------------------------------------------------------------------------------
-// PROGRAM STATE
-// ---------------------------------------------------------------------------------------
 
 export class State {
   private _programCounter: number = 0; // which line of execution are we on.
@@ -141,13 +132,11 @@ export class State {
     return this._scopeNames;
   }
 
-  // push new scope of current variables map. push scope name as well.
   public pushScope(name: string) {
     this._scopeStack.push(new Map(this._variables));
     this._scopeNames.push(name);
   }
 
-  // pop scope and scope name
   public popScope() {
     if (this._scopeStack.length > 1) {
       this._scopeStack.pop();
@@ -155,7 +144,6 @@ export class State {
     }
   }
 
-  // take a "peek" without popping at currentScope.
   public get currentScope(): Map<string, PythonValue> {
     return this._scopeStack[this._scopeStack.length - 1];
   }
@@ -283,7 +271,6 @@ export class State {
     return this._returnStack.pop();
   }
 
-  // get start line and end line for current statement for highlighting purposes
   public getCurrentStatementHighlight(): {
     startLine: number;
     endLine: number;
@@ -295,7 +282,6 @@ export class State {
     };
   }
 
-  // get start line, startCol, and endCol for current expression for highlighting purposes
   public getCurrentExpressionHighlight(): {
     line: number;
     startCol: number;
@@ -310,11 +296,6 @@ export class State {
   }
 }
 
-// ---------------------------------------------------------------------------------------
-// COMMANDS
-// ---------------------------------------------------------------------------------------
-
-// Take value from top of evaluation stack and store it in a variable.
 export class AssignVariableCommand extends Command {
   private _name: string | ListAccessExpressionNode;
   private _operator: "=" | "+=" | "-=";
@@ -375,7 +356,6 @@ export class AssignVariableCommand extends Command {
 
         list[actualIndex] = finalValue;
 
-        // list assignment undo
         this._undoCommand = new (class extends Command {
           do(state: State) {
             state.evaluationStack.push(list);
@@ -512,9 +492,8 @@ export class AssignVariableCommand extends Command {
   }
 }
 
-// Pushes value onto Evaluation Stack during Expression processing.
 export class PushValueCommand extends Command {
-  private _value: PythonValue; // Value to push.
+  private _value: PythonValue; 
   constructor(value: PythonValue) {
     super();
     this._value = value;
@@ -536,10 +515,8 @@ export class PushLoopBoundsCommand extends Command {
   }
 
   do(_currentState: State) {
-    // start, end passed in are not the absolute positions we would need to jump to and from. There are three commands that execute before every for loop (highlights and pushing the iterable)
-    // we would need to calculate the absolute positions (the actual start and end of the loop) to calculate where we would need to break from or to continue from.
-    let continueTarget = _currentState.programCounter + this._start; // this shoud always jump to the loop variable reassignment (which is AssignVariableCommand)
-    let breakTarget = _currentState.programCounter + this._end; // this should always break out of the loop, to where we pop the loop bounds signaling the completetion of a loop (which is PopLoopBound)
+    let continueTarget = _currentState.programCounter + this._start; 
+    let breakTarget = _currentState.programCounter + this._end; 
     _currentState.loopStack.push([continueTarget, breakTarget]);
     this._undoCommand = new PopLoopBoundsCommand();
   }
@@ -566,13 +543,9 @@ export class BreakCommand extends Command {
         `'break' outside loop (line ${_currentState.currentStatement?.startLine || "?"})`,
       );
     }
-    // store oldPC for undo so we can go back to it.
     const oldPC = _currentState.programCounter;
-    // get most recent loop bounds by grabbing the top.
     let startStop: [number, number] =
       _currentState.loopStack[_currentState.loopStack.length - 1];
-    // jump to whereever we should break to. Set PC to that - 1 because main loop will increment it as part of
-    // interpreter loop.
     _currentState.programCounter = startStop[1];
 
     this._undoCommand = new (class extends Command {
@@ -594,11 +567,8 @@ export class ContinueCommand extends Command {
       );
     }
     const oldPC = _currentState.programCounter;
-    // get most recent loop bounds by grabbing the top.
     let startStop: [number, number] =
       _currentState.loopStack[_currentState.loopStack.length - 1];
-    // jump to whereever we should continue to. Set PC to that - 1 because main loop will increment it as part of
-    // interpreter loop.
     _currentState.programCounter = startStop[0] - 1;
 
     this._undoCommand = new (class extends Command {
@@ -620,7 +590,7 @@ export class ConditionalJumpCommand extends Command {
     this._commandsToJump = _commandsToJump;
   }
   do(_currentState: State) {
-    const condition = _currentState.evaluationStack.pop()!; // true or false depending on
+    const condition = _currentState.evaluationStack.pop()!; 
     const boolCondition = Boolean(condition);
 
     if (condition === undefined) {
@@ -630,9 +600,8 @@ export class ConditionalJumpCommand extends Command {
     }
 
     const oldPC = _currentState.programCounter;
-    // shoudl we jump?
     if (boolCondition === false) {
-      _currentState.programCounter += this._commandsToJump - 1; // subtract 1 because stepForward increments PC;
+      _currentState.programCounter += this._commandsToJump - 1; 
     }
 
     this._undoCommand = new (class extends Command {
@@ -641,7 +610,6 @@ export class ConditionalJumpCommand extends Command {
         state.evaluationStack.push(condition);
       }
     })();
-    // PC should be incremented normally.
   }
 }
 
@@ -657,7 +625,6 @@ export class JumpCommand extends Command {
   }
   do(_currentState: State) {
     const oldPC = _currentState.programCounter;
-    // jump to a new position within the command array.
     _currentState.programCounter += this._commandsToJump - 1;
 
     this._undoCommand = new (class extends Command {
@@ -668,21 +635,19 @@ export class JumpCommand extends Command {
   }
 }
 
-// Pops value off Evaluation Stack during Expression processing.
 export class PopValueCommand extends Command {
   do(_currentState: State) {
     let value: PythonValue;
-    value = _currentState.evaluationStack.pop()!; // pop value and store in member
+    value = _currentState.evaluationStack.pop()!; 
     this._undoCommand = new PushValueCommand(value);
     return value;
   }
 }
 
-// Highlights expression that is being evaluated.
 export class HighlightExpressionCommand extends Command {
   private _expression: ExpressionNode;
   constructor(_expression: ExpressionNode) {
-    super(); // call superclass constructor
+    super(); 
     this._expression = _expression;
   }
 
@@ -703,7 +668,6 @@ export class HighlightExpressionCommand extends Command {
   }
 }
 
-// Should grab current value of variable.
 export class RetrieveValueCommand extends Command {
   private _varName: string;
   constructor(_varName: string) {
@@ -757,10 +721,6 @@ export class HighlightStatementCommand extends Command {
         state.currentStatement = previousStatement;
       }
     })();
-    // if (previousStatement) {
-    //   this._undoCommand = new HighlightStatementCommand(previousStatement);
-    // }
-
     _currentState.currentStatement = this._statement;
   }
 }
@@ -782,7 +742,6 @@ export class ReplaceHighlightedExpressionCommand extends Command {
   }
 }
 
-// For evaluating arithmetic operations
 export class BinaryOpCommand extends Command {
   private _op: BinaryOp;
   constructor(_op: BinaryOp) {
@@ -790,7 +749,7 @@ export class BinaryOpCommand extends Command {
     this._op = _op;
   }
   do(_currentState: State) {
-    const evaluatedRight = _currentState.evaluationStack.pop()!; // always pop right first!!
+    const evaluatedRight = _currentState.evaluationStack.pop()!; 
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
     let res: PythonValue = 0;
 
@@ -851,9 +810,9 @@ export class BinaryOpCommand extends Command {
 
     this._undoCommand = new (class extends Command {
       do(state: State) {
-        state.evaluationStack.pop(); // pop the result.
-        state.evaluationStack.push(evaluatedLeft); // restore the left
-        state.evaluationStack.push(evaluatedRight); // restore the right
+        state.evaluationStack.pop(); 
+        state.evaluationStack.push(evaluatedLeft); 
+        state.evaluationStack.push(evaluatedRight); 
       }
     })();
   }
@@ -866,10 +825,8 @@ export class ComparisonOpCommand extends Command {
     this._op = _op;
   }
   do(_currentState: State) {
-    const evaluatedRight = _currentState.evaluationStack.pop()!; // right should be popped first.
+    const evaluatedRight = _currentState.evaluationStack.pop()!; 
     const evaluatedLeft = _currentState.evaluationStack.pop()!;
-    //console.log(`Left: ${evaluatedLeft}, Right: ${evaluatedRight}`);
-    //console.log(`Operator: ${this._op == ">"}`);
     let res: Boolean = false;
 
     switch (this._op.toString()) {
@@ -894,9 +851,6 @@ export class ComparisonOpCommand extends Command {
       default:
         res = false;
     }
-    console.log(
-      `Comparison: ${evaluatedLeft} ${this._op} ${evaluatedRight} = ${res}`,
-    );
     _currentState.evaluationStack.push(res);
 
     this._undoCommand = new (class extends Command {
@@ -954,20 +908,18 @@ export class UnaryOpCommand extends Command {
   }
 }
 
-// EnterScopeCommand -> keeps local storage within functions/conditiionals/etc..
 export class EnterScopeCommand extends Command {
-  private _savedVariables: Map<string, PythonValue>; // place to store current state of variables before we enter function scope.
+  private _savedVariables: Map<string, PythonValue>; 
   constructor(_savedVariables: Map<string, PythonValue>) {
     super();
     this._savedVariables = _savedVariables;
   }
   do(_currentState: State) {
-    this._savedVariables = new Map(_currentState.variables); // create new map for local variables only.
-    this._undoCommand = new ExitScopeCommand(this._savedVariables); // restore previous variables.
+    this._savedVariables = new Map(_currentState.variables); 
+    this._undoCommand = new ExitScopeCommand(this._savedVariables); 
   }
 }
 
-// ExitScopeCommand -> exit scope and restore previous variable state.
 export class ExitScopeCommand extends Command {
   private _previousVariables: Map<string, PythonValue>;
   constructor(_previousVariables: Map<string, PythonValue>) {
@@ -975,18 +927,16 @@ export class ExitScopeCommand extends Command {
     this._previousVariables = _previousVariables;
   }
   do(_currentState: State) {
-    const currentVariables = new Map(_currentState.variables); // create copy of current variables set in scope. (local)
-    this._undoCommand = new ExitScopeCommand(currentVariables); // undo is going back in scope, so restore variabels to local ones.
+    const currentVariables = new Map(_currentState.variables); 
+    this._undoCommand = new ExitScopeCommand(currentVariables); 
 
-    _currentState.variables.clear(); // clear all local variables.
+    _currentState.variables.clear(); 
     this._previousVariables.forEach((value, key) => {
-      // iterate over all previous variables
-      _currentState.setVariable(key, value); // set each one by one to restore state.
+      _currentState.setVariable(key, value); state
     });
   }
 }
 
-// AppendCommand
 export class AppendCommand extends Command {
   constructor() {
     super();
@@ -994,7 +944,6 @@ export class AppendCommand extends Command {
   do(_currentState: State) {
     const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
-    // let newList;
     if (Array.isArray(list)) {
       if (argsList !== undefined) {
         list.push(argsList);
@@ -1005,14 +954,11 @@ export class AppendCommand extends Command {
             state.evaluationStack.push(argsList);
           }
         })();
-        // _currentState.evaluationStack.push(null);
       }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
-// CountCommand
 export class CountCommand extends Command {
   constructor() {
     super();
@@ -1034,7 +980,6 @@ export class CountCommand extends Command {
         })();
       }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1043,7 +988,6 @@ export class PopCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
     let poppedValue;
     if (Array.isArray(list)) {
@@ -1059,7 +1003,6 @@ export class PopCommand extends Command {
         }
       })();
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1068,10 +1011,8 @@ export class SortCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
     if (Array.isArray(list)) {
-      // if (argsList !== undefined) {
       const originalOrder = [...list];
       list.sort();
 
@@ -1082,10 +1023,7 @@ export class SortCommand extends Command {
           state.evaluationStack.push(list);
         }
       })();
-      // _currentState.evaluationStack.push(null);
-      // }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1108,11 +1046,9 @@ export class RemoveCommand extends Command {
               state.evaluationStack.push(argsList);
             }
           })();
-          // _currentState.evaluationStack.push(null);
         }
       }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1135,7 +1071,6 @@ export class IndexCommand extends Command {
         })();
       }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1144,11 +1079,9 @@ export class ReverseCommand extends Command {
     super();
   }
   do(_currentState: State) {
-    // const argsList = _currentState.evaluationStack.pop()!;
     const list = _currentState.evaluationStack.pop()!;
     if (Array.isArray(list)) {
       const originalOrder = [...list];
-      // if (argsList !== undefined) {
       _currentState.evaluationStack.push(list.reverse());
       this._undoCommand = new (class extends Command {
         do(state: State) {
@@ -1158,9 +1091,7 @@ export class ReverseCommand extends Command {
           state.evaluationStack.push(list);
         }
       })();
-      // }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
@@ -1183,11 +1114,9 @@ export class ContainsCommand extends Command {
         })();
       }
     }
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
-// PrintCommand -> prints something to the console.
 export class PrintCommand extends Command {
   constructor() {
     super();
@@ -1224,18 +1153,15 @@ export class PrintCommand extends Command {
         state.evaluationStack.push(value);
       }
     })();
-    // this._undoCommand = new PushValueCommand(value);
   }
 }
 
-// LenCommand -> gets length of strings and lists, etc...
 export class LenCommand extends Command {
   constructor() {
     super();
   }
   do(_currentState: State) {
     const value = _currentState.evaluationStack.pop()!;
-    // let length = 0;
     if (typeof value === "string") {
       _currentState.evaluationStack.push(value.length);
     } else if (Array.isArray(value)) {
@@ -1250,7 +1176,6 @@ export class LenCommand extends Command {
   }
 }
 
-// TypeCommand -> returns type of value
 export class TypeCommand extends Command {
   constructor() {
     super();
@@ -1273,7 +1198,6 @@ export class TypeCommand extends Command {
   }
 }
 
-// RangeCommand -> for range() function
 export class RangeCommand extends Command {
   private _numArgs: number;
 
@@ -1320,13 +1244,11 @@ export class RangeCommand extends Command {
         result.push(i);
       }
     }
-    // _currentState.setVariable("iterable", result); // show range iterable in preview.
     _currentState.evaluationStack.push(result);
 
     this._undoCommand = new (class extends Command {
       do(state: State) {
-        state.evaluationStack.pop(); // pop the result array
-        // push args back in reverse order
+        state.evaluationStack.pop(); 
         for (let i = args.length - 1; i >= 0; i--) {
           state.evaluationStack.push(args[i]);
         }
@@ -1335,7 +1257,6 @@ export class RangeCommand extends Command {
   }
 }
 
-// InputCommand -> cin for user input
 export class InputCommand extends Command {
   constructor() {
     super();
@@ -1344,10 +1265,8 @@ export class InputCommand extends Command {
     const promptValue = _currentState.evaluationStack.pop()!;
     const promptMessage = String(promptValue);
 
-    // pop up browser prompt dialog and get user input through that.
     const userInput = prompt(promptMessage);
 
-    // if user clicks cancel, userInput will be null -> we default to empty string
     const result = userInput !== null ? userInput : "";
     _currentState.evaluationStack.push(result);
 
@@ -1360,7 +1279,6 @@ export class InputCommand extends Command {
   }
 }
 
-// IndexAccessCommand -> arr[5]
 export class IndexAccessCommand extends Command {
   do(_currentState: State) {
     const index = _currentState.evaluationStack.pop();
@@ -1374,12 +1292,10 @@ export class IndexAccessCommand extends Command {
 
     let actualIndex = index;
     if (Array.isArray(list) || typeof list === "string") {
-      // handle negative indices / calculate offset
       if (actualIndex < 0) {
         actualIndex = list.length + actualIndex;
       }
 
-      // check bounds
       if (actualIndex < 0 || actualIndex >= list.length) {
         _currentState.error = new IndexError(
           `list index out of range (line ${_currentState.currentStatement?.startLine || "?"})`,
@@ -1405,12 +1321,9 @@ export class ListSliceCommand extends Command {
     let start = _currentState.evaluationStack.pop();
     let list = _currentState.evaluationStack.pop();
 
-    // convert to numbers
     let startIndex = start === null ? 0 : Number(start);
-    // let endIndex = end === null ? 0 : Number(end);
-    let stepIndex = step === null ? 1 : Number(step); // we by default step by 1
+    let stepIndex = step === null ? 1 : Number(step);
 
-    // handle arrays first
     if (Array.isArray(list)) {
       let endIndex: number;
       if (end === null) {
@@ -1418,14 +1331,12 @@ export class ListSliceCommand extends Command {
       } else {
         endIndex = Number(end);
       }
-      // handle negative indices first.
       if (startIndex < 0) {
         startIndex = list.length + startIndex;
       }
       if (endIndex < 0 && endIndex !== null) {
         endIndex = list.length + endIndex;
       }
-      // then we slice.
       let result: PythonValue[] = [];
       if (stepIndex > 0) {
         for (
@@ -1483,7 +1394,6 @@ export class ListSliceCommand extends Command {
   }
 }
 
-// CreateListCommand -> Creates a list of values
 export class CreateListCommand extends Command {
   private _count: number;
 
@@ -1495,7 +1405,6 @@ export class CreateListCommand extends Command {
   do(_currentState: State) {
     const list: PythonValue[] = [];
     const poppedElements: PythonValue[] = [];
-    // Pop elements in REVERSE order, then add them to the front array to maintain initial order.
     for (let i = 0; i < this._count; i++) {
       const elem: PythonValue = _currentState.evaluationStack.pop()!;
       poppedElements.push(elem);
@@ -1505,8 +1414,7 @@ export class CreateListCommand extends Command {
     _currentState.evaluationStack.push(list);
     this._undoCommand = new (class extends Command {
       do(state: State) {
-        state.evaluationStack.pop(); // pop the list
-        // push elements back in reverse order
+        state.evaluationStack.pop(); 
         for (let i = poppedElements.length - 1; i >= 0; i--) {
           state.evaluationStack.push(poppedElements[i]);
         }
@@ -1535,9 +1443,6 @@ export class ReturnCommand extends Command {
   }
 }
 
-// TYPE CONVERTER SECTION
-// int(), str(), float(), bool(), list()
-
 export class IntCommand extends Command {
   constructor() {
     super();
@@ -1548,7 +1453,6 @@ export class IntCommand extends Command {
     let result: number;
 
     if (typeof value === "number") {
-      // value is already a number, just truncate (removes any fraction or decimals)
       result = Math.trunc(value);
     } else if (typeof value === "string") {
       const parsed = parseInt(value, 10);
@@ -1573,7 +1477,6 @@ export class IntCommand extends Command {
   }
 }
 
-// 2. FloatCommand - float()
 export class FloatCommand extends Command {
   constructor() {
     super();
@@ -1607,7 +1510,6 @@ export class FloatCommand extends Command {
   }
 }
 
-// 3. StrCommand - str()
 export class StrCommand extends Command {
   constructor() {
     super();
@@ -1626,7 +1528,6 @@ export class StrCommand extends Command {
     } else if (value === null) {
       result = "None";
     } else if (Array.isArray(value)) {
-      // list converstion to string. We can do this by mapping over the array and concatenating values as we go through elements.
       result =
         "[" +
         value
@@ -1652,7 +1553,6 @@ export class StrCommand extends Command {
   }
 }
 
-// 4. BoolCommand - bool()
 export class BoolCommand extends Command {
   constructor() {
     super();
@@ -1686,7 +1586,6 @@ export class BoolCommand extends Command {
   }
 }
 
-// 5. ListCommand - list()
 export class ListCommand extends Command {
   constructor() {
     super();
@@ -1697,10 +1596,8 @@ export class ListCommand extends Command {
     let result: PythonValue[];
 
     if (Array.isArray(value)) {
-      // create copy of array.
       result = [...value];
     } else if (typeof value === "string") {
-      // convert string to list of characters to create separate elements
       result = value.split("");
     } else if (value === null) {
       result = [];
@@ -1729,25 +1626,17 @@ export class CallUserFunctionCommand extends Command {
   }
 
   do(_currentState: State) {
-    // pop func object from stack.
     const func = _currentState.getFunction(this._funcName)!;
-    // see if getFunction returns undefined.
     if (!func) {
       _currentState.error = new NameError(
         `name '${this._funcName}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
       );
     }
 
-    func.body.forEach((cmd, i) => {
-      console.log(`  ${i}: ${cmd.constructor.name}`);
-    });
-
-    // pop arguments in reverse order
     const args: PythonValue[] = [];
     for (let i = 0; i < this._numArgs; i++) {
       args.unshift(_currentState.evaluationStack.pop()!);
     }
-    // does the argument count match?
     if (args.length !== func.params.length) {
       _currentState.error = new TypeError(
         `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given (line ${_currentState.currentStatement?.startLine || "?"})`,
@@ -1757,7 +1646,6 @@ export class CallUserFunctionCommand extends Command {
     const savedEvaluationStack = [..._currentState.evaluationStack];
     const savedPC = _currentState.programCounter;
 
-    //push new scope for new function. set parameteres for new scope.
     _currentState.pushScope(this._funcName);
     for (let i = 0; i < func.params.length; i++) {
       _currentState.setVariable(func.params[i], args[i]);
@@ -1765,7 +1653,6 @@ export class CallUserFunctionCommand extends Command {
     _currentState.evaluationStack.length = 0;
     _currentState.programCounter = 0;
 
-    // execute function body
     let returnValue: PythonValue = null;
     while (_currentState.programCounter < func.body.length) {
       const cmd = func.body[_currentState.programCounter];
@@ -1780,21 +1667,14 @@ export class CallUserFunctionCommand extends Command {
 
     _currentState.popScope();
 
-    // restore previous state (restore the global evalutation stack, variabels and program counter)
     _currentState.evaluationStack.length = 0;
     _currentState.evaluationStack.push(...savedEvaluationStack);
-    // _currentState.variables = savedVariables;
     _currentState.programCounter = savedPC;
-    // _currentState.currentStatement = savedStatement;
-    // _currentState.currentExpression = savedExpression;
-
-    // Push return value
     _currentState.evaluationStack.push(returnValue);
     // TODO: Implement undo logic for function calls
   }
 }
 
-// registers the function in the state.
 export class DefineFunctionCommand extends Command {
   private _functionObj: UserFunction;
 
@@ -1822,7 +1702,6 @@ export class DefineFunctionCommand extends Command {
   }
 }
 
-// finds {variable} patterns and replaces them wiht the actual variable values.
 export class InterpolateFStringCommand extends Command {
   private _template: string;
 
@@ -1834,8 +1713,6 @@ export class InterpolateFStringCommand extends Command {
   do(_currentState: State) {
     // this pattern finds all {...} patterns
     const pattern = /\{([^}]+)\}/g;
-    // the _template itself is the f string content (including the interpolation)
-    // pattern.exec() finds the next match in the string.
     // match[1] is the content inside the curly braces
     let result = this._template;
     const matches: string[] = [];
@@ -1845,14 +1722,10 @@ export class InterpolateFStringCommand extends Command {
       matches.push(match[1]);
     }
 
-    // loop through every single captured expression.
-    // need to triim to remove any whitespace.
     for (const expr of matches) {
       const trimmed = expr.trim();
 
-      // regex checsk to see if it is a valid Python variable name. REJECTS complex expressions!
       if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
-        // look up variable in state, throw error if not found.
         const value = _currentState.getVariable(trimmed);
         if (value === null && !_currentState.hasVariable(trimmed)) {
           _currentState.error = new NameError(
@@ -1864,7 +1737,6 @@ export class InterpolateFStringCommand extends Command {
         if (typeof value === "string") {
           strValue = value;
         } else if (Array.isArray(value)) {
-          // format like Python lists
           strValue =
             "[" +
             value
@@ -1883,7 +1755,6 @@ export class InterpolateFStringCommand extends Command {
         } else {
           strValue = String(value);
         }
-        // replace the placeholder with the formatted value
         result = result.replace(`{${expr}}`, strValue);
       }
     }
@@ -1898,7 +1769,6 @@ export class InterpolateFStringCommand extends Command {
   }
 }
 
-// used for grouping multiple sub commands as one step.
 export class MacroCommand extends Command {
   private _commands: Command[];
 
@@ -1908,7 +1778,6 @@ export class MacroCommand extends Command {
   }
 
   do(_currentState: State) {
-    // go through all sub commands and run.
     for (const cmd of this._commands) {
       cmd.do(_currentState);
       if (_currentState.error) break;

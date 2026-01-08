@@ -80,7 +80,6 @@ function App() {
   // set code state when code changes.
   function handleCodeChange(code: string) {
     setCode(code);
-    // handleReset();
     setInterpreterState((prev) => ({
       ...prev,
       highlightedStatement: null,
@@ -178,10 +177,6 @@ function App() {
   }
 
   function handleStepBackward() {
-    console.log(
-      "handleStepBackward called, currentStep:",
-      interpreterState.currentStep,
-    );
     interpreterServiceReference.current.stepBack();
     updateState();
   }
