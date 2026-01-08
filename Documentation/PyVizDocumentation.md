@@ -95,6 +95,12 @@ There are three types of operators in PyViz:
 - Logical OR `or`
 - Logical NOT `not`
 
+### Assignment Operators
+
+- Assignment `=`
+- Addition Assignment `+=`
+- Subtraction Assignment `-=` 
+
 ## Control flow
 
 ### If Statements
@@ -338,11 +344,3 @@ The following common Python features are NOT supported in PyViz:
 - Del keyword
 
 ---------------------------------------------------------------------------------------------
-
-## Best Practices
-
-- Use descriptive variable names
-- Keep functions small, they should do one outstanding thing well.
-- Add comments for complex logic
-- Consistent indentation (otherwise your code will NOT interpret correctly!!)
-- Handle edge cases as neccesary

@@ -7,6 +7,7 @@ const IndentationLexer = require('moo-indentation-lexer')
 const { ProgramNode,
         StatementNode,
         AssignmentStatementNode,
+        MultiAssignmentStatementNode,
         ReturnStatementNode,
         BreakStatementNode,
         ContinueStatementNode,
@@ -156,10 +157,15 @@ compound_statement -> if_statement {% d => d[0] %}
                     | while_loop {% d => d[0] %}
                     | func_def  {% d => d[0] %}
 
-assignment_statement -> %IDENTIFIER %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0])) %}
+assignment_statement -> identifier_list %ASSIGNMENT expression_list {% d => (new MultiAssignmentStatementNode(d[0], d[2], d[1])) %}
+                      |  %IDENTIFIER %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0])) %}
                       | %IDENTIFIER %PLUS_ASSIGN expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0], '+=')) %}
                       | %IDENTIFIER %MINUS_ASSIGN expression {% d => (new AssignmentStatementNode(d[0].text, d[2], d[0], '-=')) %}
                       | list_access %ASSIGNMENT expression {% d => (new AssignmentStatementNode(d[0], d[2], d[0]._tok)) %}
+
+identifier_list -> %IDENTIFIER (%COMMA %IDENTIFIER):+ {% d => [d[0].text, ...d[1].map(x => x[1].text)] %}
+
+expression_list -> expression (%COMMA expression):+ {% d => [d[0], ...d[1].map(x => x[1])] %}
 
 if_statement -> %IF expression %COLON block (elif_statement | else_block):? {% d => (new IfStatementNode(d[1], d[3], d[4] ? d[4][0] : null, d[0])) %}
 
