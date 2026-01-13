@@ -1,11 +1,15 @@
 {
+  "homepage": "https://taddmtii.github.io/ArrayViz",
   "devDependencies": {
     "@types/moo": "^0.5.10",
     "@types/nearley": "^2.11.5",
     "@types/node": "^24.3.0",
+    "gh-pages": "^6.3.0",
     "nearley": "^2.20.1"
   },
   "scripts": {
-    "all": "nearleyc grammar.ne -o grammar.js; tsc Nodes.ts; node run_test.js"
+    "all": "nearleyc grammar.ne -o grammar.js; tsc Nodes.ts; node run_test.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   }
 }
