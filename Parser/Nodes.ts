@@ -65,6 +65,7 @@ export interface UserFunction {
     params: string[]; // names of the parameters
     body: Command[]; // commands that make up the function body
     type: "Function";
+    startIndex: number; // where function starts in command array.
 }
 
 // ------------------------------------------------------------------
@@ -134,21 +135,21 @@ export class AssignmentStatementNode extends StatementNode {
     execute(): Command[] {
         const commands: Command[] = [];
         commands.push(new HighlightStatementCommand(this));
+
         if (this._left instanceof ListAccessExpressionNode) {
-            const subCommands = [
-                ...this._left._list.evaluate(),
-                ...this._left._index.evaluate(),
-                ...this._right.evaluate(),
+            commands.push(...this._left._list.evaluate());
+            commands.push(...this._left._index.evaluate());
+            commands.push(...this._right.evaluate());
+            commands.push(
                 new AssignVariableCommand(this._left, this._operator),
-            ];
-            commands.push(new MacroCommand(subCommands));
+            );
         } else {
-            const subCommands = [
-                ...this._right.evaluate(),
+            commands.push(...this._right.evaluate());
+            commands.push(
                 new AssignVariableCommand(this._left as string, this._operator),
-            ];
-            commands.push(new MacroCommand(subCommands));
+            );
         }
+
         return commands;
     }
 }
@@ -188,8 +189,7 @@ export class MultiAssignmentStatementNode extends StatementNode {
             subCommands.push(new AssignVariableCommand(this._identifiers[i]));
         }
 
-        commands.push(new MacroCommand(subCommands));
-        return commands;
+        return subCommands;
     }
 }
 
@@ -466,10 +466,12 @@ export class FuncDefStatementNode extends StatementNode {
             params: paramNames,
             body: blockCommands,
             type: "Function",
+            startIndex: -1,
         };
 
-        // define the function in state
         commands.push(new DefineFunctionCommand(functionObj));
+        commands.push(new JumpCommand(blockCommands.length + 1));
+        commands.push(...blockCommands);
 
         return commands;
     }
@@ -717,12 +719,10 @@ export class ComparisonExpressionNode extends ExpressionNode {
     }
     evaluate(): Command[] {
         return [
-            new MacroCommand([
-                new HighlightExpressionCommand(this),
-                ...this._left.evaluate(),
-                ...this._right.evaluate(),
-                new ComparisonOpCommand(this._operator),
-            ]),
+            new HighlightExpressionCommand(this),
+            ...this._left.evaluate(),
+            ...this._right.evaluate(),
+            new ComparisonOpCommand(this._operator),
         ];
     }
 }
@@ -766,7 +766,7 @@ export class UnaryExpressionNode extends ExpressionNode {
         subCommands.push(new HighlightExpressionCommand(this));
         subCommands.push(...this._operand.evaluate());
         subCommands.push(new UnaryOpCommand(this._operator));
-        return [new MacroCommand(subCommands)];
+        return subCommands;
     }
 }
 
@@ -845,7 +845,7 @@ export class ListAccessExpressionNode extends ExpressionNode {
         let indexValue = this._index.evaluate();
         subCommands.push(...this._index.evaluate());
         subCommands.push(new IndexAccessCommand());
-        return [new MacroCommand(subCommands)];
+        return subCommands;
     }
 }
 
@@ -940,7 +940,7 @@ export class ListSliceExpressionNode extends ExpressionNode {
         }
 
         subCommands.push(new ListSliceCommand());
-        return [new MacroCommand(subCommands)];
+        return subCommands;
     }
 }
 
@@ -970,10 +970,8 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
     }
     evaluate(): Command[] {
         return [
-            new MacroCommand([
-                new HighlightExpressionCommand(this),
-                new PushValueCommand(Boolean(this._value)),
-            ]),
+            new HighlightExpressionCommand(this),
+            new PushValueCommand(Boolean(this._value)),
         ];
     }
 }
@@ -993,10 +991,8 @@ export class StringLiteralExpressionNode extends ExpressionNode {
             text = text.slice(1, -1); // remove front quote and back quote to "clean" string
         }
         return [
-            new MacroCommand([
-                new HighlightExpressionCommand(this),
-                new PushValueCommand(text),
-            ]),
+            new HighlightExpressionCommand(this),
+            new PushValueCommand(text),
         ];
     }
 }

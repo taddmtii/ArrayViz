@@ -26,7 +26,12 @@ export class InterpreterService {
             [], // returnStack
             [], // loopStack
             [], // outputs
-            new Map(),
+            new Map(), // loopIterationState
+            null, // error
+            new Map(), // functionDefinitions
+            [new Map()], // scopeStack
+            ["Global"], // scopeNames
+            [], // functionCallStack
         );
     }
 
@@ -54,6 +59,8 @@ export class InterpreterService {
             const program: ProgramNode = parser.results[0];
             this.commands = program.execute();
             this.currentStep = 0;
+            const globalScope = new Map();
+
             this.state = new State(
                 0, // programCounter
                 0, // lineCount
@@ -61,7 +68,7 @@ export class InterpreterService {
                 null, // currentStatement
                 [], // callStack
                 [], // history
-                new Map(), // variables
+                globalScope, // variables - USE THE SAME MAP
                 1, // currentLine
                 [], // evaluationStack
                 [], // returnStack
@@ -70,12 +77,13 @@ export class InterpreterService {
                 new Map(), // loopIterationState
                 null, // error
                 new Map(), // functionDefinitions
-                [new Map()], // scopeStack
+                [globalScope], // scopeStack
                 ["Global"], // scopeNames
                 savedPredictMode, // isPredictMode
                 false, // waitingForPrediction
                 null, // predictionVariable
                 null, // predictionCorrectValue
+                [],
             );
 
             this.parseErrorMessage = null;
@@ -110,7 +118,7 @@ export class InterpreterService {
 
             if (!this.state.waitingForPrediction) {
                 this.state.programCounter++;
-                this.currentStep = this.state.programCounter;
+                this.currentStep++;
             }
 
             return true;
@@ -119,7 +127,6 @@ export class InterpreterService {
         }
     }
 
-    // clears all prediction related state when we submit prediction.
     submitPrediction(variable: string, predictedValue: string): boolean {
         if (!this.state.waitingForPrediction) return false;
 
@@ -128,7 +135,7 @@ export class InterpreterService {
         this.state.predictionCorrectValue = null;
 
         this.state.programCounter++;
-        this.currentStep = this.state.programCounter;
+        this.currentStep++;
 
         return true;
     }
@@ -164,6 +171,8 @@ export class InterpreterService {
             highlightedStatement: this.state.getCurrentStatementHighlight(),
             highlightedExpression: this.state.getCurrentExpressionHighlight(),
             functionDefinitions: this.state.functionDefinitions,
+            scopeStack: [...this.state.scopeStack],
+            scopeNames: [...this.state.scopeNames],
             error: this.state.error,
             parseError: this.parseErrorMessage,
             waitingForPrediction: this.state.waitingForPrediction,

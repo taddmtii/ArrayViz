@@ -24,6 +24,8 @@ export interface SimplifiedState {
         endCol: number;
     } | null;
     functionDefinitions: Map<string, UserFunction>;
+    scopeStack: Map<string, PythonValue>[];
+    scopeNames: string[];
     error: InterpreterError | null;
     parseError: string | null;
     waitingForPrediction?: boolean;
@@ -52,6 +54,8 @@ function App() {
         highlightedStatement: null,
         highlightedExpression: null,
         functionDefinitions: new Map<string, UserFunction>(),
+        scopeNames: [],
+        scopeStack: [],
         error: null,
         parseError: null,
     });
@@ -73,6 +77,8 @@ function App() {
             highlightedStatement: null,
             highlightedExpression: null,
             functionDefinitions: new Map<string, UserFunction>(),
+            scopeStack: [],
+            scopeNames: [],
             error: null,
             parseError: null,
         });
@@ -91,6 +97,7 @@ function App() {
     }
 
     function handleRun() {
+        handleReset();
         const success = interpreterServiceReference.current.parseCode(code);
 
         if (!success) {
@@ -273,6 +280,8 @@ function App() {
                             functionDefinitions={
                                 interpreterState.functionDefinitions
                             }
+                            scopeStack={interpreterState.scopeStack}
+                            scopeNames={interpreterState.scopeNames}
                             mode={page}
                             waitingForPrediction={
                                 interpreterState.waitingForPrediction

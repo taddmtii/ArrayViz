@@ -49,6 +49,10 @@ export class State {
     private _waitingForPrediction: boolean = false; // waiting for prediction
     private _predictionVariable: string | null = null; // which variable needs prediction
     private _predictionCorrectValue: PythonValue | null = null; // prediction correct value SHOULD be.
+    private _functionCallStack: Array<{
+        returnPC: number;
+        functionName: string;
+    }> = [];
 
     constructor(
         _programCounter: number,
@@ -72,6 +76,10 @@ export class State {
         _waitingForPrediction: boolean = false,
         _predictionVariable: string | null = null,
         _predictionCorrectValue: PythonValue | null = null,
+        _functionCallStack: Array<{
+            returnPC: number;
+            functionName: string;
+        }> = [],
     ) {
         this._programCounter = _programCounter;
         this._lineCount = _lineCount;
@@ -94,6 +102,11 @@ export class State {
         this._waitingForPrediction = _waitingForPrediction;
         this._predictionVariable = _predictionVariable;
         this._predictionCorrectValue = _predictionCorrectValue;
+        this._functionCallStack = _functionCallStack;
+    }
+
+    public get functionCallStack() {
+        return this._functionCallStack;
     }
 
     public get isPredictMode() {
@@ -133,7 +146,7 @@ export class State {
     }
 
     public pushScope(name: string) {
-        this._scopeStack.push(new Map(this._variables));
+        this._scopeStack.push(new Map());
         this._scopeNames.push(name);
     }
 
@@ -1456,16 +1469,28 @@ export class ReturnCommand extends Command {
     constructor() {
         super();
     }
+
     do(_currentState: State) {
-        console.log("ReturnCommand - eval stack before pop:", [
-            ..._currentState.evaluationStack,
-        ]);
-        const value = _currentState.evaluationStack.pop()!;
-        console.log("ReturnCommand - popped value:", value);
-        _currentState.pushReturnStack(value);
+        const value = _currentState.evaluationStack.pop() ?? null;
+
+        const callInfo = _currentState.functionCallStack.pop();
+
+        if (!callInfo) {
+            _currentState.error = new RuntimeError(
+                `'return' outside function (line ${_currentState.currentStatement?.startLine || "?"})`,
+            );
+            return;
+        }
+
+        _currentState.popScope();
+        _currentState.programCounter = callInfo.returnPC;
+        _currentState.evaluationStack.push(value);
+
         this._undoCommand = new (class extends Command {
             do(state: State) {
-                state.popReturnStack();
+                state.evaluationStack.pop();
+                state.pushScope(callInfo.functionName);
+                state.functionCallStack.push(callInfo);
                 state.evaluationStack.push(value);
             }
         })();
@@ -1660,47 +1685,43 @@ export class CallUserFunctionCommand extends Command {
             _currentState.error = new NameError(
                 `name '${this._funcName}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
             );
+            return;
         }
 
         const args: PythonValue[] = [];
         for (let i = 0; i < this._numArgs; i++) {
             args.unshift(_currentState.evaluationStack.pop()!);
         }
+
         if (args.length !== func.params.length) {
             _currentState.error = new TypeError(
                 `${this._funcName}() takes ${func.params.length} positional argument${func.params.length !== 1 ? "s" : ""} but ${args.length} ${args.length !== 1 ? "were" : "was"} given (line ${_currentState.currentStatement?.startLine || "?"})`,
             );
+            return;
         }
 
-        const savedEvaluationStack = [..._currentState.evaluationStack];
-        const savedPC = _currentState.programCounter;
+        const returnPC = _currentState.programCounter;
 
         _currentState.pushScope(this._funcName);
+
         for (let i = 0; i < func.params.length; i++) {
             _currentState.setVariable(func.params[i], args[i]);
         }
-        _currentState.evaluationStack.length = 0;
-        _currentState.programCounter = 0;
 
-        let returnValue: PythonValue = null;
-        while (_currentState.programCounter < func.body.length) {
-            const cmd = func.body[_currentState.programCounter];
-            _currentState.programCounter++;
-            cmd.do(_currentState);
+        _currentState.functionCallStack.push({
+            returnPC: returnPC,
+            functionName: this._funcName,
+        });
 
-            if (_currentState.returnStack.length > 0) {
-                returnValue = _currentState.popReturnStack()!;
-                break;
+        _currentState.programCounter = func.startIndex - 1; // -1 because it will be incremented
+
+        this._undoCommand = new (class extends Command {
+            do(state: State) {
+                state.popScope();
+                state.functionCallStack.pop();
+                state.programCounter = returnPC;
             }
-        }
-
-        _currentState.popScope();
-
-        _currentState.evaluationStack.length = 0;
-        _currentState.evaluationStack.push(...savedEvaluationStack);
-        _currentState.programCounter = savedPC;
-        _currentState.evaluationStack.push(returnValue);
-        // TODO: Implement undo logic for function calls
+        })();
     }
 }
 
@@ -1713,12 +1734,16 @@ export class DefineFunctionCommand extends Command {
     }
 
     do(_currentState: State) {
+        this._functionObj.startIndex = _currentState.programCounter + 2;
+
         const hadFunction = _currentState.functionDefinitions.has(
             this._functionObj.name,
         );
         const oldFunction = _currentState.getFunction(this._functionObj.name);
         const funcObjectName = this._functionObj.name;
+
         _currentState.setFunction(this._functionObj.name, this._functionObj);
+
         this._undoCommand = new (class extends Command {
             do(state: State) {
                 if (hadFunction) {
