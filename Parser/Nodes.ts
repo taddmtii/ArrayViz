@@ -470,8 +470,10 @@ export class FuncDefStatementNode extends StatementNode {
         };
 
         commands.push(new DefineFunctionCommand(functionObj));
-        commands.push(new JumpCommand(blockCommands.length + 1));
+        commands.push(new JumpCommand(blockCommands.length + 3));
         commands.push(...blockCommands);
+        commands.push(new PushValueCommand(null));
+        commands.push(new ReturnCommand());
 
         return commands;
     }

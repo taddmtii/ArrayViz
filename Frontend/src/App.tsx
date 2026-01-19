@@ -220,8 +220,7 @@ function App() {
             <Header page={page} setPage={handlePageChange} />
             <div className="bg-[#252525] border-x border-gray-700 p-3 text-center">
                 <span className="text-white font-mono text-lg">
-                    Step {interpreterState.currentStep} /{" "}
-                    {interpreterState.totalSteps}
+                    Step {interpreterState.currentStep}
                 </span>
             </div>
 

@@ -141,7 +141,6 @@ export class InterpreterService {
     }
 
     stepBack(): boolean {
-        console.log("stepBack() hit on step: ", this.currentStep);
         if (this.currentStep <= 0) {
             return false;
         }
@@ -164,7 +163,9 @@ export class InterpreterService {
             variables: Object.fromEntries(this.state.variables),
             currentLine: this.state.currentLine,
             outputs: [...this.state.outputs],
-            canStepForward: this.currentStep < this.commands.length,
+            canStepForward:
+                this.state.programCounter < this.commands.length &&
+                !this.state.error,
             canStepBackward: this.currentStep > 0,
             currentStep: this.currentStep,
             totalSteps: this.commands.length,

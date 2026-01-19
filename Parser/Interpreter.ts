@@ -153,7 +153,6 @@ export class State {
     public popScope() {
         if (this._scopeStack.length > 1) {
             this._scopeStack.pop();
-            this._scopeNames.pop();
         }
     }
 
@@ -695,7 +694,6 @@ export class HighlightExpressionCommand extends Command {
         const tok = this._expression._tok
             ? `"${this._expression._tok.text}" at line ${this._expression._tok.line}`
             : `at line ${this._expression.lineNum}`;
-        console.log(`Highlight in UI: [EXPR] ${exprType}: ${tok}`);
     }
 }
 
