@@ -486,9 +486,9 @@ export class ExpressionStatementNode extends StatementNode {
         this._expression = _expression;
     }
     execute(): Command[] {
-        const commands: Command[] = [];
-        commands.push(new HighlightStatementCommand(this));
-        commands.push(...this._expression.evaluate());
+        const subCommands: Command[] = [];
+        subCommands.push(new HighlightStatementCommand(this));
+        subCommands.push(...this._expression.evaluate());
         if (this._expression instanceof FuncCallExpressionNode) {
             const funcName = this._expression._func_name;
             if (funcName instanceof IdentifierExpressionNode) {
@@ -507,12 +507,11 @@ export class ExpressionStatementNode extends StatementNode {
                     "list",
                 ];
                 if (!builtIns.includes(name)) {
-                    commands.push(new PopValueCommand());
+                    subCommands.push(new PopValueCommand());
                 }
             }
         }
-
-        return commands;
+        return [new MacroCommand(subCommands)];
     }
 }
 
@@ -721,10 +720,12 @@ export class ComparisonExpressionNode extends ExpressionNode {
     }
     evaluate(): Command[] {
         return [
-            new HighlightExpressionCommand(this),
-            ...this._left.evaluate(),
-            ...this._right.evaluate(),
-            new ComparisonOpCommand(this._operator),
+            new MacroCommand([
+                new HighlightExpressionCommand(this),
+                ...this._left.evaluate(),
+                ...this._right.evaluate(),
+                new ComparisonOpCommand(this._operator),
+            ]),
         ];
     }
 }
@@ -768,7 +769,7 @@ export class UnaryExpressionNode extends ExpressionNode {
         subCommands.push(new HighlightExpressionCommand(this));
         subCommands.push(...this._operand.evaluate());
         subCommands.push(new UnaryOpCommand(this._operator));
-        return subCommands;
+        return [new MacroCommand(subCommands)];
     }
 }
 
@@ -844,10 +845,9 @@ export class ListAccessExpressionNode extends ExpressionNode {
         const subCommands: Command[] = [];
         subCommands.push(new HighlightExpressionCommand(this));
         subCommands.push(...this._list.evaluate());
-        let indexValue = this._index.evaluate();
         subCommands.push(...this._index.evaluate());
         subCommands.push(new IndexAccessCommand());
-        return subCommands;
+        return [new MacroCommand(subCommands)];
     }
 }
 
@@ -942,7 +942,7 @@ export class ListSliceExpressionNode extends ExpressionNode {
         }
 
         subCommands.push(new ListSliceCommand());
-        return subCommands;
+        return [new MacroCommand(subCommands)];
     }
 }
 
@@ -972,8 +972,10 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
     }
     evaluate(): Command[] {
         return [
-            new HighlightExpressionCommand(this),
-            new PushValueCommand(Boolean(this._value)),
+            new MacroCommand([
+                new HighlightExpressionCommand(this),
+                new PushValueCommand(Boolean(this._value)),
+            ]),
         ];
     }
 }
@@ -993,8 +995,10 @@ export class StringLiteralExpressionNode extends ExpressionNode {
             text = text.slice(1, -1); // remove front quote and back quote to "clean" string
         }
         return [
-            new HighlightExpressionCommand(this),
-            new PushValueCommand(text),
+            new MacroCommand([
+                new HighlightExpressionCommand(this),
+                new PushValueCommand(text),
+            ]),
         ];
     }
 }
