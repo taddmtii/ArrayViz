@@ -487,6 +487,65 @@ function VariablesWindow({
                                                                                 }
                                                                                 return false;
                                                                             })();
+
+                                                                        const loopVarPointingHere =
+                                                                            loopIterationState &&
+                                                                            objectVarName
+                                                                                ? Array.from(
+                                                                                      loopIterationState.entries(),
+                                                                                  ).find(
+                                                                                      ([
+                                                                                          varName,
+                                                                                          iterationIndex,
+                                                                                      ]) => {
+                                                                                          const currentValue =
+                                                                                              scopeStack[
+                                                                                                  scopeStack.length -
+                                                                                                      1
+                                                                                              ].get(
+                                                                                                  varName,
+                                                                                              );
+
+                                                                                          const isIndexIteration =
+                                                                                              typeof currentValue ===
+                                                                                                  "number" &&
+                                                                                              currentValue ===
+                                                                                                  idx &&
+                                                                                              currentValue >=
+                                                                                                  0 &&
+                                                                                              currentValue <
+                                                                                                  value.length;
+
+                                                                                          if (
+                                                                                              isIndexIteration
+                                                                                          )
+                                                                                              return true;
+
+                                                                                          if (
+                                                                                              currentValue ===
+                                                                                              item
+                                                                                          ) {
+                                                                                              const iterationCount =
+                                                                                                  (iterationIndex ||
+                                                                                                      1) -
+                                                                                                  1;
+
+                                                                                              if (
+                                                                                                  iterationCount ===
+                                                                                                      idx &&
+                                                                                                  value[
+                                                                                                      iterationCount
+                                                                                                  ] ===
+                                                                                                      item
+                                                                                              ) {
+                                                                                                  return true;
+                                                                                              }
+                                                                                          }
+
+                                                                                          return false;
+                                                                                      },
+                                                                                  )?.[0]
+                                                                                : null;
                                                                         return (
                                                                             <div
                                                                                 key={
@@ -503,6 +562,10 @@ function VariablesWindow({
                                                                                     className={`w-10 h-10 border border-yellow-500 bg-yellow-500/10 flex items-center justify-center text-xs ${
                                                                                         isPredictingIndex
                                                                                             ? "ring-2 ring-purple-500"
+                                                                                            : ""
+                                                                                    } ${
+                                                                                        loopVarPointingHere
+                                                                                            ? "ring-2 ring-orange-400"
                                                                                             : ""
                                                                                     }`}
                                                                                 >
@@ -548,6 +611,15 @@ function VariablesWindow({
                                                                                         )
                                                                                     )}
                                                                                 </div>
+                                                                                {loopVarPointingHere && (
+                                                                                    <div className="text-xs text-orange-400 font-semibold mt-1 flex items-center gap-0.5">
+                                                                                        <span>
+                                                                                            {
+                                                                                                loopVarPointingHere
+                                                                                            }
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         );
                                                                     },
