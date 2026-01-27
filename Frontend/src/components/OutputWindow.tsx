@@ -1,5 +1,5 @@
-import type { InterpreterError } from "../../../Parser/Errors";
-import type { PythonValue } from "../../../Parser/Nodes";
+import type { InterpreterError } from '../../../Parser/Errors';
+import type { PythonValue } from '../../../Parser/Nodes';
 
 interface OutputWindowProps {
   outputs: PythonValue[];

@@ -1,10 +1,10 @@
 type HeaderProps = {
-  page: "view" | "predict";
-  setPage: (mode: "view" | "predict") => void;
+  page: 'view' | 'predict';
+  setPage: (mode: 'view' | 'predict') => void;
 };
 
 function Header({ page, setPage }: HeaderProps) {
-  const isSelected = page === "view" ? "view" : "predict";
+  const isSelected = page === 'view' ? 'view' : 'predict';
   return (
     <>
       {/* Main container */}
@@ -16,14 +16,14 @@ function Header({ page, setPage }: HeaderProps) {
         {/* Controls */}
         <div className="flex gap-6 mr-4">
           <button
-            className={`btn ${isSelected === "view" ? "bg-blue-500" : "bg-[#242424] hover:bg-[#343434]"} text-white font-bold py-2 px-4 cursor-pointer rounded`}
-            onClick={() => setPage("view")}
+            className={`btn ${isSelected === 'view' ? 'bg-blue-500' : 'bg-[#242424] hover:bg-[#343434]'} text-white font-bold py-2 px-4 cursor-pointer rounded`}
+            onClick={() => setPage('view')}
           >
             View
           </button>
           <button
-            className={`btn ${isSelected === "predict" ? "bg-blue-500" : "bg-[#242424] hover:bg-[#343434]"} text-white font-bold py-2 px-4 cursor-pointer rounded`}
-            onClick={() => setPage("predict")}
+            className={`btn ${isSelected === 'predict' ? 'bg-blue-500' : 'bg-[#242424] hover:bg-[#343434]'} text-white font-bold py-2 px-4 cursor-pointer rounded`}
+            onClick={() => setPage('predict')}
           >
             Predict
           </button>

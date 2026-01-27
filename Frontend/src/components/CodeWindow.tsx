@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from "react";
-import Editor, { type Monaco } from "@monaco-editor/react";
-import type { InterpreterError } from "../../../Parser/Errors";
-import * as monaco from "monaco-editor";
+import React, { useRef, useEffect } from 'react';
+import Editor, { type Monaco } from '@monaco-editor/react';
+import type { InterpreterError } from '../../../Parser/Errors';
+import * as monaco from 'monaco-editor';
 
 interface CodeWindowProps {
   code: string;
@@ -29,7 +29,7 @@ function CodeWindow({
   // stores IDs of current text decorations so that we can later remove the highlight/add highlight.
   const decorationsRef = useRef<string[]>([]);
 
-  const monacoRef = useRef<typeof import("monaco-editor")>(null);
+  const monacoRef = useRef<typeof import('monaco-editor')>(null);
 
   function onMount(editor: monaco.editor.IStandaloneCodeEditor) {
     // save editor instance so we can use it when we first mount.
@@ -64,7 +64,7 @@ function CodeWindow({
           options: {
             // isWholeLine: true,
             // className: "statement-highlight",
-            inlineClassName: "statement-highlight",
+            inlineClassName: 'statement-highlight',
           },
         });
       }
@@ -80,7 +80,7 @@ function CodeWindow({
           highlightedExpression.endCol + 1, // +1 because Monaco is inclusive (?)
         ),
         options: {
-          inlineClassName: "expression-highlight",
+          inlineClassName: 'expression-highlight',
         },
       });
     }
@@ -116,13 +116,13 @@ function CodeWindow({
         height="100%"
         defaultLanguage="python"
         value={code}
-        onChange={(code) => onCodeChange((code as string) || "")}
+        onChange={(code) => onCodeChange((code as string) || '')}
         onMount={onMount}
         theme="vs-dark"
         options={{
           minimap: { enabled: false },
           fontSize: 16,
-          lineNumbers: "on",
+          lineNumbers: 'on',
           scrollBeyondLastLine: false,
         }}
       />

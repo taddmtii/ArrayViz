@@ -1,5 +1,5 @@
 {
-"homepage": "https://taddmtii.github.io/ArrayViz",
+  "homepage": "https://taddmtii.github.io/ArrayViz",
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.17",
+    "prettier": "^3.8.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "^4.1.17"

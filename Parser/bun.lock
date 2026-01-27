@@ -9,6 +9,7 @@
         "moo": "^0.5.2",
         "moo-indentation-lexer": "^6.0.0",
         "nearley": "^2.20.1",
+        "prettier": "^3.8.1",
       },
       "devDependencies": {
         "@types/moo": "^0.5.10",
@@ -34,6 +35,8 @@
     "moo-peekable-lexer": ["moo-peekable-lexer@1.1.2", "", {}, "sha512-8m53qKZqTW0RqvrxVYgfdbaH+7DMLXwLo3DRLea/6DtAcpzVZICtPboEIqcJ3dJf09JxZK9lRSGGcENgFq499Q=="],
 
     "nearley": ["nearley@2.20.1", "", { "dependencies": { "commander": "^2.19.0", "moo": "^0.5.0", "railroad-diagrams": "^1.0.0", "randexp": "0.4.6" }, "bin": { "nearley-railroad": "bin/nearley-railroad.js", "nearley-test": "bin/nearley-test.js", "nearley-unparse": "bin/nearley-unparse.js", "nearleyc": "bin/nearleyc.js" } }, "sha512-+Mc8UaAebFzgV+KpI5n7DasuuQCHA89dmwm7JXw3TV43ukfNQ9DnBH3Mdb2g/I4Fdxc26pwimBWvjIw0UAILSQ=="],
+
+    "prettier": ["prettier@3.8.1", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg=="],
 
     "railroad-diagrams": ["railroad-diagrams@1.0.0", "", {}, "sha512-cz93DjNeLY0idrCNOH6PviZGRN9GJhsdm9hpn1YCS879fj4W+x5IFJhhkRZcwVgMmFF7R82UA/7Oh+R8lLZg6A=="],
 
