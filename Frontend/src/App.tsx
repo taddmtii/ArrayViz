@@ -28,6 +28,7 @@ export interface SimplifiedState {
     scopeNames: string[];
     error: InterpreterError | null;
     parseError: string | null;
+    loopIterationState: Map<string, number>;
     waitingForPrediction?: boolean;
     predictionVariable?: string;
     predictionCorrectValue?: PythonValue;
@@ -281,6 +282,9 @@ function App() {
                             }
                             scopeStack={interpreterState.scopeStack}
                             scopeNames={interpreterState.scopeNames}
+                            loopIterationState={
+                                interpreterState.loopIterationState
+                            }
                             mode={page}
                             waitingForPrediction={
                                 interpreterState.waitingForPrediction

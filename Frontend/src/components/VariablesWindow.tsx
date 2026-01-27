@@ -7,6 +7,7 @@ interface VariablesWindowProps {
     scopeStack: Map<string, PythonValue>[];
     scopeNames: string[];
     mode: "view" | "predict";
+    loopIterationState?: Map<string, number>;
     waitingForPrediction?: boolean;
     predictionVariable?: string;
     predictionCorrectValue?: PythonValue;
@@ -25,6 +26,7 @@ function VariablesWindow({
     scopeStack,
     scopeNames,
     mode,
+    loopIterationState,
     waitingForPrediction,
     predictionVariable,
     predictionCorrectValue,
@@ -246,6 +248,11 @@ function VariablesWindow({
                                                         name ===
                                                             predictionVariable;
 
+                                                    const isLoopVariable =
+                                                        loopIterationState?.has(
+                                                            name,
+                                                        ) || false;
+
                                                     return (
                                                         <div
                                                             key={name}
@@ -255,7 +262,17 @@ function VariablesWindow({
                                                                     : ""
                                                             }`}
                                                         >
-                                                            <span className="text-blue-400">
+                                                            {isLoopVariable && (
+                                                                <span
+                                                                    className="text-orange-400 text-xs"
+                                                                    title="Loop variable"
+                                                                >
+                                                                    iterator
+                                                                </span>
+                                                            )}
+                                                            <span
+                                                                className={`${isLoopVariable ? "text-orange-400" : "text-blue-400"}`}
+                                                            >
                                                                 {name}
                                                             </span>
                                                             <span className="text-gray-500">

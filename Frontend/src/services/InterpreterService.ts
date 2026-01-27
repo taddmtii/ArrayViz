@@ -176,6 +176,7 @@ export class InterpreterService {
             scopeNames: [...this.state.scopeNames],
             error: this.state.error,
             parseError: this.parseErrorMessage,
+            loopIterationState: this.state.loopIterationState,
             waitingForPrediction: this.state.waitingForPrediction,
             predictionVariable: this.state.predictionVariable,
             predictionCorrectValue: this.state.predictionCorrectValue,
