@@ -158,11 +158,10 @@ function VariablesWindow({
 
     return (
       <div
-        className={`absolute top-2 right-2 px-3 py-2 rounded-lg flex items-center gap-2 z-10 ${
-          predictionFeedback.isCorrect
-            ? 'bg-green-500/20 border border-green-500'
-            : 'bg-red-500/20 border border-red-500'
-        }`}
+        className={`absolute top-2 right-2 px-3 py-2 rounded-lg flex items-center gap-2 z-10 ${predictionFeedback.isCorrect
+          ? 'bg-green-500/20 border border-green-500'
+          : 'bg-red-500/20 border border-red-500'
+          }`}
       >
         {predictionFeedback.isCorrect ? (
           <>
@@ -211,11 +210,10 @@ function VariablesWindow({
               return (
                 <div
                   key={index}
-                  className={`border rounded p-2 ${
-                    isCurrentScope
-                      ? 'border-purple-500 bg-purple-900/20'
-                      : 'border-gray-600 bg-gray-800/30'
-                  }`}
+                  className={`border rounded p-2 ${isCurrentScope
+                    ? 'border-purple-500 bg-purple-900/20'
+                    : 'border-gray-600 bg-gray-800/30'
+                    }`}
                 >
                   <div className="text-xs text-gray-400 mb-2">
                     {scopeName} {isCurrentScope && '(current)'}
@@ -242,11 +240,10 @@ function VariablesWindow({
                         return (
                           <div
                             key={name}
-                            className={`flex gap-2 items-center ${
-                              isWaitingForThis
-                                ? 'bg-purple-900/30 p-2 rounded animate-pulse'
-                                : ''
-                            }`}
+                            className={`flex gap-2 items-center ${isWaitingForThis
+                              ? 'bg-purple-900/30 p-2 rounded animate-pulse'
+                              : ''
+                              }`}
                           >
                             {isLoopVariable && (
                               <span
@@ -314,11 +311,10 @@ function VariablesWindow({
                   return (
                     <div
                       key={id}
-                      className={`border-2 border-yellow-500 rounded p-2 bg-yellow-900/10 ${
-                        isWaitingForThis
-                          ? 'ring-2 ring-purple-500 animate-pulse'
-                          : ''
-                      }`}
+                      className={`border-2 border-yellow-500 rounded p-2 bg-yellow-900/10 ${isWaitingForThis
+                        ? 'ring-2 ring-purple-500 animate-pulse'
+                        : ''
+                        }`}
                     >
                       <div className="text-xs text-yellow-400 mb-2">
                         {type} {name && `(${name})`}
@@ -326,8 +322,8 @@ function VariablesWindow({
                       {type === 'list' ? (
                         <div className="space-y-2">
                           {isWaitingForThis &&
-                          !predictionVariable?.includes('[') &&
-                          Array.isArray(predictionCorrectValue) ? (
+                            !predictionVariable?.includes('[') &&
+                            Array.isArray(predictionCorrectValue) ? (
                             <div className="w-full p-2 bg-purple-900/30 rounded">
                               <div className="text-xs text-purple-300 mb-2">
                                 Predict each list element for{' '}
@@ -400,25 +396,13 @@ function VariablesWindow({
 
                                   const loopVarPointingHere =
                                     loopIterationState && objectVarName
-                                      ? Array.from(
-                                          loopIterationState.entries(),
-                                        ).find(([varName, iterationIndex]) => {
+                                      ? Array.from(loopIterationState.entries()).find(
+                                        ([varName, iterationIndex]) => {
                                           const currentValue =
-                                            scopeStack[
-                                              scopeStack.length - 1
-                                            ].get(varName);
-
-                                          const isIndexIteration =
-                                            typeof currentValue === 'number' &&
-                                            currentValue === idx &&
-                                            currentValue >= 0 &&
-                                            currentValue < value.length;
-
-                                          if (isIndexIteration) return true;
+                                            scopeStack[scopeStack.length - 1].get(varName);
 
                                           if (currentValue === item) {
-                                            const iterationCount =
-                                              (iterationIndex || 1) - 1;
+                                            const iterationCount = (iterationIndex || 1) - 1;
 
                                             if (
                                               iterationCount === idx &&
@@ -429,7 +413,8 @@ function VariablesWindow({
                                           }
 
                                           return false;
-                                        })?.[0]
+                                        },
+                                      )?.[0]
                                       : null;
                                   return (
                                     <div
@@ -440,15 +425,13 @@ function VariablesWindow({
                                         {idx}
                                       </div>
                                       <div
-                                        className={`w-10 h-10 border border-yellow-500 bg-yellow-500/10 flex items-center justify-center text-xs ${
-                                          isPredictingIndex
-                                            ? 'ring-2 ring-purple-500'
-                                            : ''
-                                        } ${
-                                          loopVarPointingHere
+                                        className={`w-10 h-10 border border-yellow-500 bg-yellow-500/10 flex items-center justify-center text-xs ${isPredictingIndex
+                                          ? 'ring-2 ring-purple-500'
+                                          : ''
+                                          } ${loopVarPointingHere
                                             ? 'ring-2 ring-orange-400'
                                             : ''
-                                        }`}
+                                          }`}
                                       >
                                         {isPredictingIndex ? (
                                           <input
