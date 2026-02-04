@@ -27,7 +27,7 @@ In addition, instructors cannot show dynamic behavior through static lecture sli
 \subsection{Hypothesis}
 ArrayViz aims to enhance students' fundamental understanding of array searching and sorting algorithms, and will result in a better understanding of the subject matter among students. If students use ArrayViz as a supplement to lectures and labs, their comprehension of algorithm steps, operational costs, trade-offs, etc... will improve compared to students who do not utilize the resource.
 \subsection{Limitations}
-Like any other educational tool, ArrayViz faces a few constraints that may impact its scalability and implementation.
+Like any other educational tool, ArrayViz faces a few constraints that can affect its scalability and implementation.
 
 ArrayViz' effectiveness is limited to introductory algorithmic concepts, and the tool is not meant to address more advanced concepts such as graph algorithms or dynamic programming problems. The simplified Python subset ArrayViz uses, while it is educationally beneficial for beginners, may not fully prepare students for real-world programming environments.
 
@@ -58,13 +58,13 @@ The need for an educational tool is clearly imperative, one that allows students
 \subsection{Objectives}
 The main objective of ArrayViz is to enhance student's understanding of array based algorithms, providing them with an interactive simulation platform. To achieve this, the project pursues the following objectives:
 \begin{enumerate}
-    \item {Support for ...}
-    \item {Step forward and back Algorithm Execution}
+    \item {Interactive visualization of array traversal}
+    \item {Forward and backward step-by-step algorithm execution}
     \item {Comprehensive Documentation of the Visualization Language}
-    \item Expression based evaluation
-    \item {Potential Database Integration for Student Progress}
+    \item {Expression based evaluation}
     \item {Time Complexity Analysis}
-    \item {Gamification and Engagement Elements}
+    \item {Predict mode as a unique learning environment}
+    \item {Engagement Elements}
 \end{enumerate}
 \section{Background}
 \subsection{State of the Art}
@@ -91,20 +91,21 @@ With its borders set, ArrayViz serves as a targeted learning environment as oppo
 \caption{Comparison of ArrayViz with Existing Code Visualization Tools}
 \label{tab:comparison}
 \renewcommand{\arraystretch}{1.25}
-\begin{tabular}{|l|c|c|c|}
+\begin{tabular}{|l|c|c|c|c|}
 \hline
-\textbf{Feature} & \textbf{ArrayViz} & \textbf{PythonTutor} & \textbf{Thonny IDE} \\ \hline
-Primary Focus & Arrays \& intro algorithms & General Python execution & General program debugging \\ \hline
-Code Visualization & Yes & Yes & Yes \\ \hline
-Array-Specific Emphasis & Strong & Weak & Moderate \\ \hline
-Explicit Index Tracking & Yes & Limited & No \\ \hline
-Step-by-step Execution & Forward \& backward & Forward \& backward & Forward only \\ \hline
-Operation-Level Feedback & Yes (comparisons, swaps) & Limited & No \\ \hline
-Guided Learning Modes & Yes (Predict, View) & No & No \\ \hline
-Language Scope & Restricted Python subset & Full Python & Full Python \\ \hline
-Target Audience & Introductory CS students & Broad educational use & Developers / advanced students \\ \hline
-Web-based & Yes & Yes & No \\ \hline
+\textbf{Feature} & \textbf{ArrayViz} & \textbf{PythonTutor} & \textbf{Thonny IDE} & \textbf{VS Code} \\ \hline
+Primary Focus & Arrays \& intro algorithms & General Python execution & General program debugging & General software development \\ \hline
+Code Visualization & Yes & Yes & Yes & Limited (debugger-based) \\ \hline
+Array-Specific Emphasis & Strong & Weak & Moderate & Weak \\ \hline
+Explicit Index Tracking & Yes & Limited & No & No \\ \hline
+Step-by-step Execution & Forward \& backward & Forward \& backward & Forward only & Forward only \\ \hline
+Algorithm Visualization & Yes (comparisons, swaps) & Limited & No & No \\ \hline
+Guided Learning Modes & Yes (Predict, View) & No & No & No \\ \hline
+Language Scope & Restricted Python subset & Full Python & Full Python & Full Python + multi-language \\ \hline
+Target Audience & Introductory CS students & Broad educational use & Beginner students & Developers \\ \hline
+Web-based & Yes & Yes & No & No \\ \hline
 \end{tabular}
 \end{table}
+Table~\ref{tab:comparison} contextualizes ArrayViz and puts it in perspective within the landscape of existing code visualization and development tools. Although general-purpose environments such as PythonTutor, Thonny, and VS Code provide execution tracing and debugging capabilities, they are not as intuitively designed to support novice learners in understanding array-specific behavior. In particular, these tools lack explicit index tracking, guided learning modes (View and Predict), and focused visualization of array operations, all of which are critical for building foundational algorithmic intuition. ArrayViz' restricted language scope and bidirectional execution capabilities directly address the abstraction gap discussed earlier in this paper. Rather than serving as a professional development environment, ArrayViz functions as a conceptual learning platform, enabling students to observe, predict, and reason about algorithmic behavior at the level of individual array operations.
 
 \end{document}
