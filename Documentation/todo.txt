@@ -1,9 +1,0 @@
-What needs to still be done:
-
-- function and global frames
-- Prof O indexing visualization proposal
-- Create preset options in the UI for auto populated code for basic sorts and searches 
-- Expression support within f-strings
-- Better highlighting/more intuitive
-- Add class functionality
-- small QOL language features
