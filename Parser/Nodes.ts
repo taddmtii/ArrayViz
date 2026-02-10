@@ -6,16 +6,12 @@ import {
   PopValueCommand,
   HighlightExpressionCommand,
   RetrieveValueCommand,
-  MoveLinePointerCommand,
   HighlightStatementCommand,
-  ReplaceHighlightedExpressionCommand,
   BinaryOpCommand,
   ComparisonOpCommand,
   UnaryOpCommand,
   ConditionalJumpCommand,
   JumpCommand,
-  EnterScopeCommand,
-  ExitScopeCommand,
   PrintCommand,
   LenCommand,
   TypeCommand,
@@ -587,7 +583,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     }
     commands.push(new HighlightExpressionCommand(this));
     commands.push(new PushValueCommand(numValue));
-    return commands;
+    return [new MacroCommand(commands)];
   }
 }
 
@@ -599,8 +595,10 @@ export class IdentifierExpressionNode extends ExpressionNode {
   }
   evaluate(): Command[] {
     return [
-      new HighlightExpressionCommand(this),
-      new RetrieveValueCommand(this._tok.text),
+      new MacroCommand([
+        new HighlightExpressionCommand(this),
+        new RetrieveValueCommand(this._tok.text),
+      ])
     ];
   }
 }
@@ -695,7 +693,7 @@ export class ArgListExpressionNode extends ExpressionNode {
     for (const arg of this._argsList) {
       commands.push(...arg.evaluate());
     }
-    return commands;
+    return [new MacroCommand(commands)]
   }
 }
 
@@ -748,7 +746,7 @@ export class BinaryExpressionNode extends ExpressionNode {
     commands.push(...this._left.evaluate());
     commands.push(...this._right.evaluate());
     commands.push(new BinaryOpCommand(this._operator));
-    return commands;
+    return [new MacroCommand(commands)];
   }
 }
 
@@ -790,34 +788,34 @@ export class FuncCallExpressionNode extends ExpressionNode {
       const funcName = this._func_name._tok.text;
       if (funcName === "print") {
         commands.push(new PrintCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "len") {
         commands.push(new LenCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "type") {
         commands.push(new TypeCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "input") {
         commands.push(new InputCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "range") {
         commands.push(new RangeCommand(numArgs));
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "int") {
         commands.push(new IntCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "float") {
         commands.push(new FloatCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "str") {
         commands.push(new StrCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "bool") {
         commands.push(new BoolCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       } else if (funcName === "list") {
         commands.push(new ListCommand());
-        return commands;
+        return [new MacroCommand(commands)];
       }
     }
     // USER DEFINED FUNCTION
@@ -893,7 +891,7 @@ export class MethodCallExpressionNode extends ExpressionNode {
         commands.push(new ContainsCommand());
       }
     }
-    return commands;
+    return [new MacroCommand(commands)];
   }
 }
 
@@ -956,7 +954,7 @@ export class ListLiteralExpressionNode extends ExpressionNode {
     }
     let count = this._values ? this._values.length : 0;
     commands.push(new CreateListCommand(count));
-    return commands;
+    return [new MacroCommand(commands)];
   }
 }
 
@@ -1037,6 +1035,6 @@ export class FStringLiteralExpressionNode extends ExpressionNode {
     // parse and replace {variable} with actual values
     commands.push(new InterpolateFStringCommand(text));
 
-    return commands;
+    return [new MacroCommand(commands)];
   }
 }
