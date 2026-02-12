@@ -845,9 +845,6 @@ export class ListAccessExpressionNode extends ExpressionNode {
   }
 }
 
-/*
-
- */
 export class MethodCallExpressionNode extends ExpressionNode {
   private _list: ExpressionNode;
   private _methodName: IdentifierExpressionNode;

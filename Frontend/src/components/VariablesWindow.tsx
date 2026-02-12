@@ -8,6 +8,7 @@ interface VariablesWindowProps {
   scopeNames: string[];
   mode: 'view' | 'predict';
   loopIterationState?: Map<string, number>;
+  onVariableListMapping?: (variable: string, listName: string | null) => void;
   waitingForPrediction?: boolean;
   predictionVariable?: string;
   predictionCorrectValue?: PythonValue;
@@ -27,6 +28,7 @@ function VariablesWindow({
   scopeNames,
   mode,
   loopIterationState,
+  onVariableListMapping,
   waitingForPrediction,
   predictionVariable,
   predictionCorrectValue,
@@ -35,6 +37,27 @@ function VariablesWindow({
 }: VariablesWindowProps) {
   const [predictionInput, setPredictionInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [variableListMappings, setVariableListMappings] = useState<Map<string, string>>(new Map());
+
+  // gets all of the list variables.
+  function getAllLists() {
+    const lists: string[] = [];
+    scopeStack.forEach(scope => {
+      scope.forEach((value, name) => {
+        if (Array.isArray(value) && !name.startsWith('__')) {
+          lists.push(name);
+        }
+      });
+    });
+    return lists;
+  };
+
+  function handleListMapping(varName: string, listName: string) {
+    const newMappings = new Map(variableListMappings);
+    newMappings.set(varName, listName);
+    setVariableListMappings(newMappings);
+    onVariableListMapping?.(varName, listName);
+  };
 
   useEffect(() => {
     if (waitingForPrediction && inputRef.current) {
@@ -276,6 +299,16 @@ function VariablesWindow({
                                 {formattedValue(value)}
                               </span>
                             )}
+                            <select
+                              value={variableListMappings.get(name) || ''}
+                              onChange={(e) => handleListMapping(name, e.target.value)}
+                              className="ml-2 bg-gray-700 text-white text-xs px-1 py-0.5 rounded border border-gray-600"
+                            >
+                              <option value="">Link to list...</option>
+                              {getAllLists().map(listName => (
+                                <option key={listName} value={listName}>{listName}</option>
+                              ))}
+                            </select>
                           </div>
                         );
                       })}
@@ -371,6 +404,13 @@ function VariablesWindow({
                             <div className="flex gap-1 flex-wrap max-w-full">
                               {Array.isArray(value) &&
                                 value.map((item, idx) => {
+                                  const mappedVars = Array.from(variableListMappings.entries())
+                                    .filter(([varName, mappedList]) => {
+                                      if (mappedList !== name) return false;
+                                      const varValue = scopeStack[scopeStack.length - 1].get(varName);
+                                      return varValue === item && idx === value.indexOf(item);
+                                    })
+                                    .map(([varName]) => varName);
                                   // check if predicting at a certain index.
                                   const isPredictingIndex =
                                     mode === 'predict' &&
@@ -431,6 +471,9 @@ function VariablesWindow({
                                           } ${loopVarPointingHere
                                             ? 'ring-2 ring-orange-400'
                                             : ''
+                                          } ${mappedVars.length > 0
+                                            ? 'ring-2 ring-blue-400'
+                                            : ''
                                           }`}
                                       >
                                         {isPredictingIndex ? (
@@ -463,6 +506,11 @@ function VariablesWindow({
                                       {loopVarPointingHere && (
                                         <div className="text-xs text-orange-400 font-semibold mt-1 flex items-center gap-0.5">
                                           <span>{loopVarPointingHere}</span>
+                                        </div>
+                                      )}
+                                      {mappedVars.length > 0 && !loopVarPointingHere && (
+                                        <div className="text-xs text-blue-400 font-semibold mt-1">
+                                          {mappedVars.join(', ')}
                                         </div>
                                       )}
                                     </div>
