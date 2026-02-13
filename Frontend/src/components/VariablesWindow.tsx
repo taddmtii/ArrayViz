@@ -408,9 +408,24 @@ function VariablesWindow({
                                     .filter(([varName, mappedList]) => {
                                       if (mappedList !== name) return false;
                                       const varValue = scopeStack[scopeStack.length - 1].get(varName);
-                                      return varValue === item && idx === value.indexOf(item);
+                                      // does variable equal this index (for range() loops)
+                                      if (varValue === idx) return true;
+                                      // does variable equal the literal item value.
+                                      if (varValue === item && idx === value.indexOf(item)) return true;
+                                      return false;
                                     })
                                     .map(([varName]) => varName);
+
+                                  const indexVars = mappedVars.filter(varName => {
+                                    const varValue = scopeStack[scopeStack.length - 1].get(varName);
+                                    return varValue === idx;
+                                  });
+
+                                  const valueVars = mappedVars.filter(varName => {
+                                    const varValue = scopeStack[scopeStack.length - 1].get(varName);
+                                    return varValue === item;
+                                  });
+
                                   // check if predicting at a certain index.
                                   const isPredictingIndex =
                                     mode === 'predict' &&
@@ -461,8 +476,13 @@ function VariablesWindow({
                                       key={idx}
                                       className="flex flex-col items-center"
                                     >
-                                      <div className="text-xs text-gray-400">
-                                        {idx}
+                                      <div className="text-xs text-gray-400 flex items-center gap-1">
+                                        <span>{idx}</span>
+                                        {indexVars.length > 0 && (
+                                          <span className="text-blue-400 font-semibold">
+                                            ({indexVars.join(', ')})
+                                          </span>
+                                        )}
                                       </div>
                                       <div
                                         className={`w-10 h-10 border border-yellow-500 bg-yellow-500/10 flex items-center justify-center text-xs ${isPredictingIndex
@@ -503,14 +523,21 @@ function VariablesWindow({
                                           String(item)
                                         )}
                                       </div>
+                                      {/*loop variables that are auto tracked*/}
                                       {loopVarPointingHere && (
                                         <div className="text-xs text-orange-400 font-semibold mt-1 flex items-center gap-0.5">
                                           <span>{loopVarPointingHere}</span>
                                         </div>
                                       )}
-                                      {mappedVars.length > 0 && !loopVarPointingHere && (
+                                      {/*{mappedVars.length > 0 && !loopVarPointingHere && (
                                         <div className="text-xs text-blue-400 font-semibold mt-1">
                                           {mappedVars.join(', ')}
+                                        </div>
+                                      )}*/}
+                                      {/*manually bound variables*/}
+                                      {!loopVarPointingHere && valueVars.length > 0 && (
+                                        <div className="text-xs text-blue-400 font-semibold mt-1">
+                                          {valueVars.join(', ')}
                                         </div>
                                       )}
                                     </div>
