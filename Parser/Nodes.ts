@@ -144,6 +144,11 @@ export class AssignmentStatementNode extends StatementNode {
       commands.push(
         new AssignVariableCommand(this._left as string, this._operator),
       );
+
+      if (this._right instanceof FuncCallExpressionNode) {
+        return commands;
+      }
+
       return [new MacroCommand(commands)];
     }
 
@@ -375,12 +380,7 @@ export class ForStatementNode extends StatementNode {
     commands.push(...iterableCommands);
 
     const blockCommands = this._block.execute();
-    commands.push(
-      new PushLoopBoundsCommand(
-        0,
-        1 + iterableCommands.length + blockCommands.length,
-      ),
-    );
+    commands.push(new PushLoopBoundsCommand(0, 4 + blockCommands.length));
     commands.push(new AssignVariableCommand(this._loopVar._tok.text));
     commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
     commands.push(...blockCommands);
