@@ -25,7 +25,7 @@ function ButtonControls({
 }: ButtonControlsProps) {
   return (
     <>
-      <div className="flex justify-center gap-6 p-4">
+      <div className="flex flex-wrap justify-center gap-6 p-4">
         <button
           onClick={onFirst}
           disabled={!canStepBackward || disableFirstLast}

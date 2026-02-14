@@ -130,18 +130,21 @@ export class AssignmentStatementNode extends StatementNode {
 
   execute(): Command[] {
     const commands: Command[] = [];
-    commands.push(new HighlightStatementCommand(this));
 
     if (this._left instanceof ListAccessExpressionNode) {
+      commands.push(new HighlightStatementCommand(this));
       commands.push(...this._left._list.evaluate());
       commands.push(...this._left._index.evaluate());
       commands.push(...this._right.evaluate());
       commands.push(new AssignVariableCommand(this._left, this._operator));
+      return commands;
     } else {
+      commands.push(new HighlightStatementCommand(this));
       commands.push(...this._right.evaluate());
       commands.push(
         new AssignVariableCommand(this._left as string, this._operator),
       );
+      return [new MacroCommand(commands)];
     }
 
     return commands;
@@ -183,7 +186,7 @@ export class MultiAssignmentStatementNode extends StatementNode {
       subCommands.push(new AssignVariableCommand(this._identifiers[i]));
     }
 
-    return subCommands;
+    return [new MacroCommand(subCommands)];
   }
 }
 
@@ -598,7 +601,7 @@ export class IdentifierExpressionNode extends ExpressionNode {
       new MacroCommand([
         new HighlightExpressionCommand(this),
         new RetrieveValueCommand(this._tok.text),
-      ])
+      ]),
     ];
   }
 }
@@ -693,7 +696,7 @@ export class ArgListExpressionNode extends ExpressionNode {
     for (const arg of this._argsList) {
       commands.push(...arg.evaluate());
     }
-    return [new MacroCommand(commands)]
+    return [new MacroCommand(commands)];
   }
 }
 
