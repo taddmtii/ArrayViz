@@ -6,7 +6,7 @@ import {
   StatementNode,
   ExpressionNode,
   ListAccessExpressionNode,
-  UserFunction,
+  type UserFunction,
 } from "./Nodes";
 
 import {
@@ -15,7 +15,6 @@ import {
   TypeError,
   NameError,
   IndexError,
-  ValueError,
   ZeroDivisionError,
 } from "./Errors";
 
@@ -200,8 +199,14 @@ export class State {
   }
 
   public hasVariable(name: string): boolean {
-    return this.currentScope.has(name);
+    for (let i = this._scopeStack.length - 1; i >= 0; i--) {
+      if (this._scopeStack[i].has(name)) {
+        return true;
+      }
+    }
+    return false;
   }
+
   public get lineCount() {
     return this._lineCount;
   }
@@ -257,9 +262,12 @@ export class State {
     this.currentScope.set(name, value);
   }
   public getVariable(name: string): PythonValue | PythonValue[] {
-    const v = this.currentScope.get(name);
-    if (v === undefined) return null;
-    return v;
+    for (let i = this._scopeStack.length - 1; i >= 0; i--) {
+      if (this._scopeStack[i].has(name)) {
+        return this._scopeStack[i].get(name)!;
+      }
+    }
+    return null;
   }
 
   public pushCallStack(func: ExpressionNode) {
