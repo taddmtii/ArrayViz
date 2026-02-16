@@ -149,7 +149,7 @@ export class AssignmentStatementNode extends StatementNode {
         return commands;
       }
 
-      return [new MacroCommand(commands)];
+      return commands;
     }
 
     return commands;
@@ -749,7 +749,7 @@ export class BinaryExpressionNode extends ExpressionNode {
     commands.push(...this._left.evaluate());
     commands.push(...this._right.evaluate());
     commands.push(new BinaryOpCommand(this._operator));
-    return [new MacroCommand(commands)];
+    return commands;
   }
 }
 
