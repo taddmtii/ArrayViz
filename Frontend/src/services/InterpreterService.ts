@@ -10,6 +10,8 @@ export class InterpreterService {
   private state: State;
   private currentStep: number = 0;
   private parseErrorMessage: string | null = null;
+  private executedCommands: number[] = [];
+  private undoStack: Command[] = [];
 
   constructor() {
     this.state = new State(
@@ -56,6 +58,8 @@ export class InterpreterService {
       const program: ProgramNode = parser.results[0];
       this.commands = program.execute();
       this.currentStep = 0;
+      this.executedCommands = [];
+      this.undoStack = [];
       const globalScope = new Map();
 
       this.state = new State(
@@ -108,16 +112,21 @@ export class InterpreterService {
       return false;
     }
 
-    const command = this.commands[this.state.programCounter];
+    const pcBefore = this.state.programCounter;
+    const command = this.commands[pcBefore];
 
     try {
       command.do(this.state);
 
       if (!this.state.waitingForPrediction) {
-        this.state.programCounter++;
+        this.executedCommands.push(pcBefore);
+        this.undoStack.push(command.getUndoCommand());
+
+        if (this.state.programCounter === pcBefore) {
+          this.state.programCounter++;
+        }
         this.currentStep++;
       }
-
       return true;
     } catch (error) {
       return false;
@@ -138,20 +147,22 @@ export class InterpreterService {
   }
 
   stepBack(): boolean {
-    if (this.currentStep <= 0) {
+    if (this.currentStep <= 0 || this.executedCommands.length === 0) {
       return false;
     }
-    this.state.programCounter--;
-    this.currentStep--;
-    const command = this.commands[this.state.programCounter];
-    if (command && typeof command.undo === 'function') {
-      command.undo(this.state);
-    } else {
-      console.warn(`Command at step ${this.currentStep} has no undo method`);
+    const commandPC = this.executedCommands.pop()!;
+    const undoCommand = this.undoStack.pop()!;
+
+    if (undoCommand) {
+      undoCommand.do(this.state);
     }
+
+    this.state.programCounter = commandPC;
+    this.currentStep--;
 
     return true;
   }
+
   // returns a modified state snapshot that we can then send to the UI with only things is cares about.
   getState(): SimplifiedState {
     const result = {

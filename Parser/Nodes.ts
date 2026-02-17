@@ -291,17 +291,17 @@ export class IfStatementNode extends StatementNode {
     }
     if (elseCommands.length > 0) {
       // has an else: jump over then branch + the jump command after it
-      commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 3));
     } else {
       // no else: just jump over the then branch
-      commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
     }
 
     commands.push(...thenCommands);
 
     if (elseCommands.length > 0) {
       // has an else: jump over then branch + the jump command after it
-      commands.push(new JumpCommand(elseCommands.length + 1));
+      commands.push(new JumpCommand(elseCommands.length + 2));
       commands.push(...elseCommands);
     }
 
@@ -340,7 +340,7 @@ export class ElifStatementNode extends StatementNode {
 
     if (elseCommands.length > 0) {
       // has more elif/else: jump over then branch + the jump command after it
-      commands.push(new ConditionalJumpCommand(thenCommands.length + 2));
+      commands.push(new ConditionalJumpCommand(thenCommands.length + 3));
     } else {
       // no more elif/else: just jump over then branch
       commands.push(new ConditionalJumpCommand(thenCommands.length + 1));
@@ -350,7 +350,7 @@ export class ElifStatementNode extends StatementNode {
 
     // if we executed then branch, jump over remaining elif/else
     if (elseCommands.length > 0) {
-      commands.push(new JumpCommand(elseCommands.length + 1));
+      commands.push(new JumpCommand(elseCommands.length + 2));
       commands.push(...elseCommands);
     }
 
@@ -382,7 +382,7 @@ export class ForStatementNode extends StatementNode {
     const blockCommands = this._block.execute();
     commands.push(new PushLoopBoundsCommand(0, 4 + blockCommands.length));
     commands.push(new AssignVariableCommand(this._loopVar._tok.text));
-    commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
+    commands.push(new ConditionalJumpCommand(blockCommands.length + 3));
     commands.push(...blockCommands);
     commands.push(new JumpCommand(-(blockCommands.length + 2)));
     commands.push(new PopLoopBoundsCommand());
@@ -416,7 +416,7 @@ export class WhileStatementNode extends StatementNode {
     );
 
     commands.push(...conditionCommands);
-    commands.push(new ConditionalJumpCommand(blockCommands.length + 2));
+    commands.push(new ConditionalJumpCommand(blockCommands.length + 3));
     commands.push(...blockCommands);
     commands.push(
       new JumpCommand(-(blockCommands.length + conditionCommands.length + 1)),
@@ -465,7 +465,7 @@ export class FuncDefStatementNode extends StatementNode {
     };
 
     commands.push(new DefineFunctionCommand(functionObj));
-    commands.push(new JumpCommand(blockCommands.length + 3));
+    commands.push(new JumpCommand(blockCommands.length + 4));
     commands.push(...blockCommands);
     commands.push(new PushValueCommand(null));
     commands.push(new ReturnCommand());
@@ -506,7 +506,7 @@ export class ExpressionStatementNode extends StatementNode {
         }
       }
     }
-    return [new MacroCommand(subCommands)];
+    return subCommands
   }
 }
 
@@ -586,7 +586,7 @@ export class NumberLiteralExpressionNode extends ExpressionNode {
     }
     commands.push(new HighlightExpressionCommand(this));
     commands.push(new PushValueCommand(numValue));
-    return [new MacroCommand(commands)];
+    return commands
   }
 }
 
@@ -598,10 +598,8 @@ export class IdentifierExpressionNode extends ExpressionNode {
   }
   evaluate(): Command[] {
     return [
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        new RetrieveValueCommand(this._tok.text),
-      ]),
+      new HighlightExpressionCommand(this),
+      new RetrieveValueCommand(this._tok.text),
     ];
   }
 }
@@ -696,7 +694,7 @@ export class ArgListExpressionNode extends ExpressionNode {
     for (const arg of this._argsList) {
       commands.push(...arg.evaluate());
     }
-    return [new MacroCommand(commands)];
+    return commands
   }
 }
 
@@ -717,12 +715,10 @@ export class ComparisonExpressionNode extends ExpressionNode {
   }
   evaluate(): Command[] {
     return [
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        ...this._left.evaluate(),
-        ...this._right.evaluate(),
-        new ComparisonOpCommand(this._operator),
-      ]),
+      new HighlightExpressionCommand(this),
+      ...this._left.evaluate(),
+      ...this._right.evaluate(),
+      new ComparisonOpCommand(this._operator),
     ];
   }
 }
@@ -766,7 +762,7 @@ export class UnaryExpressionNode extends ExpressionNode {
     subCommands.push(new HighlightExpressionCommand(this));
     subCommands.push(...this._operand.evaluate());
     subCommands.push(new UnaryOpCommand(this._operator));
-    return [new MacroCommand(subCommands)];
+    return subCommands;
   }
 }
 
@@ -791,42 +787,40 @@ export class FuncCallExpressionNode extends ExpressionNode {
       const funcName = this._func_name._tok.text;
       if (funcName === "print") {
         commands.push(new PrintCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "len") {
         commands.push(new LenCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "type") {
         commands.push(new TypeCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "input") {
         commands.push(new InputCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "range") {
         commands.push(new RangeCommand(numArgs));
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "int") {
         commands.push(new IntCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "float") {
         commands.push(new FloatCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "str") {
         commands.push(new StrCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "bool") {
         commands.push(new BoolCommand());
-        return [new MacroCommand(commands)];
+        return commands;
       } else if (funcName === "list") {
         commands.push(new ListCommand());
-        return [new MacroCommand(commands)];
+        return commands;
+      } else {
+        commands.push(new CallUserFunctionCommand(funcName, numArgs));
+        return commands;
       }
     }
-    // USER DEFINED FUNCTION
-    if (this._func_name instanceof IdentifierExpressionNode) {
-      const funcName = this._func_name._tok.text;
-      commands.push(new CallUserFunctionCommand(funcName, numArgs));
-      return commands;
-    }
+    return commands
   }
 }
 
@@ -844,7 +838,7 @@ export class ListAccessExpressionNode extends ExpressionNode {
     subCommands.push(...this._list.evaluate());
     subCommands.push(...this._index.evaluate());
     subCommands.push(new IndexAccessCommand());
-    return [new MacroCommand(subCommands)];
+    return subCommands;
   }
 }
 
@@ -891,7 +885,7 @@ export class MethodCallExpressionNode extends ExpressionNode {
         commands.push(new ContainsCommand());
       }
     }
-    return [new MacroCommand(commands)];
+    return commands;
   }
 }
 
@@ -936,7 +930,7 @@ export class ListSliceExpressionNode extends ExpressionNode {
     }
 
     subCommands.push(new ListSliceCommand());
-    return [new MacroCommand(subCommands)];
+    return subCommands
   }
 }
 
@@ -954,7 +948,7 @@ export class ListLiteralExpressionNode extends ExpressionNode {
     }
     let count = this._values ? this._values.length : 0;
     commands.push(new CreateListCommand(count));
-    return [new MacroCommand(commands)];
+    return commands
   }
 }
 
@@ -966,10 +960,8 @@ export class BooleanLiteralExpressionNode extends ExpressionNode {
   }
   evaluate(): Command[] {
     return [
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        new PushValueCommand(Boolean(this._value)),
-      ]),
+      new HighlightExpressionCommand(this),
+      new PushValueCommand(Boolean(this._value)),
     ];
   }
 }
@@ -989,10 +981,8 @@ export class StringLiteralExpressionNode extends ExpressionNode {
       text = text.slice(1, -1); // remove front quote and back quote to "clean" string
     }
     return [
-      new MacroCommand([
-        new HighlightExpressionCommand(this),
-        new PushValueCommand(text),
-      ]),
+      new HighlightExpressionCommand(this),
+      new PushValueCommand(text),
     ];
   }
 }
@@ -1035,6 +1025,6 @@ export class FStringLiteralExpressionNode extends ExpressionNode {
     // parse and replace {variable} with actual values
     commands.push(new InterpolateFStringCommand(text));
 
-    return [new MacroCommand(commands)];
+    return commands
   }
 }

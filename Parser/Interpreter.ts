@@ -20,6 +20,11 @@ import {
 
 export abstract class Command {
   protected _undoCommand: Command | null = null;
+
+  getUndoCommand(): Command | null {
+    return this._undoCommand;
+  }
+
   abstract do(_currentState: State): void;
   undo(_currentState: State) {
     this._undoCommand?.do(_currentState);
@@ -399,62 +404,84 @@ export class AssignVariableCommand extends Command {
       }
 
       // For loop iteration
-      const top =
-        _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
+      const top = _currentState.evaluationStack[_currentState.evaluationStack.length - 1];
 
       if (_currentState.loopStack.length > 0 && Array.isArray(top)) {
         const iterable = _currentState.evaluationStack.pop()!;
 
         if (Array.isArray(iterable) && iterable.length > 0) {
-          const currentIndex =
-            _currentState.loopIterationState.get(this._name) || 0;
+          const currentIndex = _currentState.loopIterationState.get(this._name) || 0;
 
           if (currentIndex < iterable.length) {
             const nextItem = iterable[currentIndex];
             const oldValue = _currentState.getVariable(this._name);
+            const hadVariable = _currentState.hasVariable(this._name);
             const oldIndex = currentIndex;
             const name = this._name;
+
             _currentState.setVariable(this._name, nextItem);
             _currentState.loopIterationState.set(this._name, currentIndex + 1);
             _currentState.evaluationStack.push(iterable);
             _currentState.evaluationStack.push(true);
+
             this._undoCommand = new (class extends Command {
               do(state: State) {
                 state.evaluationStack.pop(); // pop true
                 state.evaluationStack.pop(); // pop iterable
-                state.setVariable(name, oldValue);
+
+                if (oldIndex === 0 && !hadVariable) {
+                  state.currentScope.delete(name);
+                } else if (hadVariable) {
+                  state.setVariable(name, oldValue);
+                } else {
+                  state.setVariable(name, iterable[oldIndex - 1]);
+                }
+
                 state.loopIterationState.set(name, oldIndex);
                 state.evaluationStack.push(iterable);
               }
             })();
 
-            // CHECKIBNG FOR PREDICTION ON FOR LOOP ITERATION
+            // Prediction mode check
             if (_currentState.isPredictMode && typeof this._name === "string") {
               _currentState.waitingForPrediction = true;
               _currentState.predictionVariable = this._name;
               _currentState.predictionCorrectValue = nextItem;
-              return; // pause execution
+              return;
             }
           } else {
+            // Loop exhausted
+            const name = this._name;
+            const lastIndex = _currentState.loopIterationState.get(this._name) || 0;
+            const lastValue = _currentState.getVariable(this._name);
+
+            _currentState.evaluationStack.push(iterable);
             _currentState.evaluationStack.push(false);
+            _currentState.loopIterationState.delete(this._name);
+
             this._undoCommand = new (class extends Command {
               do(state: State) {
                 state.evaluationStack.pop(); // pop false
-                state.evaluationStack.push(iterable);
+                state.evaluationStack.pop(); // pop iterable
+                state.evaluationStack.push(iterable); // push iterable back
+                state.loopIterationState.set(name, lastIndex);
+                state.setVariable(name, lastValue);
               }
             })();
-            _currentState.loopIterationState.delete(this._name);
           }
         } else {
+          // Empty iterable
           _currentState.evaluationStack.push(false);
+
           this._undoCommand = new (class extends Command {
             do(state: State) {
-              state.evaluationStack.pop();
+              state.evaluationStack.pop(); // pop false
+              state.evaluationStack.push(iterable); // push iterable back
             }
           })();
         }
       } else {
-        // normal assignment
+        // Normal assignment
         const newValue = _currentState.evaluationStack.pop();
 
         if (newValue === undefined) {
@@ -462,6 +489,7 @@ export class AssignVariableCommand extends Command {
             `Stack underflow during variable assignment (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
         }
+
         const oldValue = _currentState.getVariable(this._name);
         const hadVariable = _currentState.hasVariable(this._name);
         const name = this._name;
@@ -489,13 +517,14 @@ export class AssignVariableCommand extends Command {
           do(state: State) {
             if (hadVariable) {
               state.setVariable(name, oldValue);
-              state.evaluationStack.push(oldValue);
             } else {
-              state.variables.delete(name);
+              state.currentScope.delete(name);
             }
+            state.evaluationStack.push(newValue);
           }
         })();
 
+        // Prediction mode check
         if (_currentState.isPredictMode && typeof this._name === "string") {
           _currentState.waitingForPrediction = true;
           _currentState.predictionVariable = this._name;
@@ -1371,6 +1400,16 @@ export class ListSliceCommand extends Command {
         }
       }
       _currentState.evaluationStack.push(result);
+
+      this._undoCommand = new (class extends Command {
+        do(state: State) {
+          state.evaluationStack.pop();
+          state.evaluationStack.push(list);
+          state.evaluationStack.push(start!);
+          state.evaluationStack.push(end!);
+          state.evaluationStack.push(step!);
+        }
+      })();
     } else if (typeof list === "string") {
       let result: string = "";
       let endIndex: number;
@@ -1449,7 +1488,6 @@ export class ReturnCommand extends Command {
 
   do(_currentState: State) {
     const value = _currentState.evaluationStack.pop() ?? null;
-
     const callInfo = _currentState.functionCallStack.pop();
 
     if (!callInfo) {
@@ -1460,7 +1498,8 @@ export class ReturnCommand extends Command {
     }
 
     _currentState.popScope();
-    _currentState.programCounter = callInfo.returnPC;
+    _currentState.scopeNames.pop();
+    _currentState.programCounter = callInfo.returnPC + 1;
     _currentState.evaluationStack.push(value);
 
     this._undoCommand = new (class extends Command {
@@ -1692,11 +1731,17 @@ export class CallUserFunctionCommand extends Command {
 
     _currentState.programCounter = func.startIndex - 1; // -1 because it will be incremented
 
+    const numArgs = this._numArgs;
     this._undoCommand = new (class extends Command {
       do(state: State) {
         state.popScope();
+        state.scopeNames.pop();
         state.functionCallStack.pop();
         state.programCounter = returnPC;
+
+        for (let i = numArgs - 1; i >= 0; i--) {
+          state.evaluationStack.push(args[i]);
+        }
       }
     })();
   }
@@ -1711,7 +1756,7 @@ export class DefineFunctionCommand extends Command {
   }
 
   do(_currentState: State) {
-    this._functionObj.startIndex = _currentState.programCounter + 2;
+    this._functionObj.startIndex = _currentState.programCounter + 3;
 
     const hadFunction = _currentState.functionDefinitions.has(
       this._functionObj.name,
