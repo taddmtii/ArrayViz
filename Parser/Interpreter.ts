@@ -1787,9 +1787,7 @@ export class InterpolateFStringCommand extends Command {
   }
 
   do(_currentState: State) {
-    // this pattern finds all {...} patterns
     const pattern = /\{([^}]+)\}/g;
-    // match[1] is the content inside the curly braces
     let result = this._template;
     const matches: string[] = [];
     let match;
@@ -1800,39 +1798,43 @@ export class InterpolateFStringCommand extends Command {
 
     for (const expr of matches) {
       const trimmed = expr.trim();
+      let strValue: string;
 
+      // simple variable reference (looking for identifiers), look it up.
       if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
         const value = _currentState.getVariable(trimmed);
         if (value === null && !_currentState.hasVariable(trimmed)) {
           _currentState.error = new NameError(
             `name '${trimmed}' is not defined (line ${_currentState.currentStatement?.startLine || "?"})`,
           );
+          return;
         }
-
-        let strValue: string;
-        if (typeof value === "string") {
-          strValue = value;
-        } else if (Array.isArray(value)) {
-          strValue =
-            "[" +
-            value
-              .map((v) => {
-                if (typeof v === "string") return `'${v}'`;
-                if (v === null) return "None";
-                if (typeof v === "boolean") return v ? "True" : "False";
-                return String(v);
-              })
-              .join(", ") +
-            "]";
-        } else if (value === null) {
-          strValue = "None";
-        } else if (typeof value === "boolean") {
-          strValue = value ? "True" : "False";
-        } else {
-          strValue = String(value);
+        strValue = this.formatValue(value);
+      } else {
+        // expression, simple or complex.
+        try {
+          // build context object with all variables. this will gather all the variables from all scopes into one object.
+          const context: any = {};
+          for (let i = _currentState.scopeStack.length - 1; i >= 0; i--) {
+            _currentState.scopeStack[i].forEach((value, key) => {
+              if (!(key in context)) {
+                context[key] = value;
+              }
+            });
+          }
+          // create function that evaluates the expression in the context
+          const evalFunc = new Function(...Object.keys(context), `return ${trimmed};`);
+          const value = evalFunc(...Object.values(context));
+          strValue = this.formatValue(value);
+        } catch (error) {
+          _currentState.error = new RuntimeError(
+            `Invalid expression in f-string: ${trimmed} (line ${_currentState.currentStatement?.startLine || "?"})`,
+          );
+          return;
         }
-        result = result.replace(`{${expr}}`, strValue);
       }
+
+      result = result.replace(`{${expr}}`, strValue);
     }
 
     _currentState.evaluationStack.push(result);
@@ -1842,6 +1844,31 @@ export class InterpolateFStringCommand extends Command {
         state.evaluationStack.pop();
       }
     })();
+  }
+  // helper to assist in formatting value for string value that gets returned (within f string).
+  private formatValue(value: PythonValue): string {
+    if (typeof value === "string") {
+      return value;
+    } else if (Array.isArray(value)) {
+      return (
+        "[" +
+        value
+          .map((v) => {
+            if (typeof v === "string") return `'${v}'`;
+            if (v === null) return "None";
+            if (typeof v === "boolean") return v ? "True" : "False";
+            return String(v);
+          })
+          .join(", ") +
+        "]"
+      );
+    } else if (value === null) {
+      return "None";
+    } else if (typeof value === "boolean") {
+      return value ? "True" : "False";
+    } else {
+      return String(value);
+    }
   }
 }
 
