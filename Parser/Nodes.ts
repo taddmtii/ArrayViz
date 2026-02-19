@@ -41,7 +41,6 @@ import {
   ListCommand,
   DefineFunctionCommand,
   InterpolateFStringCommand,
-  MacroCommand,
 } from "./Interpreter";
 
 export type Assignable = AssignmentStatementNode;
@@ -191,7 +190,7 @@ export class MultiAssignmentStatementNode extends StatementNode {
       subCommands.push(new AssignVariableCommand(this._identifiers[i]));
     }
 
-    return [new MacroCommand(subCommands)];
+    return subCommands;
   }
 }
 

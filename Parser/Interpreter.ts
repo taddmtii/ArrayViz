@@ -25,6 +25,10 @@ export abstract class Command {
     return this._undoCommand;
   }
 
+  isVisible(): boolean {
+    return true;
+  }
+
   abstract do(_currentState: State): void;
   undo(_currentState: State) {
     this._undoCommand?.do(_currentState);
@@ -548,6 +552,10 @@ export class PushValueCommand extends Command {
     this._value = value;
   }
 
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     _currentState.evaluationStack.push(this._value);
     this._undoCommand = new PopValueCommand();
@@ -563,6 +571,10 @@ export class PushLoopBoundsCommand extends Command {
     this._end = _end;
   }
 
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     let continueTarget = _currentState.programCounter + this._start;
     let breakTarget = _currentState.programCounter + this._end;
@@ -574,6 +586,10 @@ export class PushLoopBoundsCommand extends Command {
 export class PopLoopBoundsCommand extends Command {
   constructor() {
     super();
+  }
+
+  isVisible(): boolean {
+    return false;
   }
 
   do(_currentState: State) {
@@ -638,6 +654,11 @@ export class ConditionalJumpCommand extends Command {
     super();
     this._commandsToJump = _commandsToJump;
   }
+
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     const condition = _currentState.evaluationStack.pop()!;
     const boolCondition = Boolean(condition);
@@ -672,6 +693,11 @@ export class JumpCommand extends Command {
     super();
     this._commandsToJump = _commandsToJump;
   }
+
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     const oldPC = _currentState.programCounter;
     _currentState.programCounter += this._commandsToJump - 1;
@@ -685,6 +711,10 @@ export class JumpCommand extends Command {
 }
 
 export class PopValueCommand extends Command {
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     let value: PythonValue;
     value = _currentState.evaluationStack.pop()!;

@@ -218,7 +218,7 @@ function App() {
       <Header page={page} setPage={handlePageChange} />
       <div className="bg-[#252525] border-x border-gray-700 p-3 text-center">
         <span className="text-white font-mono text-lg">
-          Step {interpreterState.currentStep}
+          Welcome to ArrayViz! You can start by typing code in the editor below.
         </span>
       </div>
 
@@ -228,7 +228,7 @@ function App() {
             <div>
               <div className="text-red-300 font-bold text-sm">Parse Error</div>
               <div className="text-red-200 text-xs mt-1">
-                {interpreterState.parseError}
+                There was an error in parsing your code, please review syntax.
               </div>
             </div>
           </div>

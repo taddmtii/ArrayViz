@@ -105,32 +105,34 @@ export class InterpreterService {
   }
 
   stepForward(): boolean {
-    if (this.state.programCounter >= this.commands.length) {
-      return false;
-    }
-    if (this.state.error) {
-      return false;
-    }
 
-    const pcBefore = this.state.programCounter;
-    const command = this.commands[pcBefore];
+    while (this.state.programCounter < this.commands.length && !this.state.error) {
+      const pcBefore = this.state.programCounter;
+      const command = this.commands[pcBefore];
 
-    try {
-      command.do(this.state);
+      try {
+        command.do(this.state);
 
-      if (!this.state.waitingForPrediction) {
-        this.executedCommands.push(pcBefore);
-        this.undoStack.push(command.getUndoCommand());
+        if (!this.state.waitingForPrediction) {
+          this.executedCommands.push(pcBefore);
+          this.undoStack.push(command.getUndoCommand());
 
-        if (this.state.programCounter === pcBefore) {
-          this.state.programCounter++;
+          if (this.state.programCounter === pcBefore) {
+            this.state.programCounter++;
+          }
+          this.currentStep++;
+
+          if (command.isVisible()) {
+            return true;
+          }
+        } else {
+          return true;
         }
-        this.currentStep++;
+      } catch (error) {
+        return false;
       }
-      return true;
-    } catch (error) {
-      return false;
     }
+    return false
   }
 
   submitPrediction(variable: string, predictedValue: string): boolean {
@@ -147,20 +149,23 @@ export class InterpreterService {
   }
 
   stepBack(): boolean {
-    if (this.currentStep <= 0 || this.executedCommands.length === 0) {
-      return false;
+    while (this.currentStep > 0 && this.executedCommands.length > 0) {
+      const commandPC = this.executedCommands.pop()!;
+      const undoCommand = this.undoStack.pop()!;
+      const command = this.commands[commandPC]
+
+      if (undoCommand) {
+        undoCommand.do(this.state);
+      }
+
+      this.state.programCounter = commandPC;
+      this.currentStep--;
+
+      if (command.isVisible()) {
+        return true;
+      }
     }
-    const commandPC = this.executedCommands.pop()!;
-    const undoCommand = this.undoStack.pop()!;
-
-    if (undoCommand) {
-      undoCommand.do(this.state);
-    }
-
-    this.state.programCounter = commandPC;
-    this.currentStep--;
-
-    return true;
+    return false
   }
 
   // returns a modified state snapshot that we can then send to the UI with only things is cares about.
