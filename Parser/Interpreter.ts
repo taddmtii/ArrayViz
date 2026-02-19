@@ -1871,28 +1871,3 @@ export class InterpolateFStringCommand extends Command {
     }
   }
 }
-
-export class MacroCommand extends Command {
-  private _commands: Command[];
-
-  constructor(commands: Command[]) {
-    super();
-    this._commands = commands;
-  }
-
-  do(_currentState: State) {
-    for (const cmd of this._commands) {
-      cmd.do(_currentState);
-      if (_currentState.error) break;
-    }
-
-    const commands = this._commands;
-    this._undoCommand = new (class extends Command {
-      do(state: State) {
-        for (let i = commands.length - 1; i >= 0; i--) {
-          commands[i].undo(state);
-        }
-      }
-    })();
-  }
-}
