@@ -56,14 +56,12 @@ def greeting(name) -> str:
 
 ### f-strings
 
-PyViz allows you to embed variable names inside string literals, using curly braces `{}`.
-
-***PyViz does not currently support embedding expressions inside f-strings directly, they must first be stored in a variable***
+PyViz allows you to embed variable names and/or complex expressions inside string literals, using curly braces `{}`.
 
 ```python
 name = "Alice"
 age = 30
-print(f"Hello, {name}. You are {age} years old.")
+print(f"Hello, {name}. You are {age - 12} years old.")
 ```
 
 ## Operators
@@ -235,6 +233,8 @@ print(factorial(5))
 
 Like many other languages, variables defined inside a function are local to that function.
 
+Global and local scopes coexist.
+
 ## Arrays/Lists
 
 ### Creating a List
@@ -335,7 +335,7 @@ The following common Python features are NOT supported in PyViz:
 - Sets: No set data type
 - Tuples: No immutable sequences (use lists instead)
 - Bitwise Operators: No &, |, ^, ~, <<, >>
-- Global Keyword: All variables are function-scoped or local
+- Global Keyword: All variables are global or function scoped.
 - Lambda Functions: No anonymous functions
 - Import Statements: No external modules
 - File I/O: No file reading/writing operations
