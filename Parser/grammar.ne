@@ -1,7 +1,5 @@
 
 @{%
-// import * as moo from 'moo';
-// import IndentationLexer from 'moo-indentation-lexer';
 const moo = require("moo");
 const IndentationLexer = require('moo-indentation-lexer')
 const { ProgramNode,
@@ -84,14 +82,11 @@ const lexer = new IndentationLexer({
     DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // STRINGS
-
-    // also account for escape single and double quotes within string
-    // also add f-strings
     F_STRING_SINGLE: /f'(?:[^'\\]|\\[\s\S])*'/,
     F_STRING_DOUBLE: /f"(?:[^"\\]|\\[\s\S])*"/,
-    STRING_SINGLE: /'(?:[^'\\]|\\.)*'/, // matches anything but single quotes and backslashes.
-    STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
-    STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/, // come back to this, triple double and single + allow for new lines
+    STRING_SINGLE: /'(?:[^'\\]|\\.)*'/,
+    STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/,
+    STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/,
 
     ARROW: "->",
 
@@ -124,11 +119,10 @@ const lexer = new IndentationLexer({
 
 })});
 
-// Overrides next method from lexer, automatically skips whitespace and comments.
-lexer.next = (next => () => { // Captures the original next method, returns new func that becomes next method
+lexer.next = (next => () => {
     let tok;
-    while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "COMMENT")) {} // keep getting tokens and disgard any tokens with type WS or NL
-    return tok; // return first non WS token
+    while ((tok = next.call(lexer)) && (tok.type === "WS" || tok.type === "COMMENT")) {}
+    return tok;
 })(lexer.next);
 
 %}
@@ -137,13 +131,12 @@ lexer.next = (next => () => { // Captures the original next method, returns new 
 
 program -> statement_list {% d => d[0] %}
 
-statement_list -> statement:+ {% d => new ProgramNode(d[0].filter(statement => statement !== null)) %} # statements cannot be null.
+statement_list -> statement:+ {% d => new ProgramNode(d[0].filter(statement => statement !== null)) %}
 
 statement -> simple_statement %NL {% d => d[0] %}
-           | compound_statement {% d => d[0] %} # compound statement already eats newline.
+           | compound_statement {% d => d[0] %}
            | %NL {% d => null %}
 
-# A simple statement is a standalone statement.
 simple_statement -> assignment_statement {% d => d[0] %}
                   | return_statement {% d => d[0] %}
                   | %BREAK  {% d => (new BreakStatementNode(d[0])) %}
@@ -151,7 +144,6 @@ simple_statement -> assignment_statement {% d => d[0] %}
                   | %PASS {% d => (new PassStatementNode(d[0])) %}
                   | expression {% d => (new ExpressionStatementNode(d[0], d[0]._tok)) %}
 
-# A compound statement is a statement is a statement explitly followed by a block (or a list of statements).
 compound_statement -> if_statement {% d => d[0] %}
                     | for_loop {% d => d[0] %}
                     | while_loop {% d => d[0] %}
@@ -253,7 +245,7 @@ function_call -> primary %LPAREN arg_list:? %RPAREN {% d => (new FuncCallExpress
 
 list_access -> primary %LSQBRACK expression %RSQBRACK {% d => (new ListAccessExpressionNode(d[0], d[2])) %}
 
-method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], new IdentifierExpressionNode(d[2]), d[4] || null)) %}  # nums.remove(5) || nums.remove(num)
+method_call -> primary %DOT %IDENTIFIER %LPAREN arg_list:? %RPAREN {% d => (new MethodCallExpressionNode(d[0], new IdentifierExpressionNode(d[2]), d[4] || null)) %}
 
 list_slice -> primary %LSQBRACK expression %COLON expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], d[6]) %} # nums[1:2:1]
             | primary %LSQBRACK expression %COLON expression %RSQBRACK {% d => new ListSliceExpressionNode(d[0], d[2], d[4], null) %} # nums[2:5]

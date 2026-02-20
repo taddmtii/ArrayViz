@@ -6,7 +6,6 @@ import IndentationLexer from "moo-indentation-lexer";
 
 import {
   ProgramNode,
-  StatementNode,
   AssignmentStatementNode,
   MultiAssignmentStatementNode,
   ReturnStatementNode,
@@ -20,7 +19,6 @@ import {
   ElifStatementNode,
   ExpressionStatementNode,
   BlockStatementNode,
-  ExpressionNode,
   FormalParamsListExpressionNode,
   ConditionalExpressionNode,
   ArgListExpressionNode,
@@ -90,14 +88,11 @@ const lexer = new IndentationLexer({
     DECIMAL: /0|[+-]?[1-9][0-9]*/,
 
     // STRINGS
-
-    // also account for escape single and double quotes within string
-    // also add f-strings
     F_STRING_SINGLE: /f'(?:[^'\\]|\\[\s\S])*'/,
     F_STRING_DOUBLE: /f"(?:[^"\\]|\\[\s\S])*"/,
-    STRING_SINGLE: /'(?:[^'\\]|\\.)*'/, // matches anything but single quotes and backslashes.
-    STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/, // matches anything but double quotes and backslashes.
-    STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/, // come back to this, triple double and single + allow for new lines
+    STRING_SINGLE: /'(?:[^'\\]|\\.)*'/,
+    STRING_DOUBLE: /"(?:[^"\\]|\\.)*"/,
+    STRING_TRIPLE: /'''(?:[^"\\]|\\.)*'''/,
 
     ARROW: "->",
 
@@ -130,15 +125,13 @@ const lexer = new IndentationLexer({
   }),
 });
 
-// Overrides next method from lexer, automatically skips whitespace and comments.
 lexer.next = ((next) => () => {
-  // Captures the original next method, returns new func that becomes next method
   let tok;
   while (
     (tok = next.call(lexer)) &&
     (tok.type === "WS" || tok.type === "COMMENT")
-  ) {} // keep getting tokens and disgard any tokens with type WS or NL
-  return tok; // return first non WS token
+  ) { }
+  return tok;
 })(lexer.next);
 
 var grammar = {
