@@ -16,23 +16,16 @@ export class InterpreterService {
   constructor() {
     this.state = new State(
       0, // programCounter
-      0, // lineCount
       null, // currentExpression
       null, // currentStatement
-      [], // callStack
-      [], // history
-      new Map(), // variables
-      1, // currentLine
       [], // evaluationStack
-      [], // returnStack
-      [], // loopStack
+      [],
       [], // outputs
       new Map(), // loopIterationState
       null, // error
       new Map(), // functionDefinitions
       [new Map()], // scopeStack
       ['Global'], // scopeNames
-      [], // functionCallStack
     );
   }
 
@@ -64,27 +57,16 @@ export class InterpreterService {
 
       this.state = new State(
         0, // programCounter
-        0, // lineCount
         null, // currentExpression
         null, // currentStatement
-        [], // callStack
-        [], // history
-        globalScope, // variables - USE THE SAME MAP
-        1, // currentLine
         [], // evaluationStack
-        [], // returnStack
-        [], // loopStack
+        [],
         [], // outputs
         new Map(), // loopIterationState
         null, // error
         new Map(), // functionDefinitions
-        [globalScope], // scopeStack
+        [new Map()], // scopeStack
         ['Global'], // scopeNames
-        savedPredictMode, // isPredictMode
-        false, // waitingForPrediction
-        null, // predictionVariable
-        null, // predictionCorrectValue
-        [],
       );
 
       this.parseErrorMessage = null;
@@ -105,7 +87,6 @@ export class InterpreterService {
   }
 
   stepForward(): boolean {
-
     while (this.state.programCounter < this.commands.length && !this.state.error) {
       const pcBefore = this.state.programCounter;
       const command = this.commands[pcBefore];
@@ -172,7 +153,6 @@ export class InterpreterService {
   getState(): SimplifiedState {
     const result = {
       variables: Object.fromEntries(this.state.variables),
-      currentLine: this.state.currentLine,
       outputs: [...this.state.outputs],
       canStepForward:
         this.state.programCounter < this.commands.length && !this.state.error,

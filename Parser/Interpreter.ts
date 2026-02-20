@@ -37,15 +37,9 @@ export abstract class Command {
 
 export class State {
   private _programCounter: number = 0; // which line of execution are we on.
-  private _lineCount: number = 0; // all lines in program.
-  private _currentLine: number = 1; // current line number
   private _currentExpression: ExpressionNode | null; // current highlighted expression we are evaluating
   private _currentStatement: StatementNode | null; // what statement are we on
-  private _callStack: ExpressionNode[]; // function call stack
-  private _history: Command[]; // history of all commands
-  private _variables: Map<string, PythonValue> = new Map(); // storage for variables and thier values
   private _evaluationStack: PythonValue[]; // stack for expression evaluation
-  private _returnStack: PythonValue[]; // stack for return values
   private _loopStack: [number, number][];
   private _outputs: PythonValue[] = [];
   private _loopIterationState: Map<string, number> = new Map(); // tracks the iteration index per loop variable.
@@ -64,15 +58,9 @@ export class State {
 
   constructor(
     _programCounter: number,
-    _lineCount: number,
     _currentExpression: ExpressionNode | null,
     _currentStatement: StatementNode | null,
-    _callStack: ExpressionNode[],
-    _history: Command[],
-    _variables: Map<string, PythonValue>,
-    _currentLine: number,
     _evaluationStack: PythonValue[],
-    _returnStack: PythonValue[],
     _loopStack: [number, number][],
     _outputs: PythonValue[],
     _loopIterationState: Map<string, number>,
@@ -90,15 +78,9 @@ export class State {
     }> = [],
   ) {
     this._programCounter = _programCounter;
-    this._lineCount = _lineCount;
     this._currentExpression = _currentExpression;
     this._currentStatement = _currentStatement;
-    this._callStack = _callStack;
-    this._history = _history;
-    this._variables = _variables;
-    this._currentLine = _currentLine;
     this._evaluationStack = _evaluationStack;
-    this._returnStack = _returnStack;
     this._loopStack = _loopStack;
     this._outputs = _outputs;
     this._loopIterationState = _loopIterationState;
@@ -187,10 +169,6 @@ export class State {
     this._programCounter = val;
   }
 
-  public get returnStack() {
-    return this._returnStack;
-  }
-
   public get outputs() {
     return this._outputs;
   }
@@ -214,21 +192,6 @@ export class State {
       }
     }
     return false;
-  }
-
-  public get lineCount() {
-    return this._lineCount;
-  }
-  public set lineCount(val: number) {
-    this._lineCount = val;
-  }
-
-  public get currentLine() {
-    return this._currentLine;
-  }
-
-  public set currentLine(val: number) {
-    this._currentLine = val;
   }
 
   public get currentExpression() {
@@ -277,27 +240,6 @@ export class State {
       }
     }
     return null;
-  }
-
-  public pushCallStack(func: ExpressionNode) {
-    this._callStack.push(func);
-  }
-  public popCallStack() {
-    return this._callStack.pop();
-  }
-
-  public addHistoryCommand(step: Command) {
-    this._history.push(step);
-  }
-  public getMostRecentHistoryCommand() {
-    return this._history.pop();
-  }
-
-  public pushReturnStack(value: PythonValue) {
-    this._returnStack.push(value);
-  }
-  public popReturnStack() {
-    return this._returnStack.pop();
   }
 
   public getCurrentStatementHighlight(): {
@@ -771,21 +713,6 @@ export class RetrieveValueCommand extends Command {
   }
 }
 
-export class MoveLinePointerCommand extends Command {
-  private _lineNum: number;
-  constructor(_lineNum: number) {
-    super();
-    this._lineNum = _lineNum;
-  }
-
-  do(_currentState: State) {
-    this._undoCommand = new MoveLinePointerCommand(
-      _currentState.programCounter,
-    );
-    _currentState.programCounter = this._lineNum;
-  }
-}
-
 export class HighlightStatementCommand extends Command {
   private _statement: StatementNode;
   constructor(_statement: StatementNode) {
@@ -803,22 +730,22 @@ export class HighlightStatementCommand extends Command {
   }
 }
 
-export class ReplaceHighlightedExpressionCommand extends Command {
-  private _oldExpression: ExpressionNode;
-  private _newExpression: ExpressionNode;
-  constructor(_oldExpression: ExpressionNode, _newExpression: ExpressionNode) {
-    super();
-    this._oldExpression = _oldExpression;
-    this._newExpression = _newExpression;
-  }
-  do(_currentState: State) {
-    this._undoCommand = new ReplaceHighlightedExpressionCommand(
-      this._newExpression,
-      this._oldExpression,
-    );
-    _currentState.currentExpression = this._newExpression;
-  }
-}
+// export class ReplaceHighlightedExpressionCommand extends Command {
+//   private _oldExpression: ExpressionNode;
+//   private _newExpression: ExpressionNode;
+//   constructor(_oldExpression: ExpressionNode, _newExpression: ExpressionNode) {
+//     super();
+//     this._oldExpression = _oldExpression;
+//     this._newExpression = _newExpression;
+//   }
+//   do(_currentState: State) {
+//     this._undoCommand = new ReplaceHighlightedExpressionCommand(
+//       this._newExpression,
+//       this._oldExpression,
+//     );
+//     _currentState.currentExpression = this._newExpression;
+//   }
+// }
 
 export class BinaryOpCommand extends Command {
   private _op: BinaryOp;
@@ -986,35 +913,6 @@ export class UnaryOpCommand extends Command {
   }
 }
 
-export class EnterScopeCommand extends Command {
-  private _savedVariables: Map<string, PythonValue>;
-  constructor(_savedVariables: Map<string, PythonValue>) {
-    super();
-    this._savedVariables = _savedVariables;
-  }
-  do(_currentState: State) {
-    this._savedVariables = new Map(_currentState.variables);
-    this._undoCommand = new ExitScopeCommand(this._savedVariables);
-  }
-}
-
-export class ExitScopeCommand extends Command {
-  private _previousVariables: Map<string, PythonValue>;
-  constructor(_previousVariables: Map<string, PythonValue>) {
-    super();
-    this._previousVariables = _previousVariables;
-  }
-  do(_currentState: State) {
-    const currentVariables = new Map(_currentState.variables);
-    this._undoCommand = new ExitScopeCommand(currentVariables);
-
-    _currentState.variables.clear();
-    this._previousVariables.forEach((value, key) => {
-      _currentState.setVariable(key, value);
-    });
-  }
-}
-
 export class AppendCommand extends Command {
   constructor() {
     super();
@@ -1067,9 +965,8 @@ export class PopCommand extends Command {
   }
   do(_currentState: State) {
     const list = _currentState.evaluationStack.pop()!;
-    let poppedValue;
+    let poppedValue: PythonValue;
     if (Array.isArray(list)) {
-      console.log(list);
       poppedValue = list.pop();
 
       _currentState.evaluationStack.push(poppedValue);

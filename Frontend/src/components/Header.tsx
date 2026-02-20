@@ -1,5 +1,3 @@
-import { Settings } from "lucide-react";
-
 type HeaderProps = {
   page: 'view' | 'predict';
   setPage: (mode: 'view' | 'predict') => void;
@@ -12,8 +10,15 @@ function Header({ page, setPage }: HeaderProps) {
       {/* Main container */}
       <div className="flex w-100vw p-4 bg-[#3D3D3D] justify-between">
         {/* ArrayViz title */}
-        <div className="flex ml-4">
+        <div className="flex gap-4 ml-4">
           <h1 className="flex text-white text-2xl ">ArrayViz</h1>
+          <a href="https://github.com/taddmtii/ArrayViz/blob/main/Documentation/PyVizDocumentation.md" target="_blank">
+            <button
+              className={`btn text-white font-bold bg-[#242424] hover:bg-[#343434] py-2 px-2 cursor-pointer rounded`}
+            >
+              Documentation
+            </button>
+          </a>
         </div>
         {/* Controls */}
         <div className="flex gap-4 mr-4">
@@ -29,13 +34,6 @@ function Header({ page, setPage }: HeaderProps) {
           >
             Predict
           </button>
-          <a href="https://github.com/taddmtii/ArrayViz/blob/main/Documentation/PyVizDocumentation.md" target="_blank">
-            <button
-              className={`btn text-white font-bold bg-[#242424] hover:bg-[#343434] py-2 px-2 cursor-pointer rounded`}
-            >
-              Documentation
-            </button>
-          </a>
         </div>
       </div>
     </>
