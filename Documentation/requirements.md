@@ -1,13 +1,13 @@
 *inspired* by template: https://www.perforce.com/blog/alm/how-write-software-requirements-specification-srs-document
 
-Project: ArrayViz <br>
+Project: CodeLens <br>
 Prepared by: Tadd Trumbull <br>
 Course: CPTR-486 Senior Seminar
 
 # 1. Introduction
     1.1 Purpose and Intended Use
 
-        Define the functional and non-functional requirements for ArrayViz, which is an interactive educational tool for visualing array operations and algorithms. ArrayViz aims to help students understand these fundamental array sorting algorithms by simulating execution manually, while also allowing the student to alter opeations such as indexing and swapping.
+        Define the functional and non-functional requirements for CodeLens, which is an interactive educational tool for visualing array operations and algorithms. CodeLens aims to help students understand these fundamental array sorting algorithms by simulating execution manually, while also allowing the student to alter opeations such as indexing and swapping.
 
     1.2 Intended Audience (Actors)
 
@@ -19,7 +19,7 @@ Course: CPTR-486 Senior Seminar
 
     1.3 Product Scope
 
-        ArrayViz simulates core array based searching and sorting algorithms by supporting step by step alteration of array elements, and giving visual feedback on operations with analytics to supplement understanding of time complexity.
+        CodeLens simulates core array based searching and sorting algorithms by supporting step by step alteration of array elements, and giving visual feedback on operations with analytics to supplement understanding of time complexity.
 
     1.4 Definitions
 

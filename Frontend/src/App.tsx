@@ -218,7 +218,7 @@ function App() {
       <Header page={page} setPage={handlePageChange} />
       <div className="bg-[#252525] border-x border-gray-700 p-3 text-center">
         <span className="text-white font-mono text-lg">
-          Welcome to ArrayViz! You can start by typing code in the editor below.
+          Welcome to CodeLens! You can start by typing code in the editor below.
         </span>
       </div>
 
