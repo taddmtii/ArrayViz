@@ -43,15 +43,6 @@ price = 19.21
 - **List**: Ordered, contigious collections of elements in virtual memory. ([1,2,3], ["a", "b", "c"])
 - **None**: Represents absence of value
 
-### Type Annotations
-
-Optional type hints can be added to function definitions.
-
-```python
-def greeting(name) -> str:
-    return "Hello, " + name
-```
-
 ## Output
 
 ### f-strings
