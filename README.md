@@ -1,4 +1,4 @@
-Check out the latest build of ArrayViz yourself:
+Check out the latest build of CodeLens yourself:
 
 https://taddmtii.github.io/CodeLens/
 
