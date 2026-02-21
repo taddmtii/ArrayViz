@@ -694,6 +694,11 @@ export class RetrieveValueCommand extends Command {
     super();
     this._varName = _varName;
   }
+
+  isVisible(): boolean {
+    return false;
+  }
+
   do(_currentState: State) {
     try {
       if (!_currentState.hasVariable(this._varName)) {

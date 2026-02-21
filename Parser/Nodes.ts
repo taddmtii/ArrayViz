@@ -366,7 +366,7 @@ export class ForStatementNode extends StatementNode {
     commands.push(...iterableCommands);
 
     const blockCommands = this._block.execute();
-    commands.push(new PushLoopBoundsCommand(0, 4 + blockCommands.length));
+    commands.push(new PushLoopBoundsCommand(1, 4 + blockCommands.length));
     commands.push(new AssignVariableCommand(this._loopVar._tok.text));
     commands.push(new ConditionalJumpCommand(blockCommands.length + 3));
     commands.push(...blockCommands);
