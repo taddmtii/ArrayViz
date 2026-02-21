@@ -80,6 +80,7 @@ function VariablesWindow({
     name?: string; // name that is OPTIONAL because you can just declare something like a list literal.
   }> = [];
   const references: Record<string, string> = {}; // mapping from variable name to object id
+  const listExists: boolean = getAllLists().length > 0
 
   let objectId = 0;
 
@@ -268,14 +269,14 @@ function VariablesWindow({
                               : ''
                               }`}
                           >
-                            {isLoopVariable && (
+                            {/*{isLoopVariable && (
                               <span
                                 className="text-orange-400 text-xs"
                                 title="Loop variable"
                               >
                                 iterator
                               </span>
-                            )}
+                            )}*/}
                             <span
                               className={`${isLoopVariable ? 'text-orange-400' : 'text-blue-400'}`}
                             >
@@ -299,16 +300,19 @@ function VariablesWindow({
                                 {formattedValue(value)}
                               </span>
                             )}
-                            <select
-                              value={variableListMappings.get(name) || ''}
-                              onChange={(e) => handleListMapping(name, e.target.value)}
-                              className="ml-2 bg-gray-700 text-white text-xs px-1 py-0.5 rounded border border-gray-600"
-                            >
-                              <option value="">Link to list...</option>
-                              {getAllLists().map(listName => (
-                                <option key={listName} value={listName}>{listName}</option>
-                              ))}
-                            </select>
+                            {listExists && (
+                              <select
+                                value={variableListMappings.get(name) || ''}
+                                onChange={(e) => handleListMapping(name, e.target.value)}
+                                className="ml-2 bg-gray-700 text-white text-xs px-1 py-0.5 rounded border border-gray-600"
+                              >
+                                <option value="">Link to list...</option>
+                                {getAllLists().map(listName => (
+                                  <option key={listName} value={listName}>{listName}</option>
+                                ))}
+                              </select>
+                            )}
+
                           </div>
                         );
                       })}
